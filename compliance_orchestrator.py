@@ -67,7 +67,7 @@ MODEL = os.getenv(
     "COMPLIANCE_MODEL",
     DEFAULT_MODELS.get(DEFAULT_PROVIDER, DEFAULT_MODELS["anthropic"]),
 )
-MAX_TOKENS = 4096
+MAX_TOKENS = 8192
 AGENT_KEYS: list[str] = list(AGENTS.keys())
 DOMAIN_AGENT_KEYS: list[str] = [k for k in AGENT_KEYS if k not in ("auditor", "narrative")]
 
