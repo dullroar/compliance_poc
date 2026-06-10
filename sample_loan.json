@@ -1,0 +1,190 @@
+{
+  "case_information": {
+    "case_id": "TEST-2024-001",
+    "review_date": "2024-06-01",
+    "reviewer": "Compliance Review System"
+  },
+  "borrower_information": {
+    "borrower_name": "John and Mary Smith",
+    "applicant_type": "Joint",
+    "joint_application_indicator": true,
+    "age_primary": 34,
+    "years_farming": 4,
+    "gross_farm_sales_prior_year": 185000,
+    "entity_type": "Individual"
+  },
+  "loan_information": {
+    "loan_number": "LN-2024-001",
+    "loan_purpose": "Purchase",
+    "loan_amount": 425000,
+    "interest_rate": 7.85,
+    "apr": 8.12,
+    "lien_position": "First",
+    "loan_type": "Fixed",
+    "loan_term_months": 360,
+    "application_date": "2024-03-15",
+    "decision_date": "2024-04-10",
+    "action_taken": "Originated",
+    "action_taken_date": "2024-05-01",
+    "consummation_date": "2024-05-01"
+  },
+  "collateral_information": {
+    "property_type": "Farm with residential dwelling",
+    "property_address": "1234 Rural Route 2, Shelby County, IL 62565",
+    "property_state": "IL",
+    "property_county": "Shelby",
+    "census_tract": "17173960200",
+    "occupancy_type": "Principal Residence",
+    "dwelling_present": true,
+    "dwelling_type": "Single Family",
+    "construction_type": "Site Built",
+    "land_acres": 240,
+    "improvements_include_residence": true,
+    "as_is_appraised_value": 590000,
+    "appraisal_date": "2024-03-28",
+    "flood_determination_completed": true,
+    "flood_determination_date": "2024-03-20",
+    "flood_zone": "X",
+    "sfha_indicator": false
+  },
+  "timeline_information": {
+    "application_received_date": "2024-03-15",
+    "appraisal_ordered_date": "2024-03-18",
+    "appraisal_received_date": "2024-03-28",
+    "credit_decision_date": "2024-04-10",
+    "commitment_letter_date": "2024-04-12",
+    "closing_date": "2024-05-01",
+    "adverse_action_notice_date": null,
+    "adverse_action_required": false
+  },
+  "supporting_documents": [
+    "Signed loan application",
+    "Credit approval memorandum",
+    "Appraisal report",
+    "Flood zone determination certificate",
+    "Commitment letter",
+    "Closing disclosure",
+    "Promissory note",
+    "Mortgage instrument",
+    "Occupancy certification"
+  ],
+  "hmda_fields": {
+    "occupancy_type": "Principal Residence",
+    "loan_purpose": "Home Purchase",
+    "dwelling_type": "Single Family",
+    "action_taken": "1",
+    "action_taken_date": "2024-05-01",
+    "loan_amount": 425000,
+    "property_location": "Shelby County, IL",
+    "application_date": "2024-03-15",
+    "denial_reasons": [],
+    "rate_spread": 2.37,
+    "nmls_identifier": "987654",
+    "automated_underwriting": {
+      "system": "None",
+      "result": "Manual underwrite"
+    }
+  },
+  "ecoa_information": {
+    "application_date": "2024-03-15",
+    "credit_decision_date": "2024-04-10",
+    "decision_type": "Approval",
+    "adverse_action_date": null,
+    "counteroffer_date": null,
+    "withdrawal_date": null
+  },
+  "applicant_information": {
+    "applicant_type": "Joint",
+    "joint_application_indicator": true,
+    "marital_status_collected": "Not collected",
+    "age_considered": false,
+    "public_assistance_income": false,
+    "protected_class_information": {}
+  },
+  "underwriting_information": {
+    "decision_factors": [
+      "Repayment capacity supported",
+      "Collateral adequate",
+      "Credit history satisfactory"
+    ],
+    "credit_policy_references": ["Agricultural Loan Policy Section 4.2"],
+    "exception_requests": [],
+    "override_information": []
+  },
+  "notice_information": {
+    "notice_required": false,
+    "notice_sent": false,
+    "notice_date": null,
+    "notice_type": null
+  },
+  "apr_information": {
+    "apr": 8.12,
+    "interest_rate": 7.85,
+    "lock_date": "2024-04-10",
+    "consummation_date": "2024-05-01",
+    "apor_rate": 7.02,
+    "apor_source": "FFIEC APOR Table",
+    "threshold_used": "First Lien +1.5%",
+    "lien_position": "First",
+    "loan_term": 360
+  },
+  "dwelling_information": {
+    "principal_dwelling": true,
+    "occupancy_evidence": ["Occupancy certification signed at closing"]
+  },
+  "escrow_information": {
+    "escrow_required": true,
+    "escrow_established": true,
+    "escrow_waiver": null
+  },
+  "appraisal_information": {
+    "appraisal_required": true,
+    "appraisal_completed": true,
+    "additional_appraisal_required": false
+  },
+  "hvcre_information": {
+    "loan_purpose": "Purchase of existing improved real property",
+    "project_type": "Existing farm",
+    "adc_activity": false,
+    "construction_status": "Not applicable",
+    "project_completion_date": null,
+    "income_producing_status": "Agricultural"
+  },
+  "capital_contribution": {
+    "required_contribution": null,
+    "actual_contribution": null,
+    "contribution_source": null,
+    "verification_documents": []
+  },
+  "ybs_information": {
+    "young_farmer_criteria": {
+      "age": 34,
+      "young_farmer_threshold_years": 35
+    },
+    "beginning_farmer_criteria": {
+      "years_farming": 4,
+      "beginning_farmer_threshold_years": 10
+    },
+    "small_farmer_criteria": {
+      "gross_sales_prior_year": 185000,
+      "small_farmer_threshold": 250000
+    }
+  },
+  "vmi_information": {
+    "application_channel": "In-person",
+    "vmi_collection_required": true,
+    "vmi_presented_to_applicant": true,
+    "vmi_collection_method": "Face-to-face",
+    "applicant_provided_vmi": true,
+    "visual_observation_used": false,
+    "demographic_data_segregated": true,
+    "underwriting_firewall_documented": true
+  },
+  "institution_context": {
+    "institution_name": "Example Farm Credit ACA",
+    "institution_type": "Farm Credit ACA",
+    "examination_standard": "FCA",
+    "hmda_covered_institution": true,
+    "consumer_lending_authority": true
+  }
+}

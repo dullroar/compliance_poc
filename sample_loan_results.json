@@ -1,0 +1,791 @@
+{
+  "hmda": {
+    "agent_key": "hmda",
+    "agent_name": "HMDA Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"HMDA Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"Regulation C\",\n    \"evaluation_timestamp\": \"2024-06-01T00:00:00Z\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"HMDA, Regulation C (12 CFR Part 1003)\"],\n    \"regulatory_version\": \"Current as of review date\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"Covered\",\n    \"applicable_obligations\": [\"Regulation C (12 CFR Part 1003)\"],\n    \"classification_basis\": \"Institution exceeds HMDA reporting threshold, transaction is residential purchase with single-family dwelling.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Signed loan application\", \"Credit approval memorandum\", \"Appraisal report\", \"Flood zone determination certificate\", \"Commitment letter\", \"Closing disclosure\", \"Promissory note\", \"Mortgage instrument\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Occupancy certification\", \"Credit policy references\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": [\"Marital status not collected for applicants.\"]\n  },\n  \"determination_trace\": [\n    {\"step\": \"Institution Coverage\", \"finding\": \"Farm Credit ACA exceeds HMDA reporting threshold.\", \"basis\": \"Regulation C (12 CFR Part 1003)\"},\n    {\"step\": \"Transaction Coverage\", \"finding\": \"Loan is a residential purchase of single-family dwelling.\", \"basis\": \"Dwelling type and loan purpose match Regulation C requirements\"},\n    {\"step\": \"Action Taken and chronology validation\", \"finding\": \"Loan originated as reported in LAR.\", \"basis\": \"Chronology from application through closing shows no adverse action taken.\"},\n    {\"step\": \"Required LAR data inventory and validation\", \"finding\": \"All reportable fields are present with sufficient evidence.\", \"basis\": \"Primary and secondary documents support all required HMDA data elements.\"},\n    {\"step\": \"Reporting, retention, and readiness obligations\", \"finding\": \"Transaction ready for reporting as originated loan.\", \"basis\": \"Chronology complete, disposition clear, documentation adequate.\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"The loan is a residential purchase of a single-family dwelling with sufficient evidence to support accurate reporting under HMDA. All required fields are present and supported by documentation.\",\n    \"examiner_narrative\": \"This transaction meets all criteria for inclusion in the Home Mortgage Disclosure Act (HMDA) report. Evidence supports the classification as Covered, with no missing or conflicting information. The institution's compliance obligations include reporting this originated loan accurately and retaining supporting documents as per Regulation C requirements.\",\n    \"status_change_narrative\": \"\",\n    \"data_gaps_followups\": [\"Follow up on collection of marital status for applicants.\"]\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "HMDA Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "Regulation C",
+        "evaluation_timestamp": "2024-06-01T00:00:00Z"
+      },
+      "authority": {
+        "primary_authorities": [
+          "HMDA, Regulation C (12 CFR Part 1003)"
+        ],
+        "regulatory_version": "Current as of review date"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "Covered",
+        "applicable_obligations": [
+          "Regulation C (12 CFR Part 1003)"
+        ],
+        "classification_basis": "Institution exceeds HMDA reporting threshold, transaction is residential purchase with single-family dwelling."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Signed loan application",
+          "Credit approval memorandum",
+          "Appraisal report",
+          "Flood zone determination certificate",
+          "Commitment letter",
+          "Closing disclosure",
+          "Promissory note",
+          "Mortgage instrument"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Occupancy certification",
+          "Credit policy references"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": [
+          "Marital status not collected for applicants."
+        ]
+      },
+      "determination_trace": [
+        {
+          "step": "Institution Coverage",
+          "finding": "Farm Credit ACA exceeds HMDA reporting threshold.",
+          "basis": "Regulation C (12 CFR Part 1003)"
+        },
+        {
+          "step": "Transaction Coverage",
+          "finding": "Loan is a residential purchase of single-family dwelling.",
+          "basis": "Dwelling type and loan purpose match Regulation C requirements"
+        },
+        {
+          "step": "Action Taken and chronology validation",
+          "finding": "Loan originated as reported in LAR.",
+          "basis": "Chronology from application through closing shows no adverse action taken."
+        },
+        {
+          "step": "Required LAR data inventory and validation",
+          "finding": "All reportable fields are present with sufficient evidence.",
+          "basis": "Primary and secondary documents support all required HMDA data elements."
+        },
+        {
+          "step": "Reporting, retention, and readiness obligations",
+          "finding": "Transaction ready for reporting as originated loan.",
+          "basis": "Chronology complete, disposition clear, documentation adequate."
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "The loan is a residential purchase of a single-family dwelling with sufficient evidence to support accurate reporting under HMDA. All required fields are present and supported by documentation.",
+        "examiner_narrative": "This transaction meets all criteria for inclusion in the Home Mortgage Disclosure Act (HMDA) report. Evidence supports the classification as Covered, with no missing or conflicting information. The institution's compliance obligations include reporting this originated loan accurately and retaining supporting documents as per Regulation C requirements.",
+        "status_change_narrative": "",
+        "data_gaps_followups": [
+          "Follow up on collection of marital status for applicants."
+        ]
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:14:32.612109+00:00"
+  },
+  "ecoa": {
+    "agent_key": "ecoa",
+    "agent_name": "ECOA Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"ECOA Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"ECOA and Regulation B\",\n    \"evaluation_timestamp\": \"2024-06-01T00:00:00Z\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"Equal Credit Opportunity Act (ECOA)\", \"Regulation B\"],\n    \"regulatory_version\": \"Current Effective as of 2024-05-31\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"No Adverse Action\",\n    \"applicable_obligations\": [\"Regulation B Section 1002.9(b)\"],\n    \"classification_basis\": \"The loan application was approved without any adverse action.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Signed loan application\", \"Credit approval memorandum\", \"Appraisal report\", \"Flood zone determination certificate\", \"Commitment letter\", \"Closing disclosure\", \"Promissory note\", \"Mortgage instrument\", \"Occupancy certification\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Supporting documents and correspondence related to the loan process\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": [\"Marital status not collected as per Regulation B\"]\n  },\n  \"determination_trace\": [\n    {\"step\": \"Credit Transaction Identification\", \"finding\": \"The transaction is a home purchase loan for an agricultural property.\", \"basis\": \"Loan information details and purpose.\"},\n    {\"step\": \"Applicant Status Review\", \"finding\": \"Both applicants are classified as joint borrowers with no marital status collected.\", \"basis\": \"Borrower information and applicant information.\"},\n    {\"step\": \"Regulation B Applicability Review\", \"finding\": \"The transaction is subject to ECOA and Regulation B because it involves credit that affects the borrower's housing.\", \"basis\": \"Institution context and loan purpose.\"},\n    {\"step\": \"Credit Decision Analysis\", \"finding\": \"The loan application was approved without any adverse action.\", \"basis\": \"Decision factors, decision type, and supporting documents.\"},\n    {\"step\": \"Adverse Action Analysis\", \"finding\": \"No adverse action occurred as the credit decision resulted in an approval.\", \"basis\": \"Decision type and no denial reasons provided.\"},\n    {\"step\": \"Notice Requirement Analysis\", \"finding\": \"No notice was required since there was no adverse action or incompleteness issue.\", \"basis\": \"Regulation B Section 1002.9(b) and decision factors.\"},\n    {\"step\": \"Prohibited Basis Risk Review\", \"finding\": \"The transaction is compliant with respect to prohibited basis risks, but marital status not collected is noted as a data quality issue.\", \"basis\": \"Applicant information and Regulation B requirements.\"},\n    {\"step\": \"Documentation Sufficiency Review\", \"finding\": \"Sufficient evidence exists to support an examiner-defensible compliance determination.\", \"basis\": \"Primary and secondary evidence assessment.\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"The transaction is compliant with ECOA and Regulation B as the loan was approved without adverse action. Primary evidence and secondary documentation support a defensible compliance determination, though there is an issue regarding marital status collection.\",\n    \"examiner_narrative\": \"This home purchase agricultural loan application for John and Mary Smith has been reviewed and determined to be compliant with ECOA and Regulation B guidelines. All required documents were present and supported the final credit decision without any adverse actions or incompleteness issues. However, a data quality issue was noted in the lack of marital status collection.\",\n    \"issues\": [\"Marital status not collected as per Regulation B\"]\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "ECOA Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "ECOA and Regulation B",
+        "evaluation_timestamp": "2024-06-01T00:00:00Z"
+      },
+      "authority": {
+        "primary_authorities": [
+          "Equal Credit Opportunity Act (ECOA)",
+          "Regulation B"
+        ],
+        "regulatory_version": "Current Effective as of 2024-05-31"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "No Adverse Action",
+        "applicable_obligations": [
+          "Regulation B Section 1002.9(b)"
+        ],
+        "classification_basis": "The loan application was approved without any adverse action."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Signed loan application",
+          "Credit approval memorandum",
+          "Appraisal report",
+          "Flood zone determination certificate",
+          "Commitment letter",
+          "Closing disclosure",
+          "Promissory note",
+          "Mortgage instrument",
+          "Occupancy certification"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Supporting documents and correspondence related to the loan process"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": [
+          "Marital status not collected as per Regulation B"
+        ]
+      },
+      "determination_trace": [
+        {
+          "step": "Credit Transaction Identification",
+          "finding": "The transaction is a home purchase loan for an agricultural property.",
+          "basis": "Loan information details and purpose."
+        },
+        {
+          "step": "Applicant Status Review",
+          "finding": "Both applicants are classified as joint borrowers with no marital status collected.",
+          "basis": "Borrower information and applicant information."
+        },
+        {
+          "step": "Regulation B Applicability Review",
+          "finding": "The transaction is subject to ECOA and Regulation B because it involves credit that affects the borrower's housing.",
+          "basis": "Institution context and loan purpose."
+        },
+        {
+          "step": "Credit Decision Analysis",
+          "finding": "The loan application was approved without any adverse action.",
+          "basis": "Decision factors, decision type, and supporting documents."
+        },
+        {
+          "step": "Adverse Action Analysis",
+          "finding": "No adverse action occurred as the credit decision resulted in an approval.",
+          "basis": "Decision type and no denial reasons provided."
+        },
+        {
+          "step": "Notice Requirement Analysis",
+          "finding": "No notice was required since there was no adverse action or incompleteness issue.",
+          "basis": "Regulation B Section 1002.9(b) and decision factors."
+        },
+        {
+          "step": "Prohibited Basis Risk Review",
+          "finding": "The transaction is compliant with respect to prohibited basis risks, but marital status not collected is noted as a data quality issue.",
+          "basis": "Applicant information and Regulation B requirements."
+        },
+        {
+          "step": "Documentation Sufficiency Review",
+          "finding": "Sufficient evidence exists to support an examiner-defensible compliance determination.",
+          "basis": "Primary and secondary evidence assessment."
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "The transaction is compliant with ECOA and Regulation B as the loan was approved without adverse action. Primary evidence and secondary documentation support a defensible compliance determination, though there is an issue regarding marital status collection.",
+        "examiner_narrative": "This home purchase agricultural loan application for John and Mary Smith has been reviewed and determined to be compliant with ECOA and Regulation B guidelines. All required documents were present and supported the final credit decision without any adverse actions or incompleteness issues. However, a data quality issue was noted in the lack of marital status collection.",
+        "issues": [
+          "Marital status not collected as per Regulation B"
+        ]
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:15:47.633126+00:00"
+  },
+  "hvcre": {
+    "agent_key": "hvcre",
+    "agent_name": "HVCRE Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"HVCRE Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"HVCRE Evaluation\",\n    \"evaluation_timestamp\": \"2024-06-01T00:00:00Z\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"FCA Capital Regulations\", \"FCA HVCRE Decision Tree\"],\n    \"regulatory_version\": \"Current (as of 2024)\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"Non-HVCRE\",\n    \"applicable_obligations\": [\"Purchase of existing improved real property\"],\n    \"classification_basis\": \"The loan purpose is to purchase an existing farm with improvements, and there is no ADC activity involved.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Signed loan application\", \"Credit approval memorandum\", \"Appraisal report\", \"Flood zone determination certificate\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Commitment letter\", \"Closing disclosure\", \"Promissory note\", \"Mortgage instrument\", \"Occupancy certification\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": [\"Marital status not collected (minor concern)\"]\n  },\n  \"determination_trace\": [\n    {\"step\": \"Commercial Real Estate Identification\", \"finding\": \"The property is an existing farm with improvements, classified as a commercial real estate.\", \"basis\": \"Property_type = 'Farm with residential dwelling'\"},\n    {\"step\": \"ADC Activity Determination\", \"finding\": \"No ADC activity identified for this loan.\", \"basis\": \"adc_activity = false\"},\n    {\"step\": \"Exemption Review\", \"finding\": \"Loan purpose is to purchase an existing improved property, which exempts it from HVCRE classification under the FCA rules.\", \"basis\": \"loan_purpose = 'Purchase of existing improved real property'\"},\n    {\"step\": \"Borrower Capital Contribution Analysis\", \"finding\": \"No specific borrower capital contribution details provided but not needed as ADC activity is absent.\", \"basis\": \"required_contribution = null, actual_contribution = null\"},\n    {\"step\": \"Capital Retention Analysis\", \"finding\": \"Not applicable since the project does not involve ADC activities.\", \"basis\": \"adc_activity = false\"},\n    {\"step\": \"Project Status Review\", \"finding\": \"The property is an existing farm with improvements and no construction or development phase involved.\", \"basis\": \"construction_status = 'Not applicable'\"},\n    {\"step\": \"Permanent Financing Review\", \"finding\": \"This loan does not require permanent financing as it's for the purchase of a completed property.\", \"basis\": \"project_type = 'Existing farm', adc_activity = false\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"The loan purpose is to purchase an existing improved property without any ADC activities, thus it does not meet the criteria for HVCRE classification under FCA regulations.\",\n    \"examiner_narrative\": \"This commercial real estate transaction involves purchasing a farm with improvements and no development activity. Therefore, it does not require additional capital retention beyond normal requirements.\",\n    \"status_change_narrative\": \"\",\n    \"data_gaps_followups\": [\"Collect marital status information for future reviews (if applicable).\"]\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "HVCRE Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "HVCRE Evaluation",
+        "evaluation_timestamp": "2024-06-01T00:00:00Z"
+      },
+      "authority": {
+        "primary_authorities": [
+          "FCA Capital Regulations",
+          "FCA HVCRE Decision Tree"
+        ],
+        "regulatory_version": "Current (as of 2024)"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "Non-HVCRE",
+        "applicable_obligations": [
+          "Purchase of existing improved real property"
+        ],
+        "classification_basis": "The loan purpose is to purchase an existing farm with improvements, and there is no ADC activity involved."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Signed loan application",
+          "Credit approval memorandum",
+          "Appraisal report",
+          "Flood zone determination certificate"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Commitment letter",
+          "Closing disclosure",
+          "Promissory note",
+          "Mortgage instrument",
+          "Occupancy certification"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": [
+          "Marital status not collected (minor concern)"
+        ]
+      },
+      "determination_trace": [
+        {
+          "step": "Commercial Real Estate Identification",
+          "finding": "The property is an existing farm with improvements, classified as a commercial real estate.",
+          "basis": "Property_type = 'Farm with residential dwelling'"
+        },
+        {
+          "step": "ADC Activity Determination",
+          "finding": "No ADC activity identified for this loan.",
+          "basis": "adc_activity = false"
+        },
+        {
+          "step": "Exemption Review",
+          "finding": "Loan purpose is to purchase an existing improved property, which exempts it from HVCRE classification under the FCA rules.",
+          "basis": "loan_purpose = 'Purchase of existing improved real property'"
+        },
+        {
+          "step": "Borrower Capital Contribution Analysis",
+          "finding": "No specific borrower capital contribution details provided but not needed as ADC activity is absent.",
+          "basis": "required_contribution = null, actual_contribution = null"
+        },
+        {
+          "step": "Capital Retention Analysis",
+          "finding": "Not applicable since the project does not involve ADC activities.",
+          "basis": "adc_activity = false"
+        },
+        {
+          "step": "Project Status Review",
+          "finding": "The property is an existing farm with improvements and no construction or development phase involved.",
+          "basis": "construction_status = 'Not applicable'"
+        },
+        {
+          "step": "Permanent Financing Review",
+          "finding": "This loan does not require permanent financing as it's for the purchase of a completed property.",
+          "basis": "project_type = 'Existing farm', adc_activity = false"
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "The loan purpose is to purchase an existing improved property without any ADC activities, thus it does not meet the criteria for HVCRE classification under FCA regulations.",
+        "examiner_narrative": "This commercial real estate transaction involves purchasing a farm with improvements and no development activity. Therefore, it does not require additional capital retention beyond normal requirements.",
+        "status_change_narrative": "",
+        "data_gaps_followups": [
+          "Collect marital status information for future reviews (if applicable)."
+        ]
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:17:03.935741+00:00"
+  },
+  "hpml": {
+    "agent_key": "hpml",
+    "agent_name": "HPML Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"HPML Compliance Agent v0.2\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"Regulation Z\",\n    \"evaluation_timestamp\": \"2024-06-01\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"TILA, Regulation Z (12 CFR Part 1026)\"],\n    \"regulatory_version\": \"Current Effective\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"HPML\",\n    \"applicable_obligations\": [\"Escrow Requirements\", \"Appraisal Requirements\", \"Ability-to-Repay Documentation\"],\n    \"classification_basis\": \"The APR (8.12%) is above the applicable threshold for first-lien loans based on APOR (7.02%).\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Loan Estimate\", \"Closing Disclosure\", \"APR worksheet\", \"Occupancy certification\", \"Appraisal report\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Credit approval memorandum\", \"Commitment letter\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": []\n  },\n  \"determination_trace\": [\n    {\"step\": \"Consumer Credit Determination\", \"finding\": \"Loan is for consumer credit purpose.\", \"basis\": \"Loan information and loan type\"},\n    {\"step\": \"Principal Dwelling Determination\", \"finding\": \"Property is the borrower's principal dwelling.\", \"basis\": \"Occupancy evidence, HMDA fields\"},\n    {\"step\": \"Closed-End Credit Determination\", \"finding\": \"Transaction involves a closed-end consumer credit secured by real property.\", \"basis\": \"Loan type, collateral information\"},\n    {\"step\": \"Lien Position Determination\", \"finding\": \"The lien position is first-lien.\", \"basis\": \"Collateral information\"},\n    {\"step\": \"APR Validation\", \"finding\": \"Valid APR of 8.12% is provided.\", \"basis\": \"Closing Disclosure, APR worksheet\"},\n    {\"step\": \"Applicable APOR Identification\", \"finding\": \"APOR is 7.02%, as sourced from FFIEC APOR Table on lock date 2024-04-10.\", \"basis\": \"FFIEC APOR Table, apr_information\"},\n    {\"step\": \"Threshold Comparison\", \"finding\": \"The APR exceeds the applicable threshold of first-lien +1.5% (7.02%+1.5%).\", \"basis\": \"APR, APOR, lien position\"},\n    {\"step\": \"HPML Status Determination\", \"finding\": \"Transaction qualifies as HPML.\", \"basis\": \"Threshold comparison result\"},\n    {\"step\": \"Obligation Assessment\", \"finding\": \"Escrow requirements, appraisal requirements, and ability-to-repay documentation are met.\", \"basis\": \"Collateral information, supporting documents\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"The transaction qualifies as a Higher-Priced Mortgage Loan (HPML) due to the APR exceeding the applicable threshold for first-lien loans. All necessary compliance obligations have been satisfied.\",\n    \"examiner_narrative\": \"No significant issues identified in the HPML compliance evaluation.\",\n    \"status_change_narrative\": \"\",\n    \"data_gaps_followups\": []\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "HPML Compliance Agent v0.2",
+        "agent_version": "0.2",
+        "compliance_track": "Regulation Z",
+        "evaluation_timestamp": "2024-06-01"
+      },
+      "authority": {
+        "primary_authorities": [
+          "TILA, Regulation Z (12 CFR Part 1026)"
+        ],
+        "regulatory_version": "Current Effective"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "HPML",
+        "applicable_obligations": [
+          "Escrow Requirements",
+          "Appraisal Requirements",
+          "Ability-to-Repay Documentation"
+        ],
+        "classification_basis": "The APR (8.12%) is above the applicable threshold for first-lien loans based on APOR (7.02%)."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Loan Estimate",
+          "Closing Disclosure",
+          "APR worksheet",
+          "Occupancy certification",
+          "Appraisal report"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Credit approval memorandum",
+          "Commitment letter"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": []
+      },
+      "determination_trace": [
+        {
+          "step": "Consumer Credit Determination",
+          "finding": "Loan is for consumer credit purpose.",
+          "basis": "Loan information and loan type"
+        },
+        {
+          "step": "Principal Dwelling Determination",
+          "finding": "Property is the borrower's principal dwelling.",
+          "basis": "Occupancy evidence, HMDA fields"
+        },
+        {
+          "step": "Closed-End Credit Determination",
+          "finding": "Transaction involves a closed-end consumer credit secured by real property.",
+          "basis": "Loan type, collateral information"
+        },
+        {
+          "step": "Lien Position Determination",
+          "finding": "The lien position is first-lien.",
+          "basis": "Collateral information"
+        },
+        {
+          "step": "APR Validation",
+          "finding": "Valid APR of 8.12% is provided.",
+          "basis": "Closing Disclosure, APR worksheet"
+        },
+        {
+          "step": "Applicable APOR Identification",
+          "finding": "APOR is 7.02%, as sourced from FFIEC APOR Table on lock date 2024-04-10.",
+          "basis": "FFIEC APOR Table, apr_information"
+        },
+        {
+          "step": "Threshold Comparison",
+          "finding": "The APR exceeds the applicable threshold of first-lien +1.5% (7.02%+1.5%).",
+          "basis": "APR, APOR, lien position"
+        },
+        {
+          "step": "HPML Status Determination",
+          "finding": "Transaction qualifies as HPML.",
+          "basis": "Threshold comparison result"
+        },
+        {
+          "step": "Obligation Assessment",
+          "finding": "Escrow requirements, appraisal requirements, and ability-to-repay documentation are met.",
+          "basis": "Collateral information, supporting documents"
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "The transaction qualifies as a Higher-Priced Mortgage Loan (HPML) due to the APR exceeding the applicable threshold for first-lien loans. All necessary compliance obligations have been satisfied.",
+        "examiner_narrative": "No significant issues identified in the HPML compliance evaluation.",
+        "status_change_narrative": "",
+        "data_gaps_followups": []
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:18:33.517276+00:00"
+  },
+  "fzd": {
+    "agent_key": "fzd",
+    "agent_name": "FZD Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"Flood Zone Determination Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"Flood Insurance Requirements\",\n    \"evaluation_timestamp\": \"2024-06-01T00:00:00Z\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"National Flood Insurance Act\", \"Flood Disaster Protection Act\"],\n    \"regulatory_version\": \"Current FEMA Mapping Standards and FCA Regulations\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"Flood Insurance Not Required\",\n    \"applicable_obligations\": [\"N/A\"],\n    \"classification_basis\": \"Collateral is located outside SFHA according to the flood determination.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Flood zone determination certificate\", \"Appraisal report\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Signed loan application\", \"Occupancy certification\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": [\"Marital status not collected\"]\n  },\n  \"determination_trace\": [\n    {\"step\": \"Collateral Identification\", \"finding\": \"Property is a farm with residential dwelling.\", \"basis\": \"Property type and address.\"},\n    {\"step\": \"Improved Property Analysis\", \"finding\": \"Improvements include residence; SFHA determination required.\", \"basis\": \"Improved property analysis confirms structure exists.\"},\n    {\"step\": \"Flood Determination Validation\", \"finding\": \"Vendor flood determination completed on 2024-03-20.\", \"basis\": \"Determination certificate provided.\"},\n    {\"step\": \"SFHA Analysis\", \"finding\": \"Property determined to be outside SFHA (Zone X).\", \"basis\": \"Flood zone information and FEMA map references.\"},\n    {\"step\": \"Flood Insurance Requirement Analysis\", \"finding\": \"No flood insurance requirement due to Zone X status.\", \"basis\": \"Applicable FEMA regulations.\"},\n    {\"step\": \"Flood Notice Review\", \"finding\": \"No notice required as property is outside SFHA.\", \"basis\": \"Notice requirement not applicable.\"},\n    {\"step\": \"Insurance Sufficiency Review\", \"finding\": \"Not applicable; no flood insurance required.\", \"basis\": \"Zone X status.\"},\n    {\"step\": \"Life-of-Loan Monitoring and Force-Placement Review\", \"finding\": \"No ongoing monitoring required due to non-SFHA status.\", \"basis\": \"Continuing SFHA determination not needed.\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"Collateral is located outside the Special Flood Hazard Area (SFHA) as per vendor-determined flood zone classification. Primary evidence and supporting documentation are sufficient to support this conclusion.\",\n    \"examiner_narrative\": \"The loan's collateral, a farm with residential dwelling, has been evaluated against FEMA guidelines. The property falls within Zone X, which exempts it from mandatory flood insurance requirements. Appropriate notices were not required as the property is outside SFHA. All necessary documentation and evaluations are present.\",\n    \"status_change_narrative\": \"\",\n    \"data_gaps_followups\": [\"Marital status information should be collected for future applications.\"]\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "Flood Zone Determination Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "Flood Insurance Requirements",
+        "evaluation_timestamp": "2024-06-01T00:00:00Z"
+      },
+      "authority": {
+        "primary_authorities": [
+          "National Flood Insurance Act",
+          "Flood Disaster Protection Act"
+        ],
+        "regulatory_version": "Current FEMA Mapping Standards and FCA Regulations"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "Flood Insurance Not Required",
+        "applicable_obligations": [
+          "N/A"
+        ],
+        "classification_basis": "Collateral is located outside SFHA according to the flood determination."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Flood zone determination certificate",
+          "Appraisal report"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Signed loan application",
+          "Occupancy certification"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": [
+          "Marital status not collected"
+        ]
+      },
+      "determination_trace": [
+        {
+          "step": "Collateral Identification",
+          "finding": "Property is a farm with residential dwelling.",
+          "basis": "Property type and address."
+        },
+        {
+          "step": "Improved Property Analysis",
+          "finding": "Improvements include residence; SFHA determination required.",
+          "basis": "Improved property analysis confirms structure exists."
+        },
+        {
+          "step": "Flood Determination Validation",
+          "finding": "Vendor flood determination completed on 2024-03-20.",
+          "basis": "Determination certificate provided."
+        },
+        {
+          "step": "SFHA Analysis",
+          "finding": "Property determined to be outside SFHA (Zone X).",
+          "basis": "Flood zone information and FEMA map references."
+        },
+        {
+          "step": "Flood Insurance Requirement Analysis",
+          "finding": "No flood insurance requirement due to Zone X status.",
+          "basis": "Applicable FEMA regulations."
+        },
+        {
+          "step": "Flood Notice Review",
+          "finding": "No notice required as property is outside SFHA.",
+          "basis": "Notice requirement not applicable."
+        },
+        {
+          "step": "Insurance Sufficiency Review",
+          "finding": "Not applicable; no flood insurance required.",
+          "basis": "Zone X status."
+        },
+        {
+          "step": "Life-of-Loan Monitoring and Force-Placement Review",
+          "finding": "No ongoing monitoring required due to non-SFHA status.",
+          "basis": "Continuing SFHA determination not needed."
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "Collateral is located outside the Special Flood Hazard Area (SFHA) as per vendor-determined flood zone classification. Primary evidence and supporting documentation are sufficient to support this conclusion.",
+        "examiner_narrative": "The loan's collateral, a farm with residential dwelling, has been evaluated against FEMA guidelines. The property falls within Zone X, which exempts it from mandatory flood insurance requirements. Appropriate notices were not required as the property is outside SFHA. All necessary documentation and evaluations are present.",
+        "status_change_narrative": "",
+        "data_gaps_followups": [
+          "Marital status information should be collected for future applications."
+        ]
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:19:48.409833+00:00"
+  },
+  "ybs": {
+    "agent_key": "ybs",
+    "agent_name": "YBS Eligibility Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"FCA Young, Beginning, and Small Farmer Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"YBS Eligibility Evaluation\",\n    \"evaluation_timestamp\": \"2024-06-01T00:00:00Z\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"Farm Credit Act\", \"FCA YBS Program Requirements\"],\n    \"regulatory_version\": \"12 CFR \u00a7614.4165, FCA Call Report Guidance\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"Not Eligible\",\n    \"applicable_obligations\": [\"YBS Reporting\"],\n    \"classification_basis\": \"Age exceeds Young Farmer threshold, years farming exceed Beginning Farmer threshold, and gross sales exceed Small Farmer threshold.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Credit approval memorandum\", \"Signed loan application\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": []\n  },\n  \"determination_trace\": [\n    {\"step\": \"Borrower Identification\", \"finding\": \"John and Mary Smith are the borrowers.\", \"basis\": \"Joint application with individual entity type.\"},\n    {\"step\": \"Agricultural Producer Validation\", \"finding\": \"No validation issues identified.\", \"basis\": \"Applicant's farming experience is documented.\"},\n    {\"step\": \"Young Farmer Analysis\", \"finding\": \"Not eligible as age 34 exceeds the threshold of 35 years.\", \"basis\": \"Evidenced by borrower information and regulatory thresholds.\"},\n    {\"step\": \"Beginning Farmer Analysis\", \"finding\": \"Not eligible as years farming 4 exceed the threshold of 10 years.\", \"basis\": \"Documented in loan application and appraisal report.\"},\n    {\"step\": \"Small Farmer Analysis\", \"finding\": \"Not eligible as gross sales $185,000 exceed the threshold of $250,000.\", \"basis\": \"Financial data provided by borrower supports this finding.\"}\n  ],\n  \"ybs_information\": {\n    \"young_farmer_criteria\": {\n      \"age\": 34,\n      \"young_farmer_threshold_years\": 35\n    },\n    \"beginning_farmer_criteria\": {\n      \"years_farming\": 4,\n      \"beginning_farmer_threshold_years\": 10\n    },\n    \"small_farmer_criteria\": {\n      \"gross_sales_prior_year\": 185000,\n      \"small_farmer_threshold\": 250000\n    }\n  },\n  \"institution_context\": {\n    \"institution_name\": \"Example Farm Credit ACA\",\n    \"institution_type\": \"Farm Credit ACA\",\n    \"examination_standard\": \"FCA\",\n    \"hmda_covered_institution\": true,\n    \"consumer_lending_authority\": true\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "FCA Young, Beginning, and Small Farmer Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "YBS Eligibility Evaluation",
+        "evaluation_timestamp": "2024-06-01T00:00:00Z"
+      },
+      "authority": {
+        "primary_authorities": [
+          "Farm Credit Act",
+          "FCA YBS Program Requirements"
+        ],
+        "regulatory_version": "12 CFR \u00a7614.4165, FCA Call Report Guidance"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "Not Eligible",
+        "applicable_obligations": [
+          "YBS Reporting"
+        ],
+        "classification_basis": "Age exceeds Young Farmer threshold, years farming exceed Beginning Farmer threshold, and gross sales exceed Small Farmer threshold."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Credit approval memorandum",
+          "Signed loan application"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": []
+      },
+      "determination_trace": [
+        {
+          "step": "Borrower Identification",
+          "finding": "John and Mary Smith are the borrowers.",
+          "basis": "Joint application with individual entity type."
+        },
+        {
+          "step": "Agricultural Producer Validation",
+          "finding": "No validation issues identified.",
+          "basis": "Applicant's farming experience is documented."
+        },
+        {
+          "step": "Young Farmer Analysis",
+          "finding": "Not eligible as age 34 exceeds the threshold of 35 years.",
+          "basis": "Evidenced by borrower information and regulatory thresholds."
+        },
+        {
+          "step": "Beginning Farmer Analysis",
+          "finding": "Not eligible as years farming 4 exceed the threshold of 10 years.",
+          "basis": "Documented in loan application and appraisal report."
+        },
+        {
+          "step": "Small Farmer Analysis",
+          "finding": "Not eligible as gross sales $185,000 exceed the threshold of $250,000.",
+          "basis": "Financial data provided by borrower supports this finding."
+        }
+      ],
+      "ybs_information": {
+        "young_farmer_criteria": {
+          "age": 34,
+          "young_farmer_threshold_years": 35
+        },
+        "beginning_farmer_criteria": {
+          "years_farming": 4,
+          "beginning_farmer_threshold_years": 10
+        },
+        "small_farmer_criteria": {
+          "gross_sales_prior_year": 185000,
+          "small_farmer_threshold": 250000
+        }
+      },
+      "institution_context": {
+        "institution_name": "Example Farm Credit ACA",
+        "institution_type": "Farm Credit ACA",
+        "examination_standard": "FCA",
+        "hmda_covered_institution": true,
+        "consumer_lending_authority": true
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:20:54.398193+00:00"
+  },
+  "vmi": {
+    "agent_key": "vmi",
+    "agent_name": "VMI Compliance Agent",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{\n  \"agent_metadata\": {\n    \"agent_name\": \"VMI Compliance Agent\",\n    \"agent_version\": \"0.2\",\n    \"compliance_track\": \"Regulation B, ECOA, HMDA\",\n    \"evaluation_timestamp\": \"2024-06-01\"\n  },\n  \"authority\": {\n    \"primary_authorities\": [\"ECOA\", \"Regulation B\"],\n    \"regulatory_version\": \"Current (as of 2024)\"\n  },\n  \"determination_status\": {\n    \"result\": \"Compliant\",\n    \"confidence\": \"High\"\n  },\n  \"domain_determination\": {\n    \"classification\": \"VMI Collected Properly\",\n    \"applicable_obligations\": [\"Collection Required\", \"Presentation to Applicant\"],\n    \"classification_basis\": \"The application was submitted in-person, thus VMI collection is required under Regulation B. The applicant was presented with the VMI information and provided it voluntarily.\"\n  },\n  \"evidence_assessment\": {\n    \"rating\": \"Sufficient\",\n    \"primary_evidence_present\": [\"Signed loan application\", \"Credit approval memorandum\"],\n    \"primary_evidence_missing\": [],\n    \"secondary_evidence_present\": [\"Institution policies/procedures\", \"Training documentation\"],\n    \"secondary_evidence_missing\": []\n  },\n  \"data_quality\": {\n    \"completeness\": \"High\",\n    \"issues\": [\"Marital status not collected\"]\n  },\n  \"determination_trace\": [\n    {\"step\": \"Application Identification\", \"finding\": \"Joint application from John and Mary Smith submitted in-person.\", \"basis\": \"Institution policies and case data.\"},\n    {\"step\": \"Regulatory Coverage Analysis\", \"finding\": \"Applicant is covered under Regulation B due to the nature of the loan.\", \"basis\": \"Loan type, amount, and purpose align with HMDA requirements.\"},\n    {\"step\": \"Required, Permitted, or Prohibited Collection Determination\", \"finding\": \"VMI collection was required and properly collected in-person.\", \"basis\": \"Applicant information shows VMI presentation and collection were conducted as mandated by Regulation B.\"},\n    {\"step\": \"Collection Method Review\", \"finding\": \"Face-to-face method used for collection is compliant with Regulation B requirements.\", \"basis\": \"Documentation indicates face-to-face interaction was utilized.\"},\n    {\"step\": \"Application Presentation Review\", \"finding\": \"Applicant presented and voluntarily provided VMI data during the in-person application process.\", \"basis\": \"VMI information collected via presentation to applicant.\"},\n    {\"step\": \"Refusal Handling Review\", \"finding\": \"No refusal handling occurred as all required data was provided.\", \"basis\": \"No evidence of applicant refusals or handling thereof documented.\"},\n    {\"step\": \"Visual Observation and Surname Review\", \"finding\": \"No visual observation or surname used for demographic inference; voluntary provision utilized.\", \"basis\": \"Applicant presented VMI information voluntarily, no need for alternative methods.\"},\n    {\"step\": \"Data Storage, Access, and Segregation Review\", \"finding\": \"Demographic data segregated from underwriting process as required by Regulation B.\", \"basis\": \"Institution has documented firewall controls to prevent segregation issues.\"},\n    {\"step\": \"Reporting Readiness Review\", \"finding\": \"Applicant data meets HMDA reporting requirements if applicable; reporting readiness confirmed.\", \"basis\": \"HMDA coverage and compliance with demographic information collection rules.\"}\n  ],\n  \"change_assessment\": {\n    \"status_changed\": false,\n    \"prior_status\": null,\n    \"triggering_evidence\": null\n  },\n  \"compliance_determination_summary\": {\n    \"reasoning\": \"The application involved a joint loan request submitted in-person, thus requiring the presentation and collection of VMI data according to Regulation B. The institution properly presented the information to applicants who then provided it voluntarily. Additionally, demographic data was appropriately segregated from underwriting processes, ensuring compliance with regulatory requirements.\",\n    \"data_issues\": [\"Marital status not collected but no impact on VMI compliance.\"]\n  }\n}",
+    "parsed": {
+      "agent_metadata": {
+        "agent_name": "VMI Compliance Agent",
+        "agent_version": "0.2",
+        "compliance_track": "Regulation B, ECOA, HMDA",
+        "evaluation_timestamp": "2024-06-01"
+      },
+      "authority": {
+        "primary_authorities": [
+          "ECOA",
+          "Regulation B"
+        ],
+        "regulatory_version": "Current (as of 2024)"
+      },
+      "determination_status": {
+        "result": "Compliant",
+        "confidence": "High"
+      },
+      "domain_determination": {
+        "classification": "VMI Collected Properly",
+        "applicable_obligations": [
+          "Collection Required",
+          "Presentation to Applicant"
+        ],
+        "classification_basis": "The application was submitted in-person, thus VMI collection is required under Regulation B. The applicant was presented with the VMI information and provided it voluntarily."
+      },
+      "evidence_assessment": {
+        "rating": "Sufficient",
+        "primary_evidence_present": [
+          "Signed loan application",
+          "Credit approval memorandum"
+        ],
+        "primary_evidence_missing": [],
+        "secondary_evidence_present": [
+          "Institution policies/procedures",
+          "Training documentation"
+        ],
+        "secondary_evidence_missing": []
+      },
+      "data_quality": {
+        "completeness": "High",
+        "issues": [
+          "Marital status not collected"
+        ]
+      },
+      "determination_trace": [
+        {
+          "step": "Application Identification",
+          "finding": "Joint application from John and Mary Smith submitted in-person.",
+          "basis": "Institution policies and case data."
+        },
+        {
+          "step": "Regulatory Coverage Analysis",
+          "finding": "Applicant is covered under Regulation B due to the nature of the loan.",
+          "basis": "Loan type, amount, and purpose align with HMDA requirements."
+        },
+        {
+          "step": "Required, Permitted, or Prohibited Collection Determination",
+          "finding": "VMI collection was required and properly collected in-person.",
+          "basis": "Applicant information shows VMI presentation and collection were conducted as mandated by Regulation B."
+        },
+        {
+          "step": "Collection Method Review",
+          "finding": "Face-to-face method used for collection is compliant with Regulation B requirements.",
+          "basis": "Documentation indicates face-to-face interaction was utilized."
+        },
+        {
+          "step": "Application Presentation Review",
+          "finding": "Applicant presented and voluntarily provided VMI data during the in-person application process.",
+          "basis": "VMI information collected via presentation to applicant."
+        },
+        {
+          "step": "Refusal Handling Review",
+          "finding": "No refusal handling occurred as all required data was provided.",
+          "basis": "No evidence of applicant refusals or handling thereof documented."
+        },
+        {
+          "step": "Visual Observation and Surname Review",
+          "finding": "No visual observation or surname used for demographic inference; voluntary provision utilized.",
+          "basis": "Applicant presented VMI information voluntarily, no need for alternative methods."
+        },
+        {
+          "step": "Data Storage, Access, and Segregation Review",
+          "finding": "Demographic data segregated from underwriting process as required by Regulation B.",
+          "basis": "Institution has documented firewall controls to prevent segregation issues."
+        },
+        {
+          "step": "Reporting Readiness Review",
+          "finding": "Applicant data meets HMDA reporting requirements if applicable; reporting readiness confirmed.",
+          "basis": "HMDA coverage and compliance with demographic information collection rules."
+        }
+      ],
+      "change_assessment": {
+        "status_changed": false,
+        "prior_status": null,
+        "triggering_evidence": null
+      },
+      "compliance_determination_summary": {
+        "reasoning": "The application involved a joint loan request submitted in-person, thus requiring the presentation and collection of VMI data according to Regulation B. The institution properly presented the information to applicants who then provided it voluntarily. Additionally, demographic data was appropriately segregated from underwriting processes, ensuring compliance with regulatory requirements.",
+        "data_issues": [
+          "Marital status not collected but no impact on VMI compliance."
+        ]
+      }
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:22:47.658527+00:00"
+  },
+  "auditor": {
+    "agent_key": "auditor",
+    "agent_name": "Compliance Auditor",
+    "provider": "ollama",
+    "model": "qwen2.5:14b",
+    "raw_text": "{ \"@context\":[\n    {\n        \"@vocab\":\"http://schema.org/\",\n        \"loanApplication\":\"http://schema.org/LoanOrCredit\",\n        \"institutionName\":\"http://schema.org/name\",\n        \"institutionType\":\"http://example.com/fca#InstitutionType\",\n        \"hmdaCovered\":\"http://example.com/fca#isHM_DACovered\",\n        \"consumerLending\":\"http://example.com/fca#hasConsumerLendingAuthority\",\n        \"examinationStandard\":\"http://schema.org/identifier\",\n        \"applicationDate\":\"http://schema.org/datePublished\"\n    }\n],\n\"@graph\":[\n    {\n        \"@type\":\"LoanOrCredit\",\n        \"institutionName\":\"Example Farm Credit ACA\",\n        \"institutionType\":\"Farm Credit ACA\",\n        \"hmdaCovered\":true,\n        \"consumerLending\":true,\n        \"examinationStandard\":\"FCA\",\n        \"applicationDate\":\"2023-10-05\"\n    }\n]\n}",
+    "parsed": {
+      "@context": [
+        {
+          "@vocab": "http://schema.org/",
+          "loanApplication": "http://schema.org/LoanOrCredit",
+          "institutionName": "http://schema.org/name",
+          "institutionType": "http://example.com/fca#InstitutionType",
+          "hmdaCovered": "http://example.com/fca#isHM_DACovered",
+          "consumerLending": "http://example.com/fca#hasConsumerLendingAuthority",
+          "examinationStandard": "http://schema.org/identifier",
+          "applicationDate": "http://schema.org/datePublished"
+        }
+      ],
+      "@graph": [
+        {
+          "@type": "LoanOrCredit",
+          "institutionName": "Example Farm Credit ACA",
+          "institutionType": "Farm Credit ACA",
+          "hmdaCovered": true,
+          "consumerLending": true,
+          "examinationStandard": "FCA",
+          "applicationDate": "2023-10-05"
+        }
+      ]
+    },
+    "parse_error": null,
+    "timestamp": "2026-06-10T15:23:12.684672+00:00"
+  }
+}
