@@ -4,6 +4,8 @@ Sequential fan-out orchestrator for seven Farm Credit ACA compliance agents.
 Supports Anthropic and local Ollama models. Each agent is backed by a
 spec-derived system prompt; input and output contracts mirror the v0.2 schemas.
 
+For architectural decisions and constraints, see [DESIGN.md](DESIGN.md).
+
 ---
 
 ## Agents
