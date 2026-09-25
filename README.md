@@ -43,7 +43,8 @@ For Ollama running in the same WSL environment:
 
 ```
 COMPLIANCE_PROVIDER=ollama
-COMPLIANCE_MODEL=qwen3.5:latest
+# Optional — defaults to gemma4:26b
+# COMPLIANCE_MODEL=gemma4:26b
 OLLAMA_BASE_URL=http://localhost:11434
 # Optional; local models can take a while on their first request
 OLLAMA_TIMEOUT=300
@@ -87,10 +88,10 @@ Select a local model for an individual run:
 
 ```bash
 python compliance_orchestrator.py batch sample_loan.json \
-  --provider ollama --model qwen2.5:14b --agents hmda ecoa
+  --provider ollama --model gemma4:26b --agents hmda ecoa
 
 python compliance_orchestrator.py chat hmda \
-  --provider ollama --model deepseek-coder-v2:16b
+  --provider ollama --model gemma4:26b
 ```
 
 ### Chat / REPL mode — interactive session with one agent
@@ -119,7 +120,7 @@ with open("sample_loan.json") as f:
     loan = json.load(f)
 
 # Run all seven agents sequentially
-results = run_batch(loan, provider="ollama", model="qwen3.5:latest")
+results = run_batch(loan, provider="ollama", model="gemma4:26b")
 
 # Access individual results
 hmda = results["hmda"]
@@ -198,5 +199,5 @@ be parsed as JSON (rare, but handle it).
   Use `save <filename>` to persist a session for audit purposes.
 - **Model pinning**: set `COMPLIANCE_MODEL` in `.env` to lock a specific model
   version for reproducibility, or pass `model=` / `--model` for a single run.
-- **Token budget**: `MAX_TOKENS=4096` covers full structured output. Increase if
+- **Token budget**: `MAX_TOKENS=8192` covers full structured output. Increase if
   a specific agent consistently truncates.

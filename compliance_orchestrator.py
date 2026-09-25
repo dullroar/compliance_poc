@@ -61,7 +61,7 @@ load_dotenv()
 DEFAULT_PROVIDER = os.getenv("COMPLIANCE_PROVIDER", "anthropic").lower()
 DEFAULT_MODELS = {
     "anthropic": "claude-sonnet-4-20250514",
-    "ollama": "qwen3.5:latest",
+    "ollama": "gemma4:26b",
 }
 MODEL = os.getenv(
     "COMPLIANCE_MODEL",
@@ -531,7 +531,7 @@ def _print_usage() -> None:
           python compliance_orchestrator.py chat hmda
           python compliance_orchestrator.py batch loan.json
           python compliance_orchestrator.py batch loan.json --agents hmda ecoa
-          python compliance_orchestrator.py batch loan.json --provider ollama --model qwen2.5:14b
+          python compliance_orchestrator.py batch loan.json --provider ollama --model gemma4:26b
           python compliance_orchestrator.py batch loan.json --json-out results.json --narrative-out report.md
         """).strip()
     )
