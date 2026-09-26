@@ -1,0 +1,20 @@
+policy_id: ybs-entity-attribution-policy
+policy_version: 0.1.0
+status: draft_engineering_review
+authority_note: >-
+  This is an explicit institution policy for the pilot, not a representation of
+  a universal FCA attribution rule. It must be replaced or approved before a
+  production determination is relied upon.
+attribution:
+  required_roles:
+    - owner
+    - managing_member
+    - general_partner
+    - trustee
+    - operator
+    - controlling_person
+  entity_category_rule: all_attributable_people_must_qualify
+  conflict_handling: review_required
+  documentation_handling: review_required_when_attribution_documentation_is_absent_or_insufficient
+  successor_and_reorganization_handling: review_required_unless_documented_attribution_is_supplied
+  trust_handling: trustee_and_beneficial_control_must_be_explicitly_represented

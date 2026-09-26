@@ -1,0 +1,9 @@
+# Activate with GitHub branch protection: require review from Code Owners.
+/compliance_rules/ybs.py @dullroar
+/compliance_rules/tools.py @dullroar
+/rulepacks/ybs/ @dullroar
+/regs/ybs/ @dullroar
+/tests/fixtures/ybs/ @dullroar
+/tests/test_ybs_evaluator.py @dullroar
+/tests/test_ybs_gemma_integration.py @dullroar
+/YBS_CHANGE_CONTROL.md @dullroar

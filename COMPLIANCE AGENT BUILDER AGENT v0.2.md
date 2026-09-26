@@ -99,6 +99,29 @@ The agent:
 
 The agent should tolerate incomplete data while clearly identifying limitations.
 
+## Deterministic Rule-Pack Requirement
+
+For any compliance track that has repeatable threshold, chronology, coverage, or
+classification logic, the builder must produce a companion deterministic rule-pack
+specification. The LLM specification must name the evaluator input contract and state
+that a returned deterministic decision record is authoritative for rule outcomes,
+thresholds, effective dates, and final classification. The LLM may explain the record
+and identify evidence gaps but must never override it.
+
+The companion rule-pack specification must include:
+
+- A semantically versioned manifest and effective-date policy.
+- Versioned YAML or JSON rule data and a source manifest with local snapshot hashes.
+- Explicit separation of regulatory authority, supervisory guidance, and institution
+  policy; no policy value may be represented as a regulatory requirement.
+- A canonical structured input schema, a stable decision-record schema, and an
+  `Unable To Determine` or `Review Required` path for missing/conflicting facts.
+- A test matrix for boundaries, historical dates, entity attribution, conflicts,
+  unsupported periods, replay, and model-override protection.
+
+The builder must not claim that a registry or rule pack exists unless it is supplied
+or generated as an actual versioned artifact.
+
 ---
 
 ## Institutional Context

@@ -1,0 +1,706 @@
+[
+  {
+    "id": "young-at-2026-boundary",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-01",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Beginning + Small",
+      "categories": {
+        "p1": {
+          "young": "not_eligible",
+          "beginning": "eligible",
+          "small": "eligible"
+        }
+      }
+    }
+  },
+  {
+    "id": "beginning-at-2026-boundary",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small"
+    }
+  },
+  {
+    "id": "beginning-over-2026-boundary",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 11,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Small",
+      "categories": {
+        "p1": {
+          "beginning": "not_eligible"
+        }
+      }
+    }
+  },
+  {
+    "id": "small-at-2026-boundary",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small"
+    }
+  },
+  {
+    "id": "small-over-2026-boundary",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400001
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning",
+      "categories": {
+        "p1": {
+          "small": "not_eligible"
+        }
+      }
+    }
+  },
+  {
+    "id": "2025-threshold-before-transition",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2025-12-31",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 300000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning",
+      "threshold_id": "ybs-policy-2024"
+    }
+  },
+  {
+    "id": "2026-threshold-after-transition",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-01-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 300000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small",
+      "threshold_id": "ybs-policy-2026"
+    }
+  },
+  {
+    "id": "unsupported-historical-period",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2023-12-31",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Unable To Determine",
+      "threshold_id": null
+    }
+  },
+  {
+    "id": "missing-date-of-birth",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": null,
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Unable To Determine",
+      "missing_fields": [
+        "date_of_birth"
+      ]
+    }
+  },
+  {
+    "id": "missing-producer-status",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": null,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Unable To Determine",
+      "missing_fields": [
+        "is_agricultural_producer"
+      ]
+    }
+  },
+  {
+    "id": "conflicting-sales-evidence",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000,
+          "conflicting_fields": [
+            "annual_gross_ag_sales"
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "p1"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Unable To Determine",
+      "missing_fields": [
+        "annual_gross_ag_sales"
+      ]
+    }
+  },
+  {
+    "id": "joint-borrowers-different-results",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "p2",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 11,
+          "annual_gross_ag_sales": 400000
+        }
+      ],
+      "determination_subject_ids": [
+        "p1",
+        "p2"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required",
+      "categories": {
+        "p2": {
+          "beginning": "not_eligible"
+        }
+      }
+    }
+  },
+  {
+    "id": "ownership-control-divergence",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "p2",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 500000
+        },
+        {
+          "id": "borrower-llc",
+          "type": "entity",
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "owner"
+            },
+            {
+              "subject_id": "p2",
+              "role": "controlling_person"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "borrower-llc"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning",
+      "categories": {
+        "borrower-llc": {
+          "small": "not_eligible"
+        }
+      }
+    }
+  },
+  {
+    "id": "trust-missing-beneficial-control",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "family-trust",
+          "type": "entity",
+          "entity_kind": "trust",
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "trustee"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "family-trust"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required"
+    }
+  },
+  {
+    "id": "trust-with-trustee-and-control",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "p2",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "family-trust",
+          "type": "entity",
+          "entity_kind": "trust",
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "trustee"
+            },
+            {
+              "subject_id": "p2",
+              "role": "controlling_person"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "family-trust"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small"
+    }
+  },
+  {
+    "id": "succession-without-documentation",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "successor-farm",
+          "type": "entity",
+          "entity_kind": "successor",
+          "attribution_documented": false,
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "operator"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "successor-farm"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required"
+    }
+  },
+  {
+    "id": "reorganization-with-documented-attribution",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "reorg-farm",
+          "type": "entity",
+          "entity_kind": "reorganization",
+          "attribution_documented": true,
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "managing_member"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "reorg-farm"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small"
+    }
+  },
+  {
+    "id": "insufficient-entity-documentation",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "undocumented-llc",
+          "type": "entity",
+          "attribution_documented": false,
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "owner"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "undocumented-llc"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required"
+    }
+  },
+  {
+    "id": "conflicting-entity-attribution",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "p1",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "conflicted-llc",
+          "type": "entity",
+          "attribution_conflict": true,
+          "attribution": [
+            {
+              "subject_id": "p1",
+              "role": "owner"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "conflicted-llc"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required"
+    }
+  }
+]

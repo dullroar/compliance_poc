@@ -51,6 +51,7 @@ except ImportError:
         return False
 
 from agent_prompts import AGENTS
+from compliance_rules.ybs import YBSValidationError, evaluate_ybs
 
 load_dotenv()
 
@@ -70,6 +71,66 @@ MODEL = os.getenv(
 MAX_TOKENS = 8192
 AGENT_KEYS: list[str] = list(AGENTS.keys())
 DOMAIN_AGENT_KEYS: list[str] = [k for k in AGENT_KEYS if k not in ("auditor", "narrative")]
+
+
+def _unavailable_ybs_record(reason: str, loan_data: Any) -> dict[str, Any]:
+    """Return a safe evaluator-shaped record when canonical facts are absent."""
+    return {
+        "evaluator": {"name": "ybs", "version": "0.1.0", "network_accessed": False},
+        "case_id": loan_data.get("case_information", {}).get("case_id") if isinstance(loan_data, dict) else None,
+        "determination_status": "Unable To Determine",
+        "final_classification": "Unable To Determine",
+        "rule_results": [],
+        "facts_used": [],
+        "missing_facts": [{"field": "ybs_case", "reason": reason}],
+        "validation_errors": [{"field": "ybs_case", "reason": reason}],
+        "llm_contract": {
+            "authoritative_classification": "Unable To Determine",
+            "instruction": "The model may explain this decision record but must not change its classification, rule outcomes, thresholds, dates, or provenance.",
+        },
+    }
+
+
+def prepare_ybs_evaluation(loan_data: dict | str) -> dict[str, Any]:
+    """Run the offline YBS evaluator only on explicit canonical facts."""
+    if not isinstance(loan_data, dict):
+        return _unavailable_ybs_record("Narrative input cannot produce a final deterministic YBS determination; provide ybs_case.", loan_data)
+    ybs_case = loan_data.get("ybs_case")
+    if not isinstance(ybs_case, dict):
+        return _unavailable_ybs_record("Canonical ybs_case is required for a final deterministic YBS determination.", loan_data)
+    try:
+        return evaluate_ybs(ybs_case, ybs_case.get("rule_pack_id", "ybs-v0.1"))
+    except YBSValidationError as exc:
+        return _unavailable_ybs_record(str(exc), loan_data)
+
+
+def _guard_ybs_model_output(parsed: dict, evaluation: dict[str, Any]) -> tuple[dict, dict[str, Any]]:
+    """Preserve narrative content but make evaluator status authoritative."""
+    expected = evaluation["final_classification"]
+    domain = parsed.get("domain_determination")
+    actual = domain.get("classification") if isinstance(domain, dict) else None
+    passed = actual == expected
+    guard = {
+        "passed": passed,
+        "authoritative_classification": expected,
+        "model_classification": actual,
+        "action": "accepted" if passed else "model classification replaced with deterministic evaluator result",
+        "decision_id": evaluation.get("decision_id"),
+    }
+    if not passed:
+        if not isinstance(domain, dict):
+            domain = {}
+            parsed["domain_determination"] = domain
+        domain["model_proposed_classification"] = actual
+        domain["classification"] = expected
+        status = parsed.get("determination_status")
+        if not isinstance(status, dict):
+            status = {}
+            parsed["determination_status"] = status
+        status["result"] = "Unable To Determine" if expected in {"Unable To Determine", "Review Required"} else "Compliant"
+    parsed["deterministic_evaluation"] = evaluation
+    parsed["deterministic_guard"] = guard
+    return parsed, guard
 
 
 class OllamaClient:
@@ -215,6 +276,7 @@ def call_agent(
         )
 
     agent = AGENTS[agent_key]
+    deterministic_evaluation = prepare_ybs_evaluation(loan_data) if agent_key == "ybs" else None
     selected_provider = (provider or DEFAULT_PROVIDER).lower()
     selected_model = _model_name(selected_provider, model)
     c = client or _client(selected_provider)
@@ -229,6 +291,15 @@ def call_agent(
         user_content = prefix + "\n\n" + json.dumps(loan_data, indent=2)
     else:
         user_content = str(loan_data)
+
+    if deterministic_evaluation is not None:
+        user_content += (
+            "\n\nAUTHORITATIVE DETERMINISTIC YBS DECISION RECORD\n"
+            "Use this record as the sole source for eligibility, thresholds, effective dates, "
+            "and rule outcomes. You may explain it, identify evidence gaps, and recommend "
+            "remediation, but you must not change it.\n"
+            + json.dumps(deterministic_evaluation, indent=2)
+        )
 
     messages = list(conversation_history or [])
     messages.append({"role": "user", "content": user_content})
@@ -273,6 +344,10 @@ def call_agent(
     except json.JSONDecodeError as e:
         parse_error = str(e)
 
+    deterministic_guard = None
+    if parsed is not None and deterministic_evaluation is not None:
+        parsed, deterministic_guard = _guard_ybs_model_output(parsed, deterministic_evaluation)
+
     return {
         "agent_key": agent_key,
         "agent_name": agent["name"],
@@ -281,6 +356,8 @@ def call_agent(
         "raw_text": raw_text,
         "parsed": parsed,
         "parse_error": parse_error,
+        "deterministic_evaluation": deterministic_evaluation,
+        "deterministic_guard": deterministic_guard,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
