@@ -30,6 +30,39 @@ For architectural decisions and constraints, see [DESIGN.md](DESIGN.md).
 pip install -r requirements.txt
 ```
 
+## Deterministic YBS pilot
+
+YBS determinations now run through an offline evaluator before the YBS model is
+called. The evaluator is provider-neutral and is the authority for eligibility,
+thresholds, rule outcomes, and missing-fact status; the LLM may only explain its
+decision record. Use a canonical `ybs_case` object (see
+[`sample_ybs_case.json`](sample_ybs_case.json)) inside a normal loan payload:
+
+```json
+{
+  "case_information": {"case_id": "YBS-DETERMINISTIC-2026-001"},
+  "ybs_case": {"evaluation_date": "2026-06-01", "subjects": []}
+}
+```
+
+The canonical input and decision-record contracts are versioned in
+`rulepacks/ybs/ybs-v0.1/input.schema.json` and
+`rulepacks/ybs/ybs-v0.1/decision-record.schema.json`. Optional provider tool
+adapters use the same evaluator; batch operation always calls it directly.
+
+The initial `ybs-v0.1` pack is marked `draft_engineering_review`. Its numeric
+thresholds and entity-attribution method are explicit institution-pilot policy,
+not claims that 12 CFR §614.4165 supplies those values. The dated eCFR snapshot
+and provenance manifest are under `regs/ybs/` and `rulepacks/ybs/ybs-v0.1/`.
+Narrative input and legacy `ybs_information` remain usable for discussion but
+produce `Unable To Determine` until a canonical case is supplied.
+
+Run the offline test suite with:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 Create a `.env` file in this directory:
 
 ```

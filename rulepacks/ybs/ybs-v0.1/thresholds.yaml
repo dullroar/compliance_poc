@@ -1,0 +1,27 @@
+registry_id: ybs-threshold-registry
+registry_version: 0.1.0
+authority_note: >-
+  The numeric thresholds and comparison operators are institution policy for this
+  pilot.  12 CFR 614.4165 requires a YBS program but does not itself supply
+  these numeric eligibility thresholds.
+records:
+  - id: ybs-policy-2024
+    effective_start: "2024-01-01"
+    effective_end: "2025-12-31"
+    young_age_limit: 35
+    young_operator: lt
+    beginning_years_limit: 10
+    beginning_operator: lte
+    small_farmer_sales_limit: 250000
+    small_operator: lte
+    authority_reference: "Institution YBS pilot policy v0.1; threshold schedule 2024"
+  - id: ybs-policy-2026
+    effective_start: "2026-01-01"
+    effective_end: null
+    young_age_limit: 35
+    young_operator: lt
+    beginning_years_limit: 10
+    beginning_operator: lte
+    small_farmer_sales_limit: 400000
+    small_operator: lte
+    authority_reference: "Institution YBS pilot policy v0.1; threshold schedule 2026"

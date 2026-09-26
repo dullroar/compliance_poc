@@ -1,0 +1,29 @@
+{
+  "case_id": "YBS-DETERMINISTIC-2026-001",
+  "evaluation_date": "2026-06-01",
+  "reporting_period": "2026",
+  "rule_pack_id": "ybs-v0.1",
+  "determination_subject_ids": ["green-acres-llc"],
+  "evidence": [
+    {"id": "application", "type": "signed_application"},
+    {"id": "operating_agreement", "type": "operating_agreement"},
+    {"id": "tax_return", "type": "tax_return"}
+  ],
+  "subjects": [
+    {
+      "id": "alex-smith",
+      "type": "person",
+      "is_agricultural_producer": true,
+      "date_of_birth": "1995-06-02",
+      "years_farming": 4,
+      "annual_gross_ag_sales": 185000
+    },
+    {
+      "id": "green-acres-llc",
+      "type": "entity",
+      "attribution": [
+        {"subject_id": "alex-smith", "role": "managing_member", "ownership_percentage": 100}
+      ]
+    }
+  ]
+}

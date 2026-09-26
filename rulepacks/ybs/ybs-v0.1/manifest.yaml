@@ -1,0 +1,25 @@
+id: ybs-v0.1
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: "2026-09-24"
+files:
+  thresholds: thresholds.yaml
+  entity_policy: entity_policy.yaml
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+sources:
+  - id: ecfr-12-cfr-614-4165-2026-09-24
+    type: regulatory
+    citation: "12 CFR 614.4165"
+    url: "https://www.ecfr.gov/current/title-12/chapter-VI/subchapter-B/part-614/subpart-D/section-614.4165"
+    retrieved_date: "2026-09-25"
+    issue_date: "2026-09-24"
+    local_path: "regs/ybs/2026-09-24/12-cfr-614-4165-extract.md"
+    sha256: fe74433b5512e05d9b82fa4538027a6f0577f0c80ae98ed4e77aadb00e59d437
+    downloaded_payload_sha256: "27c7ae6bd36ee7a922267cdbbfdf8c094e995d87088f9539bcad407e3646c7bf"
+  - id: institution-ybs-pilot-policy-v0-1
+    type: institution_policy
+    citation: "YBS pilot entity attribution and threshold policy v0.1"
+    local_path: "rulepacks/ybs/ybs-v0.1/entity_policy.yaml"
+    sha256: a3f686314e973bf156713b87dcf4bad3a19a200b1b0f47decd22ac5eabd4d32c
