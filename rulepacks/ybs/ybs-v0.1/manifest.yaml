@@ -22,4 +22,9 @@ sources:
     type: institution_policy
     citation: "YBS pilot entity attribution and threshold policy v0.1"
     local_path: "rulepacks/ybs/ybs-v0.1/entity_policy.yaml"
-    sha256: a3f686314e973bf156713b87dcf4bad3a19a200b1b0f47decd22ac5eabd4d32c
+    sha256: 42f4bb1089c57083e6ffe355c337beeb0faeee82a0bab107e360b6847d258e7c
+  - id: institution-ybs-pilot-thresholds-v0-1
+    type: institution_policy
+    citation: "YBS pilot threshold schedule v0.1"
+    local_path: "rulepacks/ybs/ybs-v0.1/thresholds.yaml"
+    sha256: 2aff05ac237771740d78b65e657aa97daffe18bb5c35cb78b94346bc59e88610

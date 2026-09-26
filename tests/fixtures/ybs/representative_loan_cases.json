@@ -1,0 +1,122 @@
+[
+  {
+    "id": "single-family-farm-renewal",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "alex-rivera",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1995-06-02",
+          "years_farming": 4,
+          "annual_gross_ag_sales": 185000
+        }
+      ],
+      "determination_subject_ids": [
+        "alex-rivera"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Beginning + Small"
+    }
+  },
+  {
+    "id": "joint-operating-llc-renewal",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "jordan-lee",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "taylor-lee",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 14,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "lee-farms-llc",
+          "type": "entity",
+          "attribution": [
+            {
+              "subject_id": "jordan-lee",
+              "role": "managing_member"
+            },
+            {
+              "subject_id": "taylor-lee",
+              "role": "operator"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "lee-farms-llc"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Young + Small"
+    }
+  },
+  {
+    "id": "legacy-trust-file-needs-documentation",
+    "case": {
+      "case_id": "YBS-FIXTURE",
+      "evaluation_date": "2026-06-01",
+      "subjects": [
+        {
+          "id": "morgan-chen",
+          "type": "person",
+          "is_agricultural_producer": true,
+          "date_of_birth": "1991-06-02",
+          "years_farming": 10,
+          "annual_gross_ag_sales": 400000
+        },
+        {
+          "id": "chen-family-trust",
+          "type": "entity",
+          "entity_kind": "trust",
+          "attribution": [
+            {
+              "subject_id": "morgan-chen",
+              "role": "trustee"
+            }
+          ]
+        }
+      ],
+      "determination_subject_ids": [
+        "chen-family-trust"
+      ],
+      "evidence": [
+        {
+          "id": "application",
+          "type": "signed_application"
+        }
+      ]
+    },
+    "expected": {
+      "classification": "Review Required"
+    }
+  }
+]

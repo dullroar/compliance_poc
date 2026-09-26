@@ -54,13 +54,27 @@ The initial `ybs-v0.1` pack is marked `draft_engineering_review`. Its numeric
 thresholds and entity-attribution method are explicit institution-pilot policy,
 not claims that 12 CFR §614.4165 supplies those values. The dated eCFR snapshot
 and provenance manifest are under `regs/ybs/` and `rulepacks/ybs/ybs-v0.1/`.
-Narrative input and legacy `ybs_information` remain usable for discussion but
-produce `Unable To Determine` until a canonical case is supplied.
+Canonical entity inputs now distinguish an organization, trust, successor, and
+reorganization; trusts require trustee and controlling-person attribution, while
+successors and reorganizations require documented attribution. Narrative input
+and legacy `ybs_information` remain usable for discussion but produce `Unable To
+Determine` until a canonical case is supplied.
+
+The default suite runs deterministic fixtures, schema/source-manifest checks,
+and Anthropic/Ollama/MCP contract parity with local fakes. The opt-in Gemma test
+runs the full YBS prompt twice and asserts that the authoritative deterministic
+decision ID and classification replay identically; model prose is not assumed
+to be byte-identical. See [YBS_CHANGE_CONTROL.md](YBS_CHANGE_CONTROL.md) for
+required review paths and the GitHub branch-protection setting that activates
+the included CODEOWNERS rules.
 
 Run the offline test suite with:
 
 ```bash
-python -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v
+
+# Requires a running local Ollama with gemma4:26b; runs the YBS prompt twice.
+RUN_LIVE_OLLAMA_TESTS=1 python3 -m unittest tests.test_ybs_gemma_integration -v
 ```
 
 Create a `.env` file in this directory:

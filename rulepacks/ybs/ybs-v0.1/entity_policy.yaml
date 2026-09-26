@@ -15,5 +15,6 @@ attribution:
     - controlling_person
   entity_category_rule: all_attributable_people_must_qualify
   conflict_handling: review_required
+  documentation_handling: review_required_when_attribution_documentation_is_absent_or_insufficient
   successor_and_reorganization_handling: review_required_unless_documented_attribution_is_supplied
   trust_handling: trustee_and_beneficial_control_must_be_explicitly_represented

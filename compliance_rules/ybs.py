@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from jsonschema import Draft202012Validator, FormatChecker
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +30,16 @@ class YBSValidationError(ValueError):
 def _load_yaml(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as source:
         value = yaml.safe_load(source)
+    if not isinstance(value, dict):
+        raise YBSValidationError(f"Expected an object in {path}")
+    return value
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise YBSValidationError(f"Invalid JSON in {path}") from exc
     if not isinstance(value, dict):
         raise YBSValidationError(f"Expected an object in {path}")
     return value
@@ -75,15 +86,82 @@ def _comparison(value: float, threshold: float, operator: str) -> bool:
     return {"lt": value < threshold, "lte": value <= threshold}[operator]
 
 
-def _load_pack(rule_pack_id: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path]:
+def _validate_instance(instance: Any, schema: dict[str, Any], label: str) -> None:
+    """Validate a public contract and report a stable, actionable first error."""
+    try:
+        Draft202012Validator.check_schema(schema)
+    except Exception as exc:  # jsonschema exposes several SchemaError subclasses.
+        raise YBSValidationError(f"Invalid {label} schema: {exc.message}") from exc
+    errors = sorted(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(instance),
+        key=lambda error: list(error.absolute_path),
+    )
+    if errors:
+        error = errors[0]
+        location = ".".join(str(part) for part in error.absolute_path) or "$"
+        raise YBSValidationError(f"Invalid {label} at {location}: {error.message}")
+
+
+def _validated_local_path(root: Path, relative: str, label: str) -> Path:
+    candidate = (root / relative).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError as exc:
+        raise YBSValidationError(f"{label} must remain under {root}") from exc
+    if not candidate.is_file():
+        raise YBSValidationError(f"Missing {label}: {relative}")
+    return candidate
+
+
+def _load_pack(rule_pack_id: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], Path, dict[str, Any], dict[str, Any]]:
+    """Load and validate a pinned rule pack before it can affect a decision."""
     pack_dir = ROOT / "rulepacks" / "ybs" / rule_pack_id
     manifest_path = pack_dir / "manifest.yaml"
     if not manifest_path.exists():
         raise YBSValidationError(f"Unknown YBS rule pack: {rule_pack_id}")
     manifest = _load_yaml(manifest_path)
-    thresholds = _load_yaml(pack_dir / manifest["files"]["thresholds"])
-    policy = _load_yaml(pack_dir / manifest["files"]["entity_policy"])
-    return manifest, thresholds, policy, pack_dir
+    required_manifest_keys = {"id", "version", "status", "files", "sources"}
+    missing_manifest_keys = required_manifest_keys - manifest.keys()
+    if missing_manifest_keys:
+        raise YBSValidationError(f"Rule-pack manifest is missing {sorted(missing_manifest_keys)}")
+    if manifest["id"] != rule_pack_id or not isinstance(manifest["files"], dict) or not isinstance(manifest["sources"], list):
+        raise YBSValidationError("Rule-pack manifest has an invalid id, files, or sources contract")
+
+    required_files = {"thresholds", "entity_policy", "input_schema", "decision_record_schema"}
+    if required_files - manifest["files"].keys():
+        raise YBSValidationError("Rule-pack manifest does not declare every required rule-pack file")
+    files = {
+        name: _validated_local_path(pack_dir, relative, f"rule-pack file {name}")
+        for name, relative in manifest["files"].items()
+    }
+    thresholds = _load_yaml(files["thresholds"])
+    policy = _load_yaml(files["entity_policy"])
+    input_schema = _load_json(files["input_schema"])
+    decision_schema = _load_json(files["decision_record_schema"])
+    try:
+        Draft202012Validator.check_schema(input_schema)
+        Draft202012Validator.check_schema(decision_schema)
+    except Exception as exc:
+        raise YBSValidationError(f"Invalid rule-pack JSON schema: {exc.message}") from exc
+
+    for source in manifest["sources"]:
+        if not isinstance(source, dict) or not all(key in source for key in ("id", "local_path", "sha256")):
+            raise YBSValidationError("Every source manifest entry requires id, local_path, and sha256")
+        source_path = _validated_local_path(ROOT, source["local_path"], f"source {source.get('id', '<unknown>')}")
+        if _sha256(source_path) != source["sha256"]:
+            raise YBSValidationError(f"Source hash mismatch for {source['id']}")
+    return manifest, thresholds, policy, pack_dir, input_schema, decision_schema
+
+
+def validate_ybs_rule_pack(rule_pack_id: str = DEFAULT_PACK) -> None:
+    """Validate source provenance and both schemas for a pinned YBS rule pack."""
+    _load_pack(rule_pack_id)
+
+
+def validate_ybs_decision_record(record: dict[str, Any], rule_pack_id: str = DEFAULT_PACK) -> None:
+    """Validate an evaluator output against the pinned decision-record contract."""
+    *_, decision_schema = _load_pack(rule_pack_id)
+    _validate_instance(record, decision_schema, "YBS decision record")
 
 
 def _threshold_record(thresholds: dict[str, Any], evaluation_date: date) -> dict[str, Any] | None:
@@ -145,19 +223,30 @@ def _entity_categories(
     missing: list[dict[str, Any]],
 ) -> tuple[dict[str, str], list[dict[str, Any]]]:
     rules: list[dict[str, Any]] = []
-    if subject.get("attribution_conflict"):
+    entity_kind = subject.get("entity_kind", "organization")
+
+    def attribution_review(reason: str, rule_suffix: str = "ATTRIBUTION") -> tuple[dict[str, str], list[dict[str, Any]]]:
         categories = {category: "review_required" for category in ("young", "beginning", "small")}
-        missing.append({"subject_id": subject["id"], "field": "attribution", "reason": "conflicting ownership, control, or operating-responsibility evidence"})
-        return categories, [_rule(f"YBS-ENTITY-{category.upper()}-CONFLICT", "review_required", "institution_policy", "Conflicting entity attribution evidence requires review.") for category in categories]
+        missing.append({"subject_id": subject["id"], "field": "attribution", "reason": reason})
+        return categories, [
+            _rule(f"YBS-ENTITY-{category.upper()}-{rule_suffix}", "review_required", "institution_policy", reason)
+            for category in categories
+        ]
+
+    if subject.get("attribution_conflict"):
+        return attribution_review("Conflicting ownership, control, or operating-responsibility evidence requires review.", "CONFLICT")
+    if subject.get("attribution_documented") is False:
+        return attribution_review("Required attribution documentation is absent or insufficient.")
     related = subject.get("attribution", [])
     relevant_roles = set(policy["attribution"]["required_roles"])
     attributable = [r for r in related if r.get("role") in relevant_roles]
     if not attributable:
-        categories = {category: "review_required" for category in ("young", "beginning", "small")}
-        missing.append({"subject_id": subject["id"], "field": "attribution", "reason": "no required ownership/control/operator relationship supplied"})
-        for category in categories:
-            rules.append(_rule(f"YBS-ENTITY-{category.upper()}-ATTRIBUTION", "review_required", "institution_policy", "Entity attribution cannot be established."))
-        return categories, rules
+        return attribution_review("No required ownership, control, or operator relationship was supplied.")
+    roles = {relation.get("role") for relation in attributable}
+    if entity_kind == "trust" and not {"trustee", "controlling_person"}.issubset(roles):
+        return attribution_review("A trust requires explicit trustee and beneficial-control attribution.", "TRUST")
+    if entity_kind in {"successor", "reorganization"} and subject.get("attribution_documented") is not True:
+        return attribution_review("A successor or reorganization requires documented attribution.", "SUCCESSION")
 
     categories: dict[str, str] = {}
     for category in ("young", "beginning", "small"):
@@ -204,7 +293,8 @@ def evaluate_ybs(case: dict[str, Any], rule_pack_id: str = DEFAULT_PACK) -> dict
     if not isinstance(subjects, list) or not subjects:
         raise YBSValidationError("subjects must be a non-empty list")
 
-    manifest, thresholds, policy, pack_dir = _load_pack(rule_pack_id)
+    manifest, thresholds, policy, pack_dir, input_schema, decision_schema = _load_pack(rule_pack_id)
+    _validate_instance(case, input_schema, "canonical YBS input")
     threshold = _threshold_record(thresholds, evaluation_date)
     pack_files = {name: _sha256(pack_dir / relative) for name, relative in manifest["files"].items()}
     source_hashes = {item["id"]: item["sha256"] for item in manifest["sources"]}
@@ -217,8 +307,9 @@ def evaluate_ybs(case: dict[str, Any], rule_pack_id: str = DEFAULT_PACK) -> dict
         "evidence_references": case.get("evidence", []),
     }
     if threshold is None:
-        base.update({"determination_status": "Unable To Determine", "final_classification": "Unable To Determine", "threshold_record": None, "validation_errors": [{"field": "evaluation_date", "reason": "no effective threshold record"}], "decision_id": ""})
+        base.update({"determination_status": "Unable To Determine", "final_classification": "Unable To Determine", "threshold_record": None, "validation_errors": [{"field": "evaluation_date", "reason": "no effective threshold record"}], "llm_contract": {"authoritative_classification": "Unable To Determine", "instruction": "The model may explain this decision record but must not change its classification, rule outcomes, thresholds, dates, or provenance."}, "decision_id": ""})
         base["decision_id"] = hashlib.sha256(json.dumps(base, sort_keys=True, default=str).encode()).hexdigest()
+        _validate_instance(base, decision_schema, "YBS decision record")
         return base
 
     subject_results: dict[str, dict[str, Any]] = {}
@@ -251,4 +342,5 @@ def evaluate_ybs(case: dict[str, Any], rule_pack_id: str = DEFAULT_PACK) -> dict
     substantive = {key: value for key, value in base.items() if key not in {"evaluation_timestamp", "decision_id"}}
     base["decision_id"] = hashlib.sha256(json.dumps(substantive, sort_keys=True, default=str, separators=(",", ":")).encode()).hexdigest()
     base["evaluation_timestamp"] = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    _validate_instance(base, decision_schema, "YBS decision record")
     return base

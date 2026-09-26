@@ -32,10 +32,24 @@ def tool_definition(provider: str) -> dict[str, Any]:
     raise ValueError("Supported providers are anthropic and ollama")
 
 
+def mcp_tool_definition() -> dict[str, Any]:
+    """Return the MCP tool contract, using the same canonical input schema."""
+    return {
+        "name": "evaluate_ybs",
+        "description": "Run the authoritative offline YBS rule evaluator.",
+        "inputSchema": YBS_TOOL_PARAMETERS,
+    }
+
+
 def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     if name != "evaluate_ybs":
         raise ValueError(f"Unknown compliance tool: {name}")
     return evaluate_ybs(arguments["case"], arguments.get("rule_pack_id", "ybs-v0.1"))
+
+
+def execute_mcp_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """MCP adapter entry point; intentionally identical to native tool execution."""
+    return execute_tool(name, arguments)
 
 
 def run_anthropic_ybs_tool_loop(client: Any, *, model: str, system: str, messages: list[dict[str, Any]], max_tokens: int) -> Any:
