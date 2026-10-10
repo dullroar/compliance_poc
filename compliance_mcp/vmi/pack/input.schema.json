@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical VMI input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluation_date"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "evaluation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "primarily_purchase_or_refinance": {
+      "type": "boolean"
+    },
+    "principal_residence": {
+      "type": "boolean"
+    },
+    "secured_by_dwelling": {
+      "type": "boolean"
+    },
+    "dwelling_units": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "hmda_reportable": {
+      "type": "boolean"
+    },
+    "individual_unsecured": {
+      "type": "boolean"
+    },
+    "community_property": {
+      "type": "boolean"
+    },
+    "substitute_monitoring_program": {
+      "type": "boolean"
+    },
+    "application_channel": {
+      "enum": [
+        "face_to_face",
+        "telephone",
+        "mail",
+        "online"
+      ]
+    },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "disclosure_given": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ethnicity": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requested": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provided": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "declination_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "observation_or_surname_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terms_valid": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "race": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requested": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provided": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "declination_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "observation_or_surname_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terms_valid": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "sex": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requested": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provided": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "declination_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "observation_or_surname_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terms_valid": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "marital_status": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requested": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provided": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "declination_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "observation_or_surname_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terms_valid": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "age": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requested": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provided": {
+                  "type": "boolean"
+                },
+                "declined": {
+                  "type": "boolean"
+                },
+                "declination_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "observation_or_surname_noted": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "terms_valid": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "data_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "used_in_underwriting": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "firewall": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "underwriting_access_restricted": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "decision_makers_without_access": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "audit_logging": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

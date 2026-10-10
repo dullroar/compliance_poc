@@ -1,0 +1,160 @@
+authority_note: 'All 38 numbered items of 12 CFR 1003.4(a). `optional` marks the ''optional data'' of
+  1003.3(d)(1)(iii): items (a)(1)(i) [`partial`: the identifier only], (a)(9)(i) [`partial`: the street
+  address only], (a)(12) and (a)(15)-(30), (a)(32)-(38). Value domains come from the regulation, Appendix
+  B and Appendix C only; the FFIEC Filing Instructions Guide code lists are not pinned.'
+citation: HMDA pack LAR item table (12 CFR 1003.4(a))
+source_type: institution_policy
+partial_exemption_origination_limit: 500
+items:
+- number: 1
+  name: Universal loan identifier and application date
+  cite: 12 CFR 1003.4(a)(1)
+  optional: partial
+- number: 2
+  name: Government insurance or guarantee program
+  cite: 12 CFR 1003.4(a)(2)
+  optional: false
+- number: 3
+  name: Loan purpose
+  cite: 12 CFR 1003.4(a)(3)
+  optional: false
+- number: 4
+  name: Preapproval request
+  cite: 12 CFR 1003.4(a)(4)
+  optional: false
+- number: 5
+  name: Construction method
+  cite: 12 CFR 1003.4(a)(5)
+  optional: false
+- number: 6
+  name: Occupancy type
+  cite: 12 CFR 1003.4(a)(6)
+  optional: false
+- number: 7
+  name: Loan amount
+  cite: 12 CFR 1003.4(a)(7)
+  optional: false
+- number: 8
+  name: Action taken and date
+  cite: 12 CFR 1003.4(a)(8)
+  optional: false
+- number: 9
+  name: Property location
+  cite: 12 CFR 1003.4(a)(9)
+  optional: partial
+- number: 10
+  name: Applicant ethnicity, race, sex, age and income
+  cite: 12 CFR 1003.4(a)(10)
+  optional: false
+- number: 11
+  name: Type of purchaser
+  cite: 12 CFR 1003.4(a)(11)
+  optional: false
+- number: 12
+  name: Rate spread
+  cite: 12 CFR 1003.4(a)(12)
+  optional: true
+- number: 13
+  name: HOEPA status
+  cite: 12 CFR 1003.4(a)(13)
+  optional: false
+- number: 14
+  name: Lien status
+  cite: 12 CFR 1003.4(a)(14)
+  optional: false
+- number: 15
+  name: Credit score and scoring model
+  cite: 12 CFR 1003.4(a)(15)
+  optional: true
+- number: 16
+  name: Denial reasons
+  cite: 12 CFR 1003.4(a)(16)
+  optional: true
+- number: 17
+  name: Total loan costs or total points and fees
+  cite: 12 CFR 1003.4(a)(17)
+  optional: true
+- number: 18
+  name: Total of borrower-paid itemized amounts at or before closing
+  cite: 12 CFR 1003.4(a)(18)
+  optional: true
+- number: 19
+  name: Discount points
+  cite: 12 CFR 1003.4(a)(19)
+  optional: true
+- number: 20
+  name: Lender credits
+  cite: 12 CFR 1003.4(a)(20)
+  optional: true
+- number: 21
+  name: Interest rate
+  cite: 12 CFR 1003.4(a)(21)
+  optional: true
+- number: 22
+  name: Prepayment penalty term
+  cite: 12 CFR 1003.4(a)(22)
+  optional: true
+- number: 23
+  name: Debt-to-income ratio
+  cite: 12 CFR 1003.4(a)(23)
+  optional: true
+- number: 24
+  name: Combined loan-to-value ratio
+  cite: 12 CFR 1003.4(a)(24)
+  optional: true
+- number: 25
+  name: Loan term
+  cite: 12 CFR 1003.4(a)(25)
+  optional: true
+- number: 26
+  name: Introductory rate period
+  cite: 12 CFR 1003.4(a)(26)
+  optional: true
+- number: 27
+  name: Non-amortizing features
+  cite: 12 CFR 1003.4(a)(27)
+  optional: true
+- number: 28
+  name: Property value
+  cite: 12 CFR 1003.4(a)(28)
+  optional: true
+- number: 29
+  name: Manufactured home secured property type
+  cite: 12 CFR 1003.4(a)(29)
+  optional: true
+- number: 30
+  name: Manufactured home land property interest
+  cite: 12 CFR 1003.4(a)(30)
+  optional: true
+- number: 31
+  name: Total units
+  cite: 12 CFR 1003.4(a)(31)
+  optional: false
+- number: 32
+  name: Multifamily affordable units
+  cite: 12 CFR 1003.4(a)(32)
+  optional: true
+- number: 33
+  name: Application channel
+  cite: 12 CFR 1003.4(a)(33)
+  optional: true
+- number: 34
+  name: NMLS identifier
+  cite: 12 CFR 1003.4(a)(34)
+  optional: true
+- number: 35
+  name: Automated underwriting system and result
+  cite: 12 CFR 1003.4(a)(35)
+  optional: true
+- number: 36
+  name: Reverse mortgage flag
+  cite: 12 CFR 1003.4(a)(36)
+  optional: true
+- number: 37
+  name: Open-end line of credit flag
+  cite: 12 CFR 1003.4(a)(37)
+  optional: true
+- number: 38
+  name: Business or commercial purpose flag
+  cite: 12 CFR 1003.4(a)(38)
+  optional: true

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical HPML input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rate_set_date",
+    "consumer_purpose",
+    "closed_end",
+    "secured_by_principal_dwelling",
+    "lien_position",
+    "principal_obligation",
+    "apr"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "rate_set_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the interest rate is set; fixes the threshold record and conforming limit year"
+    },
+    "consumer_purpose": {
+      "type": "boolean"
+    },
+    "closed_end": {
+      "type": "boolean"
+    },
+    "secured_by_principal_dwelling": {
+      "type": "boolean"
+    },
+    "lien_position": {
+      "enum": [
+        "first",
+        "subordinate"
+      ]
+    },
+    "principal_obligation": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Principal obligation at consummation"
+    },
+    "units": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "apr": {
+      "type": "number",
+      "description": "Annual percentage rate, in percent (e.g. 7.25)"
+    },
+    "apor": {
+      "type": "number",
+      "description": "Average prime offer rate for a comparable transaction as of rate_set_date, in percent"
+    },
+    "apor_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table_date",
+        "product",
+        "source"
+      ],
+      "properties": {
+        "table_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "product": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "retrieved_at": {
+          "type": "string"
+        },
+        "response_sha256": {
+          "type": "string"
+        },
+        "table_date_basis": {
+          "type": "string"
+        }
+      }
+    },
+    "applicable_conforming_limit": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Freddie Mac limit in effect at rate_set_date for this property (units/county); required when principal_obligation exceeds the pinned baseline"
+    },
+    "conforming_limit_source": {
+      "type": "string"
+    },
+    "escrow_exemption": {
+      "enum": [
+        "none",
+        "cooperative",
+        "initial_construction",
+        "bridge_loan_12_months_or_less",
+        "reverse_mortgage",
+        "pace"
+      ]
+    },
+    "escrow_exemption_documented": {
+      "type": "boolean",
+      "description": "Creditor documented eligibility under 12 CFR 1026.35(b)(2)(iii)"
+    },
+    "escrow_established_before_consummation": {
+      "type": "boolean"
+    },
+    "appraisal_exemption_documented": {
+      "type": "boolean",
+      "description": "A 12 CFR 1026.35(c)(2) exemption is documented"
+    },
+    "appraisal_requirements_met": {
+      "type": "boolean"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "amortization_type": {
+      "enum": [
+        "fixed",
+        "adjustable"
+      ],
+      "description": "Selects the APOR table; used by the intake lookup, recorded with the case"
+    },
+    "apor_term_years": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "description": "Loan term in years (fixed) or years to first adjustment (adjustable); selects the APOR table column"
+    }
+  }
+}

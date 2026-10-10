@@ -107,7 +107,9 @@
       "Collateral adequate",
       "Credit history satisfactory"
     ],
-    "credit_policy_references": ["Agricultural Loan Policy Section 4.2"],
+    "credit_policy_references": [
+      "Agricultural Loan Policy Section 4.2"
+    ],
     "exception_requests": [],
     "override_information": []
   },
@@ -122,15 +124,17 @@
     "interest_rate": 7.85,
     "lock_date": "2024-04-10",
     "consummation_date": "2024-05-01",
-    "apor_rate": 7.02,
-    "apor_source": "FFIEC APOR Table",
+    "apor_rate": 6.86,
+    "apor_source": "CFPB/FFIEC HMDA Platform Rate Spread API (see hpml_case.apor_reference)",
     "threshold_used": "First Lien +1.5%",
     "lien_position": "First",
     "loan_term": 360
   },
   "dwelling_information": {
     "principal_dwelling": true,
-    "occupancy_evidence": ["Occupancy certification signed at closing"]
+    "occupancy_evidence": [
+      "Occupancy certification signed at closing"
+    ]
   },
   "escrow_information": {
     "escrow_required": true,
@@ -186,5 +190,278 @@
     "examination_standard": "FCA",
     "hmda_covered_institution": true,
     "consumer_lending_authority": true
+  },
+  "hpml_case": {
+    "case_id": "TEST-2024-001",
+    "rate_set_date": "2024-04-10",
+    "consumer_purpose": true,
+    "closed_end": true,
+    "secured_by_principal_dwelling": true,
+    "lien_position": "first",
+    "principal_obligation": 425000,
+    "units": 1,
+    "apr": 8.12,
+    "applicable_conforming_limit": 766550,
+    "conforming_limit_source": "SAMPLE DATA - confirm against FHFA 2024 announcement",
+    "escrow_established_before_consummation": true,
+    "appraisal_requirements_met": true,
+    "amortization_type": "fixed",
+    "apor_term_years": 30,
+    "apor": 6.86,
+    "apor_reference": {
+      "table_date": "2024-04-08",
+      "product": "fixed 30-year",
+      "source": "CFPB/FFIEC HMDA Platform Rate Spread API https://ffiec.cfpb.gov/documentation/api/rate-spread/",
+      "endpoint": "https://ffiec.cfpb.gov/public/rateSpread",
+      "retrieved_at": "2026-10-09T18:10:28Z",
+      "response_sha256": "50993f8be79d98d23293584bba3a49f4ed4e1fce951be251b28c4ec99e9f6db8",
+      "table_date_basis": "derived: Monday of the week containing rate_set_date; the API returns no table date"
+    }
+  },
+  "ybs_case": {
+    "case_id": "TEST-2024-001",
+    "evaluation_date": "2024-06-01",
+    "reporting_period": "2024",
+    "subjects": [
+      {
+        "id": "borrower-1",
+        "type": "person",
+        "is_agricultural_producer": true,
+        "date_of_birth": "1989-09-15",
+        "years_farming": 4,
+        "annual_gross_ag_sales": 185000
+      }
+    ]
+  },
+  "trid_case": {
+    "case_id": "TEST-2024-001",
+    "closed_end": true,
+    "secured_by_real_property_or_cooperative_unit": true,
+    "application_received_date": "2024-03-15",
+    "consummation_date": "2024-05-01",
+    "loan_estimate": {
+      "delivery_date": "2024-03-18",
+      "delivery_method": "in_person"
+    },
+    "closing_disclosure": {
+      "delivery_date": "2024-04-26",
+      "delivery_method": "in_person"
+    },
+    "charges": [
+      {
+        "id": "origination",
+        "name": "Origination fee",
+        "category": "zero_tolerance",
+        "disclosed_amount": 2500,
+        "actual_amount": 2500
+      },
+      {
+        "id": "title",
+        "name": "Title services",
+        "category": "ten_percent_tolerance",
+        "disclosed_amount": 1800,
+        "actual_amount": 1900
+      }
+    ]
+  },
+  "hmda_case": {
+    "case_id": "TEST-2024-001",
+    "financial_institution": true,
+    "credit_structure": "closed_end",
+    "secured_by_dwelling": true,
+    "amount": 425000,
+    "loan_purpose": "home_purchase",
+    "agricultural_purpose": "undetermined",
+    "business_commercial_purpose": "not_primarily",
+    "exclusions": {
+      "fiduciary_capacity": false,
+      "unimproved_land": false,
+      "temporary_financing": false,
+      "pool_interest_purchase": false,
+      "servicing_rights_purchase": false,
+      "merger_acquisition_purchase": false,
+      "partial_interest_purchase": false,
+      "ny_supplemental_consolidation": false
+    },
+    "prior_year_originations": {
+      "closed_end": [
+        400,
+        410
+      ]
+    },
+    "action_taken": "originated",
+    "action_taken_date": "2024-05-01",
+    "application_date": "2024-03-15",
+    "denial_reasons": [],
+    "apr": 8.12,
+    "apor": 6.86,
+    "apor_reference": {
+      "table_date": "2024-04-08",
+      "product": "fixed 30-year",
+      "source": "CFPB/FFIEC HMDA Platform Rate Spread API https://ffiec.cfpb.gov/documentation/api/rate-spread/",
+      "endpoint": "https://ffiec.cfpb.gov/public/rateSpread",
+      "retrieved_at": "2026-10-09T18:10:28Z",
+      "response_sha256": "50993f8be79d98d23293584bba3a49f4ed4e1fce951be251b28c4ec99e9f6db8",
+      "table_date_basis": "derived: Monday of the week containing rate_set_date; the API returns no table date"
+    },
+    "reported_rate_spread": 2.37,
+    "lar": {
+      "loan_type_government_program": "not_insured_or_guaranteed",
+      "loan_purpose": "home_purchase",
+      "construction_method": "site_built",
+      "occupancy_type": "principal_residence",
+      "loan_amount": 425000,
+      "property_address": "1234 Rural Route 2, Shelby County, IL 62565",
+      "property_state": "IL",
+      "property_county": "Shelby",
+      "property_census_tract": "17173960200",
+      "lien_status": "first_lien",
+      "interest_rate": 7.85,
+      "loan_term_months": 360,
+      "non_amortizing_features": {
+        "balloon_payment": false,
+        "interest_only_payments": false,
+        "negative_amortization": false,
+        "other_non_fully_amortizing": false
+      },
+      "property_value": 590000,
+      "total_units": 1,
+      "application_channel": {
+        "submitted_directly": true,
+        "initially_payable_to_institution": true
+      },
+      "nmls_identifier": "987654",
+      "reverse_mortgage": false,
+      "open_end_line_of_credit": false,
+      "business_or_commercial_purpose": false,
+      "prepayment_penalty_term_months": 0,
+      "total_loan_costs": 9500,
+      "total_borrower_paid_charges": 7000,
+      "discount_points": 0,
+      "lender_credits": 0,
+      "debt_to_income_ratio": 38.5,
+      "combined_loan_to_value_ratio": 72.0,
+      "credit_scores": [
+        {
+          "score": 720,
+          "model": "FICO",
+          "version": "Score 8"
+        }
+      ]
+    },
+    "lar_context": {
+      "partial_exemption": false,
+      "institution_type": "other",
+      "sold_same_year": false,
+      "subject_to_hoepa": false,
+      "subject_to_1026_19f": true,
+      "subject_to_1026_43c": true,
+      "income_considered": true,
+      "credit_score_relied_on": true,
+      "dti_relied_on": true,
+      "cltv_relied_on": true,
+      "value_relied_on": true,
+      "rate_may_change": false,
+      "aus_used": false,
+      "is_manufactured_home": false,
+      "is_multifamily": false,
+      "property_in_msa_with_office": true,
+      "county_population_over_30000": true,
+      "co_applicant_present": true,
+      "application_mode": "in_person"
+    }
+  },
+  "ecoa_case": {
+    "case_id": "TEST-2024-001",
+    "joint_application": true,
+    "application_received_date": "2024-03-15",
+    "application_complete_date": "2024-03-15",
+    "decision_date": "2024-04-10",
+    "decision_type": "approved_as_requested",
+    "notice": {
+      "sent": true,
+      "date": "2024-04-12",
+      "written": true
+    },
+    "marital_status_inquiry": {
+      "asked": false
+    },
+    "age_public_assistance": {
+      "age_use": "none",
+      "public_assistance_use": "none"
+    }
+  },
+  "vmi_case": {
+    "case_id": "TEST-2024-001",
+    "evaluation_date": "2024-05-01",
+    "primarily_purchase_or_refinance": true,
+    "principal_residence": true,
+    "secured_by_dwelling": true,
+    "dwelling_units": 1,
+    "hmda_reportable": true,
+    "application_channel": "face_to_face",
+    "monitoring": {
+      "disclosure_given": true,
+      "items": {
+        "ethnicity": {
+          "requested": true,
+          "provided": true
+        },
+        "race": {
+          "requested": true,
+          "provided": true
+        },
+        "sex": {
+          "requested": true,
+          "provided": true
+        },
+        "age": {
+          "requested": true,
+          "provided": true
+        },
+        "marital_status": {
+          "requested": false
+        }
+      }
+    },
+    "data_use": {
+      "used_in_underwriting": false
+    },
+    "firewall": {
+      "underwriting_access_restricted": true,
+      "decision_makers_without_access": true
+    }
+  },
+  "fzd_case": {
+    "case_id": "TEST-2024-001",
+    "transaction_type": "make",
+    "transaction_date": "2024-05-01",
+    "credit_purpose": "consumer",
+    "lien_position": "first",
+    "loan_balance": 425000,
+    "term_months": 360,
+    "collateral": {
+      "structure": "building",
+      "residential": true
+    },
+    "determination": {
+      "completed": true,
+      "standard_form_used": true,
+      "retained": true,
+      "date": "2024-03-20"
+    },
+    "sfha": {
+      "in_sfha": false,
+      "flood_insurance_available": true,
+      "zone": "X"
+    }
+  },
+  "hvcre_case": {
+    "case_id": "TEST-2024-001",
+    "loan_date": "2024-05-01",
+    "credit_facility_amount": 425000,
+    "primarily_finances_adc": false,
+    "purpose_income_producing": false,
+    "dependent_on_future_income_or_sales": false
   }
 }

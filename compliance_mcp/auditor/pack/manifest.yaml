@@ -1,0 +1,15 @@
+id: auditor
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+sources:
+- id: pack-auditor-thresholds
+  type: institution_policy
+  citation: 'Auditor pack: expected agents'
+  local_path: compliance_mcp/auditor/pack/thresholds.yaml
+  sha256: 106025c22fb34fcce4805b7fca33b7da27fb0ec3f53002ccaae88461749eedf9

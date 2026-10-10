@@ -58,3 +58,10 @@ desktop.ini
 .pytest_cache/
 .coverage
 htmlcov/
+logs/
+*.jsonl
+builds/
+*:Zone.Identifier
+benchmarks/results.jsonl
+benchmarks/profile.jsonl
+benchmarks/*.jsonl

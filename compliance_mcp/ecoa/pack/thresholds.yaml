@@ -1,0 +1,8 @@
+authority_note: Day counts and the small-volume threshold are regulatory (12 CFR 1002.9(a)(1), (d)); eCFR
+  snapshot issued 2026-10-07.
+citation: ECOA pack thresholds (12 CFR 1002.9)
+source_type: institution_policy
+notification_days: 30
+counteroffer_response_days: 90
+small_volume_creditor_max_applications: 150
+reasons_request_days: 60

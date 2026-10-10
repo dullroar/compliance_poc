@@ -1,0 +1,63 @@
+id: fzd
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+sources:
+- id: ecfr-12-cfr-614-4925-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4925
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4925
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4925.xml
+  sha256: 72c04883e3680c20fa04f378cee977d18a5b9a4aef640e8da3aabc88fa654b7c
+- id: ecfr-12-cfr-614-4930-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4930
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4930
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4930.xml
+  sha256: 1e6a556b1694afd51fe8cf50d98d129a2bab9f74fec7a278f1b169a5e6553447
+- id: ecfr-12-cfr-614-4935-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4935
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4935
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4935.xml
+  sha256: b4d5e7533545e86d9deada5c745ab2793fff4e70bfb74623ca33c80a3491d805
+- id: ecfr-12-cfr-614-4940-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4940
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4940
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4940.xml
+  sha256: e8de86a1fdbe0eccc3a505e45b7f2b80c0aaeee4b735fece748070ab42b3d589
+- id: ecfr-12-cfr-614-4945-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4945
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4945
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4945.xml
+  sha256: 82f0644d2fea6ddb1e3f7fe566fdaa62703581c90dedbe5b81885b56da97e25b
+- id: ecfr-12-cfr-614-4955-2026-10-07
+  type: regulatory
+  citation: 12 CFR 614.4955
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=614&section=614.4955
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/fzd/pack/sources/12-cfr-614-4955.xml
+  sha256: 8b6ff14a0600ca39a5d8662976fe0e0ebf4dd4f27952e7c98135ae13ca151944
+- id: pack-fzd-thresholds
+  type: institution_policy
+  citation: FZD pack thresholds (12 CFR 614.4930-4955)
+  local_path: compliance_mcp/fzd/pack/thresholds.yaml
+  sha256: 61545125e59c9eb4897ab682b36797bc589eb8e2df3f9523336eaa045c44d2ca

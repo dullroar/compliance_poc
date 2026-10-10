@@ -1,0 +1,9 @@
+authority_note: >-
+  One-unit baseline conforming loan limits announced by FHFA (source: fhfa-2026-cll-release).
+  The Freddie Mac limit in effect is never lower than the baseline, so a first-lien amount at or
+  below the baseline is certainly within the limit. Multi-unit and high-cost-area limits are NOT
+  tabulated here; the caller must supply applicable_conforming_limit with its source.
+  The 2025 value is the 2026 value less the stated $26,250 increase.
+records:
+  - {year: 2025, one_unit_baseline: 806500}
+  - {year: 2026, one_unit_baseline: 832750}

@@ -1,0 +1,12 @@
+authority_note: The 45-day force-placement period (614.4945(a)) and the escrow effective date (614.4935(a)(1))
+  are regulatory; eCFR snapshot issued 2026-10-07. The pack covers transactions from 2015-07-21, the date
+  of the FCA flood rule.
+citation: FZD pack thresholds (12 CFR 614.4930-4955)
+source_type: institution_policy
+records:
+- id: fca-flood-subpart-s
+  effective_start: '2015-07-21'
+  effective_end: null
+  authority_reference: 12 CFR part 614 subpart S, eCFR issued 2026-10-07
+force_placement_days: 45
+escrow_effective_date: '2016-01-01'

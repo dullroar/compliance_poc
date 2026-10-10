@@ -1,0 +1,31 @@
+id: vmi
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+sources:
+- id: ecfr-12-cfr-1002-13-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.13
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.13
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/vmi/pack/sources/12-cfr-1002-13.xml
+  sha256: fea2de33dd19128644db7c22cf168a826e51abfadbad5733b49d641aeb85c80b
+- id: ecfr-12-cfr-1002-5-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.5
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.5
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/vmi/pack/sources/12-cfr-1002-5.xml
+  sha256: c80af78bb8cd0e4454cafc76a3e97d9808ed18006569a3bad34c4c001a7d6f9e
+- id: pack-vmi-thresholds
+  type: institution_policy
+  citation: VMI pack thresholds (12 CFR 1002.13)
+  local_path: compliance_mcp/vmi/pack/thresholds.yaml
+  sha256: 4b13bf034ab14ccfbcc52e28964aeab01a0431ea6210fb6ca725f0c304b62d4d

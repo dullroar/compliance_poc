@@ -1,0 +1,43 @@
+id: trid
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-07'
+files:
+  thresholds: thresholds.yaml
+  calendar: calendar.yaml
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+sources:
+- id: ecfr-12-cfr-1026-19-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1026.19
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1026&section=1026.19
+  retrieved_date: '2026-10-08'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/trid/pack/sources/12-cfr-1026-19.xml
+  sha256: 1ea2722bfcf9006857f8e7ae37121b1f8215064cc634f8be37f9b500b1dcf081
+  excerpt:
+    start: (e) Mortgage loans
+    end: (g) Special information booklet
+- id: ecfr-12-cfr-1026-2-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1026.2
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1026&section=1026.2
+  retrieved_date: '2026-10-08'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/trid/pack/sources/12-cfr-1026-2.xml
+  sha256: 1c945d2eb7e2d7a9306a39a3aee99e639714d0be3ae91ac22090988ea0581b7e
+  excerpt:
+    start: (6) Business day means
+    end: (7) Card issuer
+- id: pack-trid-thresholds
+  type: institution_policy
+  citation: TRID pack timing and tolerance schedule (defaults for creditor open days)
+  local_path: compliance_mcp/trid/pack/thresholds.yaml
+  sha256: 15a7233b7ef23c88e85d7bbde9c439dcd1c92c2bb0749d6273f02b5d4dbff889
+- id: pack-trid-calendar
+  type: institution_policy
+  citation: TRID pack federal holiday calendar rules (interpretation flagged for review)
+  local_path: compliance_mcp/trid/pack/calendar.yaml
+  sha256: c6815f5b33e31c727215a6bdae6346b4cf05c7d1e7bbedba188b60420b3f0c1c

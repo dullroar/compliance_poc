@@ -1,0 +1,34 @@
+authority_note: Categories and limits from Appendix B to part 1003 (eCFR issued 2026-10-07).
+citation: HMDA pack Appendix B categories (12 CFR part 1003)
+source_type: institution_policy
+ethnicity_aggregate:
+- Hispanic or Latino
+- Not Hispanic or Latino
+ethnicity_subcategories:
+- Mexican
+- Puerto Rican
+- Cuban
+- Other Hispanic or Latino
+race_aggregate:
+- American Indian or Alaska Native
+- Asian
+- Black or African American
+- Native Hawaiian or Other Pacific Islander
+- White
+race_subcategories:
+- Asian Indian
+- Chinese
+- Filipino
+- Japanese
+- Korean
+- Vietnamese
+- Other Asian
+- Native Hawaiian
+- Guamanian or Chamorro
+- Samoan
+- Other Pacific Islander
+sex:
+- male
+- female
+max_ethnicity_entries: 5
+max_race_entries: 5

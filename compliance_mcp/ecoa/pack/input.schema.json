@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical ECOA input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "application_received_date",
+    "decision_type"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "business_credit": {
+      "type": "boolean"
+    },
+    "business_revenue_over_1m": {
+      "type": "boolean"
+    },
+    "joint_application": {
+      "type": "boolean"
+    },
+    "creditor_applications_prior_year": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "application_received_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "application_complete_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "decision_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "review_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "decision_type": {
+      "enum": [
+        "approved_as_requested",
+        "denied",
+        "counteroffer",
+        "withdrawn_by_applicant",
+        "closed_incomplete",
+        "existing_account_adverse",
+        "not_adverse_law_prohibits",
+        "not_adverse_product_not_offered"
+      ]
+    },
+    "counteroffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notice_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "accepted": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "true: applicant expressly accepted or used the credit; false: expressly declined; null: no response"
+        }
+      }
+    },
+    "notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sent": {
+          "type": "boolean"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "written": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "contents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "action_statement": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "creditor_name_address": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "ecoa_notice": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "agency_name_address": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "reasons_or_right_disclosure": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "reasons_basis": {
+          "enum": [
+            "statement_of_reasons",
+            "right_disclosure"
+          ]
+        },
+        "specific_reasons": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "delivered_to": {
+          "enum": [
+            "primary",
+            "other"
+          ]
+        }
+      }
+    },
+    "incompleteness_notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sent": {
+          "type": "boolean"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "specifies_info_needed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reasonable_period_designated": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "warns_no_further_consideration": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "marital_status_inquiry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "asked": {
+          "type": "boolean"
+        },
+        "credit_type": {
+          "enum": [
+            "individual_unsecured",
+            "other"
+          ]
+        },
+        "community_property": {
+          "type": "boolean"
+        },
+        "terms_valid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "spouse_signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "applicant_qualified_alone": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "joint_applicant": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "signature_required_by_state_law_to_reach_collateral": {
+          "type": "boolean"
+        }
+      }
+    },
+    "age_public_assistance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "age_use": {
+          "enum": [
+            "none",
+            "favors_elderly",
+            "credit_scoring_non_negative",
+            "judgmental_pertinent_element",
+            "other"
+          ]
+        },
+        "public_assistance_use": {
+          "enum": [
+            "none",
+            "judgmental_pertinent_element",
+            "other"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

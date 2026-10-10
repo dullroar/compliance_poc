@@ -1,0 +1,26 @@
+id: hvcre
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+sources:
+- id: ecfr-12-cfr-628-2-2026-10-07
+  type: regulatory
+  citation: 12 CFR 628.2
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=628&section=628.2
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hvcre/pack/sources/12-cfr-628-2.xml
+  sha256: 1c4edaa62bdd73ced66c9ff7abe0cce55e396c6270cd76a0e91fceea7076c156
+  excerpt:
+    start: High volatility commercial real estate (HVCRE) exposure means
+    end: Home country means
+- id: pack-hvcre-thresholds
+  type: institution_policy
+  citation: HVCRE pack thresholds (12 CFR 628.2)
+  local_path: compliance_mcp/hvcre/pack/thresholds.yaml
+  sha256: 6b02a02960082d4a8ad4a84f00b9e7ee107d03294a1a7b81ab3d874b05dbc5eb

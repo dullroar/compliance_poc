@@ -1,0 +1,13 @@
+authority_note: Regulatory values from 12 CFR 1003.3(c) and 1003.4(a). The volume and amount exclusions
+  are as pinned in the eCFR snapshot issued 2026-10-07.
+citation: HMDA pack thresholds (12 CFR 1003.3(c), 1003.4(a))
+source_type: institution_policy
+minimum_amount: 500
+closed_end_minimum_originations: 25
+open_end_minimum_originations: 200
+max_denial_reasons: 4
+business_purpose_covered_purposes:
+- home_improvement
+- home_purchase
+- refinance
+- cash_out_refinance

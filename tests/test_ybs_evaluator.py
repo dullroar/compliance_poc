@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import unittest
@@ -5,22 +6,15 @@ from pathlib import Path
 
 import yaml
 
-from compliance_orchestrator import _guard_ybs_model_output, call_agent, prepare_ybs_evaluation
-from compliance_rules.tools import (
-    YBS_TOOL_PARAMETERS,
-    execute_mcp_tool,
-    execute_tool,
-    mcp_tool_definition,
-    run_anthropic_ybs_tool_loop,
-    run_ollama_ybs_tool_loop,
-    tool_definition,
-)
-from compliance_rules.ybs import (
+from compliance_common.mcp_client import call_tool, list_tool_specs, stdio_target
+from compliance_common.tools import native_definition, run_anthropic_tool_loop, run_ollama_tool_loop, seed_anthropic, seed_ollama
+from compliance_mcp.ybs import (
     YBSValidationError,
     evaluate_ybs,
     validate_ybs_decision_record,
     validate_ybs_rule_pack,
 )
+from compliance_mcp.ybs.server import server as ybs_server
 
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "ybs"
@@ -52,7 +46,7 @@ def case(subjects, evaluation_date="2026-06-01", target_ids=None):
 class _ToolUse:
     type = "tool_use"
     id = "call-1"
-    name = "evaluate_ybs"
+    name = "ybs_evaluate"
 
     def __init__(self, payload):
         self.input = payload
@@ -114,7 +108,7 @@ class YBSContractTests(unittest.TestCase):
     def test_rule_pack_sources_and_contracts_validate(self):
         validate_ybs_rule_pack()
         root = Path(__file__).resolve().parents[1]
-        manifest = yaml.safe_load((root / "rulepacks/ybs/ybs-v0.1/manifest.yaml").read_text(encoding="utf-8"))
+        manifest = yaml.safe_load((root / "compliance_mcp/ybs/pack/manifest.yaml").read_text(encoding="utf-8"))
         for source in manifest["sources"]:
             with self.subTest(source=source["id"]):
                 self.assertEqual(hashlib.sha256((root / source["local_path"]).read_bytes()).hexdigest(), source["sha256"])
@@ -132,25 +126,21 @@ class YBSContractTests(unittest.TestCase):
     def test_all_provider_and_mcp_tools_share_one_contract_and_decision(self):
         input_case = case([person()])
         expected = evaluate_ybs(input_case)
-        anthropic = tool_definition("anthropic")
-        ollama = tool_definition("ollama")
-        mcp = mcp_tool_definition()
-        self.assertEqual(anthropic["input_schema"], YBS_TOOL_PARAMETERS)
-        self.assertEqual(ollama["function"]["parameters"], YBS_TOOL_PARAMETERS)
-        self.assertEqual(mcp["inputSchema"], YBS_TOOL_PARAMETERS)
-        self.assertEqual(anthropic["name"], ollama["function"]["name"])
-        self.assertEqual(anthropic["name"], mcp["name"])
-        for runner in (execute_tool, execute_mcp_tool):
-            with self.subTest(runner=runner.__name__):
-                self.assertEqual(runner("evaluate_ybs", {"case": input_case})["decision_id"], expected["decision_id"])
+        spec = asyncio.run(list_tool_specs(ybs_server))[0]
+        self.assertEqual(spec["name"], "ybs_evaluate")
+        self.assertEqual(native_definition(spec, "anthropic")["input_schema"], spec["inputSchema"])
+        self.assertEqual(native_definition(spec, "ollama")["function"]["parameters"], spec["inputSchema"])
+        for target in (ybs_server, stdio_target("ybs")):
+            with self.subTest(target=type(target).__name__):
+                result = asyncio.run(call_tool(target, "ybs_evaluate", {"case": input_case}))
+                self.assertEqual(result["decision_id"], expected["decision_id"])
 
-    def test_replay_is_identical_across_repeated_native_and_mcp_execution(self):
+    def test_replay_is_identical_across_repeated_direct_and_mcp_execution(self):
         input_case = case([person()])
         decisions = [
             evaluate_ybs(input_case),
             evaluate_ybs(json.loads(json.dumps(input_case))),
-            execute_tool("evaluate_ybs", {"case": input_case}),
-            execute_mcp_tool("evaluate_ybs", {"case": input_case}),
+            asyncio.run(call_tool(ybs_server, "ybs_evaluate", {"case": input_case})),
         ]
         self.assertEqual({item["decision_id"] for item in decisions}, {decisions[0]["decision_id"]})
         self.assertEqual({item["final_classification"] for item in decisions}, {"Young + Beginning + Small"})
@@ -158,36 +148,57 @@ class YBSContractTests(unittest.TestCase):
     def test_anthropic_and_ollama_tool_loops_use_the_same_evaluator(self):
         input_case = case([person()])
         expected = evaluate_ybs(input_case)["decision_id"]
+        spec = asyncio.run(list_tool_specs(ybs_server))[0]
+        execute = lambda name, args: asyncio.run(call_tool(ybs_server, name, args))  # noqa: E731
+        calls = []
         anthropic = _FakeAnthropic([_Response([_ToolUse({"case": input_case})]), _Response([])])
-        response = run_anthropic_ybs_tool_loop(
-            anthropic, model="fake", system="system", messages=[], max_tokens=1,
+        response = run_anthropic_tool_loop(
+            anthropic, spec, execute, model="fake", system="system", messages=[], max_tokens=1, calls_made=calls,
         )
         self.assertEqual(response.content, [])
         tool_result = anthropic.messages.requests[1]["messages"][-1]["content"][0]
         self.assertEqual(json.loads(tool_result["content"])["decision_id"], expected)
+        self.assertEqual(calls[0]["result"]["decision_id"], expected)
 
         responses = iter([
-            {"message": {"role": "assistant", "tool_calls": [{"function": {"name": "evaluate_ybs", "arguments": {"case": input_case}}}]}},
+            {"message": {"role": "assistant", "tool_calls": [{"function": {"name": "ybs_evaluate", "arguments": {"case": input_case}}}]}},
             {"message": {"role": "assistant", "content": "explained"}},
         ])
-        result = run_ollama_ybs_tool_loop(lambda _: next(responses), {"model": "tool-model", "messages": []})
+        result = run_ollama_tool_loop(lambda _: next(responses), spec, execute, {"model": "tool-model", "messages": []})
         self.assertEqual(result["message"]["content"], "explained")
 
-    def test_runner_guard_preserves_authoritative_decision(self):
-        class FakeOllama:
-            def create_message(self, **_):
-                return json.dumps({"domain_determination": {"classification": "Not Eligible"}, "determination_status": {"result": "Non-Compliant"}})
 
-        result = call_agent("ybs", {"ybs_case": case([person()])}, client=FakeOllama(), provider="ollama", model="fake")
-        self.assertFalse(result["deterministic_guard"]["passed"])
-        self.assertEqual(result["parsed"]["domain_determination"]["classification"], "Young + Beginning + Small")
-        parsed, guard = _guard_ybs_model_output({"domain_determination": {"classification": "Not Eligible"}}, result["deterministic_evaluation"])
-        self.assertFalse(guard["passed"])
-        self.assertEqual(parsed["domain_determination"]["classification"], "Young + Beginning + Small")
+class ToolEnforcementFormatTests(unittest.TestCase):
+    SPEC = {"name": "ybs_evaluate", "description": "d", "inputSchema": {"type": "object"}}
 
-    def test_legacy_input_is_not_a_final_determination(self):
-        result = prepare_ybs_evaluation({"ybs_information": {"young_farmer_criteria": {"age": 30}}})
-        self.assertEqual(result["final_classification"], "Unable To Determine")
+    def test_anthropic_first_request_can_force_the_tool_and_later_ones_cannot(self):
+        client = _FakeAnthropic([_Response([_ToolUse({"case": {}})]), _Response([])])
+        execute = lambda name, args: {"decision_id": "x" * 64}  # noqa: E731
+        run_anthropic_tool_loop(client, self.SPEC, execute, model="m", system="s", messages=[], max_tokens=1, force_first=True)
+        first, second = client.messages.requests
+        self.assertEqual((first["tool_choice"]["type"], first["tool_choice"]["name"]), ("tool", "ybs_evaluate"))
+        self.assertEqual(second["tool_choice"]["type"], "auto")
+        free = _FakeAnthropic([_Response([])])
+        run_anthropic_tool_loop(free, self.SPEC, execute, model="m", system="s", messages=[], max_tokens=1)
+        self.assertEqual(free.messages.requests[0]["tool_choice"]["type"], "auto")
+
+    def test_seed_formats_are_the_providers_native_tool_exchange(self):
+        anth = seed_anthropic(self.SPEC, {"case": {"a": 1}}, {"decision_id": "d"})
+        self.assertEqual((anth[0]["role"], anth[0]["content"][0]["type"], anth[0]["content"][0]["input"]), ("assistant", "tool_use", {"case": {"a": 1}}))
+        self.assertEqual((anth[1]["role"], anth[1]["content"][0]["type"], anth[1]["content"][0]["tool_use_id"]), ("user", "tool_result", anth[0]["content"][0]["id"]))
+        oll = seed_ollama(self.SPEC, {"case": {"a": 1}}, {"decision_id": "d"})
+        self.assertEqual(oll[0]["tool_calls"][0]["function"], {"name": "ybs_evaluate", "arguments": {"case": {"a": 1}}})
+        self.assertEqual((oll[1]["role"], oll[1]["tool_name"], json.loads(oll[1]["content"])), ("tool", "ybs_evaluate", {"decision_id": "d"}))
+
+    def test_a_seeded_ollama_conversation_goes_straight_to_the_final_answer(self):
+        seen = []
+        def request(payload):
+            seen.append(payload["messages"])
+            return {"message": {"role": "assistant", "content": "narrative"}}
+        payload = {"model": "m", "messages": [{"role": "user", "content": "u"}, *seed_ollama(self.SPEC, {}, {"decision_id": "d"})]}
+        out = run_ollama_tool_loop(request, self.SPEC, lambda n, a: {}, payload)
+        self.assertEqual((out["message"]["content"], len(seen)), ("narrative", 1))
+        self.assertEqual([m["role"] for m in seen[0]], ["user", "assistant", "tool"])
 
 
 if __name__ == "__main__":

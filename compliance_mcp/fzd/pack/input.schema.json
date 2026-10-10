@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical flood-insurance input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "transaction_type",
+    "transaction_date"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "transaction_type": {
+      "enum": [
+        "make",
+        "increase",
+        "extend",
+        "renew"
+      ]
+    },
+    "transaction_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "credit_purpose": {
+      "enum": [
+        "consumer",
+        "business",
+        "commercial",
+        "agricultural"
+      ]
+    },
+    "lien_position": {
+      "enum": [
+        "first",
+        "subordinate"
+      ]
+    },
+    "senior_lien_flood_insured": {
+      "type": "boolean"
+    },
+    "heloc": {
+      "type": "boolean"
+    },
+    "nonperforming_90_days": {
+      "type": "boolean"
+    },
+    "loan_balance": {
+      "type": "number",
+      "minimum": 0
+    },
+    "term_months": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "collateral": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "enum": [
+            "building",
+            "mobile_home",
+            "none"
+          ]
+        },
+        "residential": {
+          "type": "boolean"
+        }
+      }
+    },
+    "determination": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "standard_form_used": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "retained": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "sfha": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "in_sfha": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "flood_insurance_available": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "zone": {
+          "type": "string"
+        }
+      }
+    },
+    "insurance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "nfip",
+            "private_compliant",
+            "private_discretionary",
+            "mutual_aid",
+            "none"
+          ]
+        },
+        "in_force": {
+          "type": "boolean"
+        },
+        "coverage_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_available_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum coverage available under the 1968 Act for this property type (supplied)"
+        },
+        "effective_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "discretionary_sufficiency_documented": {
+          "type": "boolean"
+        },
+        "mutual_aid_fca_determination": {
+          "type": "boolean"
+        },
+        "condo_master_policy": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "borrower_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "servicer_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "record_retained": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "contents": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "warning": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "purchase_requirement_description": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "nfip_private_availability": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "same_coverage_private_statement": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "compare_policies_statement": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "disaster_relief_statement": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "escrow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "escrowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "small_lender_exception": {
+          "type": "boolean"
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lapse_or_shortfall_detected": {
+          "type": "boolean"
+        },
+        "borrower_notified_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "coverage_restored_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "force_placed_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

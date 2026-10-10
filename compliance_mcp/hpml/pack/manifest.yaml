@@ -1,0 +1,36 @@
+id: hpml
+version: 0.1.1
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: "2026-10-07"
+files:
+  thresholds: thresholds.yaml
+  conforming_limits: conforming_limits.yaml
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+sources:
+  - id: ecfr-12-cfr-1026-35-2026-10-07
+    type: regulatory
+    citation: "12 CFR 1026.35"
+    url: "https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1026&section=1026.35"
+    retrieved_date: "2026-10-08"
+    issue_date: "2026-10-07"
+    local_path: "compliance_mcp/hpml/pack/sources/12-cfr-1026-35.xml"
+    sha256: aff13c044dacce6294921ab4c80d1383a3a7471ebde23d55086ce7856e88b0f2
+  - id: fhfa-2026-cll-release
+    type: reference_data
+    citation: "FHFA announces conforming loan limit values for 2026"
+    url: "https://www.fhfa.gov/news/news-release/fhfa-announces-conforming-loan-limit-values-for-2026"
+    retrieved_date: "2026-10-08"
+    local_path: "compliance_mcp/hpml/pack/sources/fhfa-2026-cll-release.html"
+    sha256: 7114490b083c3f9609f24b37081bc55f8a1398c8dfb623fb8879f00c8a16af7f
+  - id: pack-hpml-thresholds
+    type: institution_policy
+    citation: "HPML pack threshold window and spread schedule"
+    local_path: "compliance_mcp/hpml/pack/thresholds.yaml"
+    sha256: 47f3b4ef1171fd84b2391f7b6dacca3c9e2a8ad1f9c0c369b571b1020897c9b4
+  - id: pack-hpml-conforming-limits
+    type: reference_data
+    citation: "HPML pack conforming-limit baselines"
+    local_path: "compliance_mcp/hpml/pack/conforming_limits.yaml"
+    sha256: 4eafdf563b38912ca8bf4d2356d63f25fcaf9d32ea7a7fe716da764fe635316e

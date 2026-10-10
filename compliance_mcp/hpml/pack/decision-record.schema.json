@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HPML deterministic decision record",
+  "type": "object",
+  "required": [
+    "evaluator",
+    "rule_pack",
+    "evaluation_date",
+    "determination_status",
+    "final_classification",
+    "compliance_result",
+    "rule_results",
+    "facts_used",
+    "missing_facts",
+    "llm_contract",
+    "decision_id"
+  ],
+  "properties": {
+    "final_classification": {
+      "enum": [
+        "HPML",
+        "Not HPML",
+        "Not Covered",
+        "Unable To Determine"
+      ]
+    },
+    "determination_status": {
+      "enum": [
+        "Determined",
+        "Unable To Determine",
+        "Review Required"
+      ]
+    },
+    "compliance_result": {
+      "enum": [
+        "Compliant",
+        "Non-Compliant",
+        "Not Applicable",
+        "Potential Issue",
+        "Unable To Determine"
+      ]
+    },
+    "decision_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "rule_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "outcome",
+          "basis",
+          "message"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "applies",
+              "does_not_apply",
+              "eligible",
+              "not_eligible",
+              "not_satisfied",
+              "review_required",
+              "satisfied",
+              "unable_to_determine"
+            ]
+          },
+          "basis": {
+            "enum": [
+              "regulatory",
+              "institution_policy"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "facts_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "value"
+        ]
+      }
+    },
+    "missing_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "reason"
+        ]
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "rule_pack": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "status"
+      ]
+    },
+    "llm_contract": {
+      "type": "object",
+      "required": [
+        "authoritative_classification",
+        "instruction"
+      ]
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical cross-regime audit input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "results"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "expected_agents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failed_agents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "classification",
+          "compliance_result",
+          "rules"
+        ],
+        "properties": {
+          "classification": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "compliance_result": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decision_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "agent_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "rule_id",
+                "outcome"
+              ]
+            }
+          },
+          "missing_facts": {
+            "type": "array"
+          },
+          "evaluation": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "cases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  }
+}
