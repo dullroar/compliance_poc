@@ -1,0 +1,17 @@
+authority_note: >-
+  Legal public holidays of 5 U.S.C. 6103(a) as named in 12 CFR 1026.2(a)(6), computed by rule.
+  Holidays are taken on their own calendar date; a holiday on a Saturday is NOT moved to the
+  observed Friday. That reading is an engineering interpretation awaiting compliance review.
+  Juneteenth (Jun 19) is included from 2021. Inauguration Day is excluded (regional).
+holidays:
+  - {name: New Year's Day, month_day: [1, 1]}
+  - {name: Birthday of Martin Luther King Jr., month: 1, weekday: mon, nth: 3}
+  - {name: Washington's Birthday, month: 2, weekday: mon, nth: 3}
+  - {name: Memorial Day, month: 5, weekday: mon, nth: -1}
+  - {name: Juneteenth National Independence Day, month_day: [6, 19], first_year: 2021}
+  - {name: Independence Day, month_day: [7, 4]}
+  - {name: Labor Day, month: 9, weekday: mon, nth: 1}
+  - {name: Columbus Day, month: 10, weekday: mon, nth: 2}
+  - {name: Veterans Day, month_day: [11, 11]}
+  - {name: Thanksgiving Day, month: 11, weekday: thu, nth: 4}
+  - {name: Christmas Day, month_day: [12, 25]}

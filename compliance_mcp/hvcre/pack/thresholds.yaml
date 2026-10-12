@@ -1,0 +1,8 @@
+authority_note: Values from the HVCRE exposure definition in 12 CFR 628.2 (eCFR issued 2026-10-07). The
+  Appendix A loan-to-value limits are not pinned; they are supplied per case.
+citation: HVCRE pack thresholds (12 CFR 628.2)
+source_type: institution_policy
+applies_to_loans_made_on_or_after: '2025-01-01'
+minimum_capital_fraction: 0.15
+small_loan_limit: 500000
+dwelling_minimum_percent: 50

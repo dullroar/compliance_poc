@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical HMDA input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "financial_institution",
+    "credit_structure",
+    "secured_by_dwelling",
+    "amount",
+    "action_taken",
+    "action_taken_date"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "financial_institution": {
+      "type": "boolean",
+      "description": "Institution is a financial institution under 12 CFR 1003.2(g) and not exempt (supplied fact)"
+    },
+    "credit_structure": {
+      "enum": [
+        "closed_end",
+        "open_end"
+      ]
+    },
+    "secured_by_dwelling": {
+      "type": "boolean"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Amount of the covered loan or applied for (1003.4(a)(7))"
+    },
+    "loan_purpose": {
+      "enum": [
+        "home_purchase",
+        "home_improvement",
+        "refinance",
+        "cash_out_refinance",
+        "other"
+      ]
+    },
+    "agricultural_purpose": {
+      "enum": [
+        "primarily",
+        "not_primarily",
+        "undetermined"
+      ]
+    },
+    "business_commercial_purpose": {
+      "enum": [
+        "primarily",
+        "not_primarily",
+        "undetermined"
+      ]
+    },
+    "exclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fiduciary_capacity": {
+          "type": "boolean"
+        },
+        "unimproved_land": {
+          "type": "boolean"
+        },
+        "temporary_financing": {
+          "type": "boolean"
+        },
+        "pool_interest_purchase": {
+          "type": "boolean"
+        },
+        "servicing_rights_purchase": {
+          "type": "boolean"
+        },
+        "merger_acquisition_purchase": {
+          "type": "boolean"
+        },
+        "partial_interest_purchase": {
+          "type": "boolean"
+        },
+        "ny_supplemental_consolidation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "prior_year_originations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "closed_end": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "open_end": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "action_taken": {
+      "enum": [
+        "originated",
+        "purchased",
+        "approved_not_accepted",
+        "denied",
+        "withdrawn",
+        "closed_incomplete",
+        "preapproval_denied",
+        "preapproval_approved_not_accepted"
+      ]
+    },
+    "action_taken_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "application_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "denial_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "subject_to_reg_z": {
+      "type": "boolean"
+    },
+    "assumption": {
+      "type": "boolean"
+    },
+    "reverse_mortgage": {
+      "type": "boolean"
+    },
+    "apr": {
+      "type": "number"
+    },
+    "apor": {
+      "type": "number"
+    },
+    "apor_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table_date",
+        "product",
+        "source"
+      ],
+      "properties": {
+        "table_date": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "retrieved_at": {
+          "type": "string"
+        },
+        "response_sha256": {
+          "type": "string"
+        },
+        "table_date_basis": {
+          "type": "string"
+        }
+      }
+    },
+    "reported_rate_spread": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "lar": {
+      "type": "object",
+      "description": "The reportable values for the 38 items of 12 CFR 1003.4(a); see lar_items.yaml",
+      "additionalProperties": false,
+      "properties": {
+        "uli": {},
+        "nuli": {},
+        "loan_type_government_program": {},
+        "loan_purpose": {},
+        "preapproval": {},
+        "construction_method": {},
+        "occupancy_type": {},
+        "loan_amount": {},
+        "property_address": {},
+        "property_state": {},
+        "property_county": {},
+        "property_census_tract": {},
+        "applicant": {},
+        "co_applicant": {},
+        "age": {},
+        "income": {},
+        "purchaser_type": {},
+        "hoepa_status": {},
+        "lien_status": {},
+        "credit_scores": {},
+        "denial_reasons": {},
+        "total_loan_costs": {},
+        "total_points_and_fees": {},
+        "total_borrower_paid_charges": {},
+        "discount_points": {},
+        "lender_credits": {},
+        "interest_rate": {},
+        "prepayment_penalty_term_months": {},
+        "debt_to_income_ratio": {},
+        "combined_loan_to_value_ratio": {},
+        "loan_term_months": {},
+        "introductory_rate_period_months": {},
+        "non_amortizing_features": {},
+        "property_value": {},
+        "manufactured_home_secured_property_type": {},
+        "manufactured_home_land_property_interest": {},
+        "total_units": {},
+        "multifamily_affordable_units": {},
+        "application_channel": {},
+        "nmls_identifier": {},
+        "automated_underwriting": {},
+        "reverse_mortgage": {},
+        "open_end_line_of_credit": {},
+        "business_or_commercial_purpose": {}
+      }
+    },
+    "lar_context": {
+      "type": "object",
+      "description": "Facts that decide which LAR items apply",
+      "additionalProperties": false,
+      "properties": {
+        "partial_exemption": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cra_poor_rating": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sold_same_year": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "subject_to_hoepa": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "subject_to_1026_19f": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "subject_to_1026_43c": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "income_considered": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "credit_score_relied_on": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "dti_relied_on": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cltv_relied_on": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "value_relied_on": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rate_may_change": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "aus_used": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_manufactured_home": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_multifamily": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "property_in_msa_with_office": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "county_population_over_30000": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "co_applicant_present": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "institution_type": {
+          "enum": [
+            "insured_depository",
+            "insured_credit_union",
+            "other"
+          ]
+        },
+        "application_mode": {
+          "enum": [
+            "in_person",
+            "mail",
+            "internet",
+            "telephone"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

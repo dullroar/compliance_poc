@@ -1,0 +1,63 @@
+id: ecoa
+version: 0.1.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+sources:
+- id: ecfr-12-cfr-1002-2-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.2
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.2
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/ecoa/pack/sources/12-cfr-1002-2.xml
+  sha256: 199ede030254d4e57aadd78d83bad96c93eb5a6cf93025efd7a2806d3165fbbe
+  excerpt:
+    start: Adverse action. (1)
+    end: (d) Age refers
+- id: ecfr-12-cfr-1002-5-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.5
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.5
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/ecoa/pack/sources/12-cfr-1002-5.xml
+  sha256: c80af78bb8cd0e4454cafc76a3e97d9808ed18006569a3bad34c4c001a7d6f9e
+  excerpt:
+    start: (d) Other limitations
+    end: (e) Permanent residency
+- id: ecfr-12-cfr-1002-6-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.6
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.6
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/ecoa/pack/sources/12-cfr-1002-6.xml
+  sha256: 039f0c2ff162389e3f329d58eb1de897859807e92ea03293102b1bf59d8da321
+- id: ecfr-12-cfr-1002-7-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.7
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.7
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/ecoa/pack/sources/12-cfr-1002-7.xml
+  sha256: dbadfd7a6a7202bb670be08a4ea04ace0acc649058eeb8743337ed2b9e200119
+  excerpt:
+    start: (d) Signature of spouse
+- id: ecfr-12-cfr-1002-9-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1002.9
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1002&section=1002.9
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/ecoa/pack/sources/12-cfr-1002-9.xml
+  sha256: 34cbda7be6c3f3479a6b020be68b823f7a340fb47cc30be800ce78e96d40a5c0
+- id: pack-ecoa-thresholds
+  type: institution_policy
+  citation: ECOA pack thresholds (12 CFR 1002.9)
+  local_path: compliance_mcp/ecoa/pack/thresholds.yaml
+  sha256: 39e7f747b2726f64d39f471a1c879137e491b62fd28785ec82f7f361160b4cc0

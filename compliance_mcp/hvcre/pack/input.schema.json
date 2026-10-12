@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical HVCRE input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "loan_date"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "loan_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "credit_facility_amount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "primarily_finances_adc": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "purpose_income_producing": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "dependent_on_future_income_or_sales": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "reclassified_to_non_hvcre": {
+      "type": "boolean"
+    },
+    "property": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "one_to_four_family_residential": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "dwelling_percent_of_collateral_value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "finances_only_land_improvements": {
+          "type": "boolean"
+        },
+        "agricultural_land_bona_fide_farmer": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "farm_property_construction_or_land_development": {
+          "type": "boolean"
+        },
+        "existing_income_producing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "improvement_to_existing_income_producing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cash_flow_sufficient_for_permanent": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "capital": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "as_completed_value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "as_is_value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ltv_ratio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ltv_limit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ltv_limit_source": {
+          "type": "string"
+        },
+        "contributions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cash": {
+              "type": "number",
+              "minimum": 0
+            },
+            "marketable_assets": {
+              "type": "number",
+              "minimum": 0
+            },
+            "paid_development_expenses": {
+              "type": "number",
+              "minimum": 0
+            },
+            "contributed_real_property_appraised": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "contributed_before_advances": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "contractually_retained_until_reclassified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

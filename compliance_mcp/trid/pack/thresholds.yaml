@@ -1,0 +1,18 @@
+authority_note: >-
+  Timing days and tolerance percentages are regulatory (12 CFR 1026.19(e)(1)(iii)-(iv),
+  (e)(3), (f)(1)(ii)-(iii), (f)(2)(v)). TRID integrated disclosures apply to applications
+  received on or after 2015-10-03, which is the start of this pack's window. The default
+  creditor open days are institution policy and are used only when the case does not supply
+  creditor_open_days.
+records:
+  - id: trid-reg-z-1026-19
+    effective_start: "2015-10-03"
+    effective_end: null
+    le_business_days_after_application: 3
+    le_business_days_before_consummation: 7
+    cd_business_days_before_consummation: 3
+    not_in_person_receipt_business_days: 3
+    refund_calendar_days_after_consummation: 60
+    ten_percent_tolerance: 0.10
+    default_creditor_open_days: [mon, tue, wed, thu, fri]
+    authority_reference: "12 CFR 1026.19(e), (f); 12 CFR 1026.2(a)(6); eCFR snapshot issued 2026-10-07"

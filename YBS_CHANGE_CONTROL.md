@@ -1,11 +1,14 @@
-# YBS Change Control
+# Change Control (YBS, HPML, TRID and every other evaluator domain)
 
-The YBS pack is a decision-support pilot and is intentionally review-gated.
+Every deterministic evaluator pack is a decision-support pilot and is intentionally review-gated.
+Builder output (`python -m builders.build run`) is a proposal: it lands as `draft_engineering_review`
+and goes through the same review as hand-written changes. The builders' `needs_human_review` list
+is part of the PR description.
 
 Changes to any of the following require an engineering code-owner review before
 merge:
 
-- regulatory source extracts and their manifest provenance;
+- regulatory source snapshots and their manifest provenance (`compliance_mcp/<domain>/pack/sources/`, `builders/sources.yaml`, `builders/sources.lock.yaml`);
 - institution policy, thresholds, evaluator rules, or tool contracts;
 - scenario/regression fixture inputs or expected outcomes.
 

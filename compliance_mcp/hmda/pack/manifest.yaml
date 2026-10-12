@@ -1,0 +1,67 @@
+id: hmda
+version: 0.2.0
+status: draft_engineering_review
+git_revision: uncommitted
+effective_date: '2026-10-09'
+files:
+  input_schema: input.schema.json
+  decision_record_schema: decision-record.schema.json
+  thresholds: thresholds.yaml
+  lar_items: lar_items.yaml
+  appendix_b: appendix_b.yaml
+sources:
+- id: ecfr-12-cfr-1003-2-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1003.2
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1003&section=1003.2
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hmda/pack/sources/12-cfr-1003-2.xml
+  sha256: 5a7075ee315c342fb397e5fd849515b8c2a2ec0def83d2d8fb44827b1dd18860
+- id: ecfr-12-cfr-1003-3-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1003.3
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1003&section=1003.3
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hmda/pack/sources/12-cfr-1003-3.xml
+  sha256: 4f94854550943cc61d3986c9632f9e9da745d3923d452f8da8af10a7ba6c4e75
+- id: ecfr-12-cfr-1003-4-2026-10-07
+  type: regulatory
+  citation: 12 CFR 1003.4
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1003&section=1003.4
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hmda/pack/sources/12-cfr-1003-4.xml
+  sha256: 17af917158adb9327720cca949f8c040acfad73cf515977e23d6ab341a332f4d
+- id: ecfr-12-cfr-1003-appendix-b-2026-10-07
+  type: regulatory
+  citation: 12 CFR part 1003 Appendix B
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1003&appendix=Appendix%20B%20to%20Part%201003
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hmda/pack/sources/12-cfr-1003-appendix-b.xml
+  sha256: 12e867fc4317a3c871a3c5ed73b919551c326a5163eaf064009f2d6d3a619d4e
+- id: ecfr-12-cfr-1003-appendix-c-2026-10-07
+  type: regulatory
+  citation: 12 CFR part 1003 Appendix C
+  url: https://www.ecfr.gov/api/versioner/v1/full/2026-10-07/title-12.xml?part=1003&appendix=Appendix%20C%20to%20Part%201003
+  retrieved_date: '2026-10-09'
+  issue_date: '2026-10-07'
+  local_path: compliance_mcp/hmda/pack/sources/12-cfr-1003-appendix-c.xml
+  sha256: 36b38d46071785c7e5f2e1de3ca5d669cd72c1179805c61f361bad942daaca22
+- id: pack-hmda-thresholds
+  type: institution_policy
+  citation: HMDA pack thresholds (12 CFR 1003.3(c), 1003.4(a))
+  local_path: compliance_mcp/hmda/pack/thresholds.yaml
+  sha256: ca0f0069735a3c49622d16ed2555b17cc4b5534541000a6eaaf4328a68bbb1fa
+- id: pack-hmda-lar-items
+  type: institution_policy
+  citation: HMDA pack LAR item table (12 CFR 1003.4(a))
+  local_path: compliance_mcp/hmda/pack/lar_items.yaml
+  sha256: 71cb491d255086afc7eb50776e4b15734c78169f2c526bfba5a0830d9858cf22
+- id: pack-hmda-appendix-b
+  type: institution_policy
+  citation: HMDA pack Appendix B categories (12 CFR part 1003)
+  local_path: compliance_mcp/hmda/pack/appendix_b.yaml
+  sha256: d61f37cc16a68fa0d7e84336130df8b2d28379a883b611c6de5d4e2ce2939b11

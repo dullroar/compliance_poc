@@ -1,0 +1,14 @@
+authority_note: 'The audit layer is institution policy: it applies explicit consistency checks across
+  the regimes'' inputs and results. It cites no regulation of its own and never re-decides an individual
+  regime.'
+citation: 'Auditor pack: expected agents'
+source_type: institution_policy
+expected_agents:
+- hmda
+- ecoa
+- hvcre
+- hpml
+- trid
+- fzd
+- ybs
+- vmi

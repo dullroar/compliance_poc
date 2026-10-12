@@ -1,0 +1,24 @@
+# A2A agent registry.
+#   url       A2A base URL of the agent. 127.0.0.1/localhost URLs are started by
+#             `python -m orchestrator.cli serve`; any other host is treated as remote.
+#   provider  anthropic | ollama   (optional; default COMPLIANCE_PROVIDER, else anthropic)
+#   model     model name           (optional; default COMPLIANCE_MODEL, else the provider default)
+# Local and remote models are interchangeable per agent; the protocol does not change.
+#   tool_mode  model | seeded (default model). model: the model calls its MCP tool (forced on the first turn for Anthropic);
+#              a model that still does not call it is covered by the harness. seeded: the harness makes the call and
+#              puts it in the conversation as the agent's own first step (native tool-call format); right for small
+#              local models, and one model call cheaper.
+#   include_regulations  true (default): the pinned regulation text from the rule pack is added to the system prompt.
+# concurrency: agent calls in flight at once. 1 is right for a single local model; raise it for remote models.
+concurrency: 1
+agents:
+  hmda:      {url: "http://127.0.0.1:9101/"}
+  ecoa:      {url: "http://127.0.0.1:9102/"}
+  hvcre:     {url: "http://127.0.0.1:9103/"}
+  hpml:      {url: "http://127.0.0.1:9104/"}
+  trid:      {url: "http://127.0.0.1:9110/"}
+  fzd:       {url: "http://127.0.0.1:9105/"}
+  ybs:       {url: "http://127.0.0.1:9106/"}
+  vmi:       {url: "http://127.0.0.1:9107/"}
+  auditor:   {url: "http://127.0.0.1:9108/"}
+  narrative: {url: "http://127.0.0.1:9109/"}

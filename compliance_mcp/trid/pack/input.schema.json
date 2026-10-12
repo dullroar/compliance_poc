@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical TRID input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "closed_end",
+    "secured_by_real_property_or_cooperative_unit",
+    "application_received_date",
+    "consummation_date"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "closed_end": {
+      "type": "boolean"
+    },
+    "secured_by_real_property_or_cooperative_unit": {
+      "type": "boolean"
+    },
+    "reverse_mortgage": {
+      "type": "boolean"
+    },
+    "timeshare": {
+      "type": "boolean"
+    },
+    "application_received_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "consummation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "review_date": {
+      "type": "string",
+      "format": "date",
+      "description": "As-of date for judging whether a refund cure period has run"
+    },
+    "creditor_open_days": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "creditor_closed_dates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    "loan_estimate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delivery_date",
+        "delivery_method"
+      ],
+      "properties": {
+        "delivery_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "delivery_method": {
+          "enum": [
+            "in_person",
+            "mail",
+            "electronic",
+            "other_not_in_person"
+          ]
+        },
+        "waiver_documented": {
+          "type": "boolean",
+          "description": "Dated, signed bona fide emergency waiver under 1026.19(e)(1)(v)/(f)(1)(iv)"
+        }
+      }
+    },
+    "closing_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delivery_date",
+        "delivery_method"
+      ],
+      "properties": {
+        "delivery_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "delivery_method": {
+          "enum": [
+            "in_person",
+            "mail",
+            "electronic",
+            "other_not_in_person"
+          ]
+        },
+        "waiver_documented": {
+          "type": "boolean",
+          "description": "Dated, signed bona fide emergency waiver under 1026.19(e)(1)(v)/(f)(1)(iv)"
+        }
+      }
+    },
+    "cd_changes_requiring_new_waiting_period": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "apr_inaccurate",
+          "loan_product_changed",
+          "prepayment_penalty_added"
+        ]
+      }
+    },
+    "revised_closing_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delivery_date",
+        "delivery_method"
+      ],
+      "properties": {
+        "delivery_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "delivery_method": {
+          "enum": [
+            "in_person",
+            "mail",
+            "electronic",
+            "other_not_in_person"
+          ]
+        },
+        "waiver_documented": {
+          "type": "boolean",
+          "description": "Dated, signed bona fide emergency waiver under 1026.19(e)(1)(v)/(f)(1)(iv)"
+        }
+      }
+    },
+    "charges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "category",
+          "disclosed_amount",
+          "actual_amount"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "zero_tolerance",
+              "ten_percent_tolerance",
+              "no_tolerance_bona_fide"
+            ]
+          },
+          "disclosed_amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "actual_amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "revised_amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "revision_reason": {
+            "enum": [
+              "changed_circumstance_settlement",
+              "changed_circumstance_eligibility",
+              "consumer_requested",
+              "interest_rate_dependent",
+              "expiration",
+              "construction_delayed_settlement"
+            ]
+          },
+          "revision_documented": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "tolerance_refund": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "date"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

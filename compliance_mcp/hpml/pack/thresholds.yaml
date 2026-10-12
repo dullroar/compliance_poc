@@ -1,0 +1,13 @@
+authority_note: >-
+  The spread thresholds are regulatory (12 CFR 1026.35(a)(1)). The effective window is a
+  pack coverage choice: this pack has only been tested from 2014-01-10 forward and returns
+  Unable To Determine for earlier rate-set dates. It makes no claim about earlier legal history.
+records:
+  - id: hpml-reg-z-1026-35
+    effective_start: "2014-01-10"
+    effective_end: null
+    first_lien_conforming_spread: 1.5
+    first_lien_jumbo_spread: 2.5
+    subordinate_lien_spread: 3.5
+    operator: gte
+    authority_reference: "12 CFR 1026.35(a)(1)(i)-(iii), eCFR snapshot issued 2026-10-07"

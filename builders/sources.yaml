@@ -1,0 +1,122 @@
+# Canonical source registry for the builder agents.
+#
+# For each compliance domain: where the rule text and reference data live (Federal sources),
+# and where the builders go for specs (how to build the MCP server, how to explain it as an
+# agent). Builders fetch these at BUILD time only; nothing fetches at loan-evaluation time.
+# Re-running `python -m builders.build run` after a rule change notices which source text
+# changed (normalized-text hash vs builders/sources.lock.yaml) and rebuilds ONLY the affected
+# domain, bumping only that domain's component versions.
+#
+# source.kind:
+#   ecfr_section  {title, part, section}   eCFR versioner API, text as of "up to date" date
+#   url           {url, select_regex?}     any page; select_regex narrows to the stable fragment
+#   manual        {url}                    not fetchable by a script (bot-blocked / no stable API);
+#                                          the builder reports it and a human refreshes the snapshot
+# source.snapshot: where the build stores the fetched text (inside the domain's pack).
+# Only URLs that were verified reachable when this file was written are listed.
+
+common:
+  mcp_spec: {url: "https://modelcontextprotocol.io/specification/latest", note: "How MCP servers/tools are specified"}
+  a2a_spec: {url: "https://a2a-protocol.org/latest/specification/", note: "How agents are exposed and discovered"}
+
+domains:
+  ybs:
+    agent_key: ybs
+    agent_name: "YBS Eligibility Compliance Agent"
+    agent_track: "FCA Young, Beginning, and Small Farmer (YBS) Eligibility"
+    authority: Farm Credit Administration (12 CFR 614)
+    sources:
+      - {id: ecfr-12-cfr-614-4165, type: regulatory, citation: "12 CFR 614.4165", kind: ecfr_section, title: 12, part: 614, section: "614.4165", snapshot: compliance_mcp/ybs/pack/sources/12-cfr-614-4165.xml}
+    spec_sites:
+      mcp: []
+      agent: []
+    notes: >-
+      The numeric thresholds and entity-attribution method are institution policy in the pack
+      (thresholds.yaml, entity_policy.yaml), not derived from the regulation text. Builders must
+      never overwrite policy files from regulatory sources.
+
+  hpml:
+    agent_key: hpml
+    agent_name: "HPML Compliance Agent"
+    agent_track: "Higher-Priced Mortgage Loan (HPML)"
+    authority: Consumer Financial Protection Bureau (Regulation Z)
+    sources:
+      - {id: ecfr-12-cfr-1026-35, type: regulatory, citation: "12 CFR 1026.35", kind: ecfr_section, title: 12, part: 1026, section: "1026.35", snapshot: compliance_mcp/hpml/pack/sources/12-cfr-1026-35.xml}
+      - {id: fhfa-conforming-limit-2026, type: reference_data, citation: "FHFA 2026 conforming loan limit (one-unit baseline)", kind: url, url: "https://www.fhfa.gov/news/news-release/fhfa-announces-conforming-loan-limit-values-for-2026", select_regex: "2026 CLL value for one-unit properties will be \\$[0-9,]+", snapshot: compliance_mcp/hpml/pack/sources/fhfa-2026-cll-release.html}
+      - {id: ffiec-apor-legacy-csv, type: reference_data, citation: "FFIEC APOR tables (legacy CSVs, 2000-01-03 to 2017-12-25)", kind: manual, url: "https://www.ffiec.gov/ratespread/aportables.htm", note: "Bot-checked from scripts; person-downloaded to compliance_mcp/hpml/sources/apor/. Frozen at 2017-12-25. See compliance_mcp/hpml/pack/APOR.md"}
+      - {id: cfpb-ffiec-rate-spread-api, type: reference_data, citation: "CFPB/FFIEC HMDA Platform Rate Spread API (current APOR, 2017-01-02 onward; APOR = apr - rateSpread)", kind: manual, url: "https://ffiec.cfpb.gov/documentation/api/rate-spread/", note: "Scriptable, no key, but not yet integrated; needs a decision (compliance_mcp/hpml/pack/APOR.md)"}
+    spec_sites: {mcp: [], agent: []}
+
+  trid:
+    agent_key: trid
+    agent_name: "TRID Compliance Agent"
+    agent_track: "TILA-RESPA Integrated Disclosure (TRID)"
+    authority: Consumer Financial Protection Bureau (Regulation Z)
+    sources:
+      - {id: ecfr-12-cfr-1026-19, type: regulatory, citation: "12 CFR 1026.19", kind: ecfr_section, title: 12, part: 1026, section: "1026.19", snapshot: compliance_mcp/trid/pack/sources/12-cfr-1026-19.xml}
+      - {id: ecfr-12-cfr-1026-2, type: regulatory, citation: "12 CFR 1026.2", kind: ecfr_section, title: 12, part: 1026, section: "1026.2", snapshot: compliance_mcp/trid/pack/sources/12-cfr-1026-2.xml}
+    spec_sites:
+      mcp: [{url: "https://www.consumerfinance.gov/compliance/compliance-resources/mortgage-resources/tila-respa-integrated-disclosures/", note: "CFPB TRID compliance resources"}]
+      agent: [{url: "https://www.consumerfinance.gov/compliance/compliance-resources/mortgage-resources/tila-respa-integrated-disclosures/", note: "CFPB TRID compliance resources"}]
+
+  hmda:
+    agent_key: hmda
+    agent_name: "HMDA Compliance Agent"
+    agent_track: "Home Mortgage Disclosure Act (HMDA)"
+    authority: Consumer Financial Protection Bureau (Regulation C)
+    sources:
+      - {id: ecfr-12-cfr-1003-2, type: regulatory, citation: "12 CFR 1003.2", kind: ecfr_section, title: 12, part: 1003, section: "1003.2", snapshot: compliance_mcp/hmda/pack/sources/12-cfr-1003-2.xml}
+      - {id: ecfr-12-cfr-1003-3, type: regulatory, citation: "12 CFR 1003.3", kind: ecfr_section, title: 12, part: 1003, section: "1003.3", snapshot: compliance_mcp/hmda/pack/sources/12-cfr-1003-3.xml}
+      - {id: ecfr-12-cfr-1003-4, type: regulatory, citation: "12 CFR 1003.4", kind: ecfr_section, title: 12, part: 1003, section: "1003.4", snapshot: compliance_mcp/hmda/pack/sources/12-cfr-1003-4.xml}
+      - {id: ecfr-12-cfr-1003-appendix-b, type: regulatory, citation: "12 CFR part 1003 Appendix B (ethnicity, race and sex collection)", kind: ecfr_appendix, title: 12, part: 1003, appendix: "Appendix B to Part 1003", snapshot: compliance_mcp/hmda/pack/sources/12-cfr-1003-appendix-b.xml}
+      - {id: ecfr-12-cfr-1003-appendix-c, type: regulatory, citation: "12 CFR part 1003 Appendix C (ULI check digit)", kind: ecfr_appendix, title: 12, part: 1003, appendix: "Appendix C to Part 1003", snapshot: compliance_mcp/hmda/pack/sources/12-cfr-1003-appendix-c.xml}
+      - {id: ffiec-hmda-filing-instructions-guide, type: reference_data, citation: "FFIEC HMDA Filing Instructions Guide (code lists and file format)", kind: manual, url: "https://ffiec.cfpb.gov/documentation/", note: "Not scriptable (the PDF link returns 403/404). This pack encodes value domains from the regulation and Appendices B and C only; FIG code lists are NOT pinned."}
+    spec_sites:
+      mcp: [{url: "https://ffiec.cfpb.gov/documentation/", note: "HMDA Platform documentation (filing specs)"}]
+      agent: [{url: "https://www.consumerfinance.gov/data-research/hmda/", note: "CFPB HMDA overview"}]
+
+  ecoa:
+    agent_key: ecoa
+    agent_name: "ECOA Compliance Agent"
+    agent_track: "Equal Credit Opportunity Act (ECOA)"
+    authority: Consumer Financial Protection Bureau (Regulation B)
+    sources:
+      - {id: ecfr-12-cfr-1002-2, type: regulatory, citation: "12 CFR 1002.2", kind: ecfr_section, title: 12, part: 1002, section: "1002.2", snapshot: compliance_mcp/ecoa/pack/sources/12-cfr-1002-2.xml}
+      - {id: ecfr-12-cfr-1002-5, type: regulatory, citation: "12 CFR 1002.5", kind: ecfr_section, title: 12, part: 1002, section: "1002.5", snapshot: compliance_mcp/ecoa/pack/sources/12-cfr-1002-5.xml}
+      - {id: ecfr-12-cfr-1002-6, type: regulatory, citation: "12 CFR 1002.6", kind: ecfr_section, title: 12, part: 1002, section: "1002.6", snapshot: compliance_mcp/ecoa/pack/sources/12-cfr-1002-6.xml}
+      - {id: ecfr-12-cfr-1002-7, type: regulatory, citation: "12 CFR 1002.7", kind: ecfr_section, title: 12, part: 1002, section: "1002.7", snapshot: compliance_mcp/ecoa/pack/sources/12-cfr-1002-7.xml}
+      - {id: ecfr-12-cfr-1002-9, type: regulatory, citation: "12 CFR 1002.9", kind: ecfr_section, title: 12, part: 1002, section: "1002.9", snapshot: compliance_mcp/ecoa/pack/sources/12-cfr-1002-9.xml}
+    spec_sites: {mcp: [], agent: []}
+
+  vmi:
+    agent_key: vmi
+    agent_name: "VMI Compliance Agent"
+    agent_track: "Voluntary Monitoring Information (VMI)"
+    authority: Consumer Financial Protection Bureau (Regulation B, monitoring information)
+    sources:
+      - {id: ecfr-12-cfr-1002-13, type: regulatory, citation: "12 CFR 1002.13", kind: ecfr_section, title: 12, part: 1002, section: "1002.13", snapshot: compliance_mcp/vmi/pack/sources/12-cfr-1002-13.xml}
+      - {id: ecfr-12-cfr-1002-5, type: regulatory, citation: "12 CFR 1002.5", kind: ecfr_section, title: 12, part: 1002, section: "1002.5", snapshot: compliance_mcp/vmi/pack/sources/12-cfr-1002-5.xml}
+    spec_sites: {mcp: [], agent: []}
+
+  hvcre:
+    agent_key: hvcre
+    agent_name: "HVCRE Compliance Agent"
+    agent_track: "High Volatility Commercial Real Estate (HVCRE)"
+    authority: Farm Credit Administration (12 CFR 628, capital)
+    sources:
+      - {id: ecfr-12-cfr-628-2, type: regulatory, citation: "12 CFR 628.2", kind: ecfr_section, title: 12, part: 628, section: "628.2", snapshot: compliance_mcp/hvcre/pack/sources/12-cfr-628-2.xml}
+    spec_sites: {mcp: [], agent: []}
+
+  fzd:
+    agent_key: fzd
+    agent_name: "FZD Compliance Agent"
+    agent_track: "Flood Zone Determination (FZD)"
+    authority: Farm Credit Administration (12 CFR 614 subpart S, flood insurance)
+    sources:
+      - {id: ecfr-12-cfr-614-4925, type: regulatory, citation: "12 CFR 614.4925", kind: ecfr_section, title: 12, part: 614, section: "614.4925", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4925.xml}
+      - {id: ecfr-12-cfr-614-4930, type: regulatory, citation: "12 CFR 614.4930", kind: ecfr_section, title: 12, part: 614, section: "614.4930", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4930.xml}
+      - {id: ecfr-12-cfr-614-4935, type: regulatory, citation: "12 CFR 614.4935", kind: ecfr_section, title: 12, part: 614, section: "614.4935", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4935.xml}
+      - {id: ecfr-12-cfr-614-4940, type: regulatory, citation: "12 CFR 614.4940", kind: ecfr_section, title: 12, part: 614, section: "614.4940", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4940.xml}
+      - {id: ecfr-12-cfr-614-4945, type: regulatory, citation: "12 CFR 614.4945", kind: ecfr_section, title: 12, part: 614, section: "614.4945", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4945.xml}
+      - {id: ecfr-12-cfr-614-4955, type: regulatory, citation: "12 CFR 614.4955", kind: ecfr_section, title: 12, part: 614, section: "614.4955", snapshot: compliance_mcp/fzd/pack/sources/12-cfr-614-4955.xml}
+    spec_sites: {mcp: [], agent: []}

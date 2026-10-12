@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "YBS deterministic decision record",
+  "type": "object",
+  "required": [
+    "evaluator",
+    "rule_pack",
+    "evaluation_date",
+    "determination_status",
+    "final_classification",
+    "compliance_result",
+    "rule_results",
+    "facts_used",
+    "missing_facts",
+    "subject_results",
+    "threshold_record",
+    "llm_contract",
+    "decision_id"
+  ],
+  "properties": {
+    "final_classification": {
+      "enum": [
+        "Young",
+        "Beginning",
+        "Small",
+        "Young + Beginning",
+        "Young + Small",
+        "Beginning + Small",
+        "Young + Beginning + Small",
+        "Not Eligible",
+        "Unable To Determine",
+        "Review Required"
+      ]
+    },
+    "decision_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "rule_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "outcome",
+          "basis",
+          "message"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "eligible",
+              "not_eligible",
+              "unable_to_determine",
+              "review_required"
+            ]
+          },
+          "basis": {
+            "enum": [
+              "regulatory",
+              "institution_policy"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "facts_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "subject_id",
+          "field",
+          "value"
+        ]
+      }
+    },
+    "missing_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "subject_id",
+          "field",
+          "reason"
+        ]
+      }
+    },
+    "subject_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "subject_id",
+          "subject_type",
+          "categories",
+          "classification",
+          "rule_results"
+        ]
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "network_accessed"
+      ]
+    },
+    "rule_pack": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "status",
+        "file_sha256",
+        "source_sha256"
+      ]
+    },
+    "evaluation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "determination_status": {
+      "enum": [
+        "Determined",
+        "Unable To Determine",
+        "Review Required"
+      ]
+    },
+    "threshold_record": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "llm_contract": {
+      "type": "object",
+      "required": [
+        "authoritative_classification",
+        "instruction"
+      ]
+    },
+    "compliance_result": {
+      "enum": [
+        "Compliant",
+        "Non-Compliant",
+        "Potential Issue",
+        "Not Applicable",
+        "Unable To Determine"
+      ]
+    }
+  }
+}
