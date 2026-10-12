@@ -12,6 +12,7 @@ The repository separates regulatory expertise from orchestration. The long-form 
 - Batch review runs domain agents concurrently over A2A, each independent of the others. This favors reproducible, attributable per-regime determinations over implicit cross-agent influence.
 - The auditor is a distinct cross-regime stage; narrative generation is opt-in. A domain determination should not be silently rewritten into prose.
 - Provider handling is intentionally small: Anthropic and Ollama expose the same internal message path, while Ollama uses its native HTTP API to avoid a second provider dependency. The local Ollama default is `gemma4:26b`; `COMPLIANCE_MODEL` and the CLI `--model` option remain explicit overrides for reproducible alternative-model runs.
+- Model selection is a narrative-quality, latency, and resource-fit decision, not a delegation of compliance judgment. Evaluators own domain outcomes; the auditor's deterministic evaluator owns cross-regime findings. Model-specific differences belong in the prose and report, so models may be assigned by role (domain agent versus synthesis) and compared against the same deterministic records.
 - Results retain both raw model text and parsed JSON. Parse failures remain observable evidence instead of being discarded or silently repaired.
 
 ## Constraints
@@ -20,6 +21,7 @@ This is a decision-support prototype, not an automated compliance authority or f
 
 
 - Code decides, agents narrate. Each domain has a deterministic evaluator exposed as an MCP tool (`compliance_mcp/<domain>/`). The agent calls the tool, the harness pins the tool arguments to the loan payload, and `compliance_common/assemble.py` builds the result from the tool's decision record plus the model's prose; decision-owned fields the model emits are stripped and logged.
+- Narrative checks and schema-constrained JSON reduce common model failures, but do not certify a generated report. Review both the structured guard/fallback metadata and exported Markdown: a local model may return internal-looking or instruction-like text that is not suitable for an examiner-facing report.
 - Versions live inside the artifacts (prompt header line, `EVALUATOR_VERSION`, pack manifest), never in file or directory names; git carries history. Each component is versioned independently.
 - A2A is the orchestration protocol. Each agent is a server with an Agent Card; local (Ollama) and remote (Anthropic) backends are a per-agent configuration in `agents.yaml`, not a protocol difference.
 - Builders are agents with a deterministic harness: the registry of canonical sources and a lock file decide what is rebuilt; the harness owns snapshots, manifest provenance, path guards, version bumps, test runs and rollback. Builder output is always a reviewable proposal.

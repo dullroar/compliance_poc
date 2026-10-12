@@ -265,17 +265,62 @@ anything invented, is the compliance result contradicted), speed (seconds, token
 utilization, CPU cores Ollama uses, its RAM, and what is left free for everything else). Raw results go to `benchmarks/*.jsonl`
 (gitignored); the evidence and the decision are in [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md).
 
-Current choice on an 8 GB laptop GPU: `granite4.1:3b` for the eight domain agents (fully GPU-resident, ~10 s each, `tool_mode: seeded`),
-`qwen3.5:4b` for the two synthesis jobs (auditor narrative and final report); the whole sample pipeline runs in about 3 minutes.
-Settings that mattered: `OLLAMA_NUM_THREAD=4` (cuts Ollama from ~10 busy cores to ~2 at no cost in speed, so the machine stays usable),
-an explicit `OLLAMA_NUM_CTX`, `OLLAMA_TEMPERATURE`/`OLLAMA_SEED` (faithful, near-reproducible narratives), and the output schema: on Ollama
-the final answer of a seeded agent is constrained to `compliance_common/narrative_schema.py`, so a small model cannot reply in prose or with
-the wrong keys. The model writes prose only (reasoning, examiner narrative, follow-ups) and sees only its own domain case plus the decision record. Evidence,
-data-quality and change blocks and the scope notes are produced by code. Every narrative is verified (`compliance_common/narrative.py:
-check_narrative`): any number, date or identifier absent from the decision record, the case or the regulation text, a claim that contradicts the
-code-decided result, or an empty reply sends it back once with the specific violations named; if the retry also fails, code writes the narrative from
-the decision record (`narrative_source: deterministic_fallback`). Anything other than a first-try pass is listed in `narrative_warnings`, and the
-decision record always governs.
+#### Non-Gemma comparison on the sample loan (2026-10-12)
+
+The four installed small local models were compared with `tool_mode: seeded`, all eight domain agents, a 32,768-token context, temperature 0.2,
+four CPU threads, and seeds 42 and 7 (one run per model/agent/seed). The accuracy score is a heuristic measure of narrative faithfulness, not
+the compliance decision. Means below cover 16 agent runs per model; seconds per agent are the mean across those runs.
+
+| Model | Mean narrative score (population SD) | Mean seconds / agent | Peak GPU memory | Guarded fallbacks (16 runs) |
+|---|---:|---:|---:|---:|
+| `granite4.1:3b` | 95.3 (8.0) | 6.2 s | 3.63 GB | 1 |
+| `qwen3.5:4b` | 96.2 (8.0) | 9.5 s | 4.25 GB | 1 |
+| `lfm2.5:8b` | 90.0 (14.0) | 3.2 s | 5.27 GB | 1 |
+| `ministral-3:3b` | 94.4 (11.0) | 8.6 s | 4.88 GB | 1 |
+
+Scores varied by as much as 30 points among individual cells. This is a single sample loan and two seeds, so the small mean-score differences
+do not establish a reliable accuracy ranking. LFM2.5 was fastest per agent, but also had the lowest mean and highest peak GPU use; its full-run
+TRID narrative was rejected by the grounding guard. Granite was a strong speed/fit compromise, while Qwen had the highest mean score in this
+small run. All four models fit on the GPU in this configuration.
+
+Each model was also run once through the complete sample pipeline, including the eight domain agents, the cross-regime auditor, and the final
+report. The eight domain agents and auditor took a summed 68-98 seconds per model; report generation added about 38 seconds for Granite,
+65 for Qwen, 41 for LFM2.5, and 101 for Ministral. All four produced the same core deterministic outcomes and auditor decision. The full
+reports were not uniformly reliable: LFM2.5's exported Markdown included an inline `<think>` block and instruction-like prompt text, and its
+TRID narrative fell back to the deterministic version after unsupported numbers were rejected. Treat reports as drafts for review, not as
+authoritative compliance conclusions.
+
+For a reproducible comparison, run from the repository root with the project virtual environment active and Ollama running:
+
+```bash
+OLLAMA_NUM_THREAD=4 OLLAMA_TEMPERATURE=0.2 OLLAMA_SEED=42 \
+python -m benchmarks.model_bench \
+  --models granite4.1:3b qwen3.5:4b lfm2.5:8b ministral-3:3b \
+  --agents hmda ecoa hvcre hpml trid fzd ybs vmi \
+  --modes seeded --ctx 32768 --reps 1 --out /tmp/small-models-seed42.jsonl
+```
+
+Repeat with `OLLAMA_SEED=7` and a different output file for the second seed. The full-pipeline command requires a config copy that sets
+`tool_mode: seeded` on the eight tool-backed domain agents; point `--config` at that copy:
+
+```bash
+OLLAMA_NUM_CTX=32768 OLLAMA_NUM_THREAD=4 OLLAMA_TEMPERATURE=0.2 OLLAMA_SEED=42 \
+python -m orchestrator.cli batch sample_loan.json --config /path/to/seeded-agents.yaml \
+  --spawn-local --provider ollama --model granite4.1:3b \
+  --json-out /tmp/granite-results.json --narrative-out /tmp/granite-report.md
+```
+
+Change the model and output filenames to repeat the full run for each candidate. On the tested WSL machine, the Ollama service was configured
+with `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_NUM_PARALLEL=1`, and `OLLAMA_MAX_LOADED_MODELS=1`; these service-level
+settings were active during the comparison, but were not varied as part of it.
+
+The practical starting choice remains `granite4.1:3b` for the eight domain agents and `qwen3.5:4b` for synthesis when prioritizing a clearer
+cross-regime report over latency. This is a role-based starting point, not a winning-model claim: all compliance outcomes are code-owned and
+all generated narratives and reports require review. Small local models are not dependable MCP tool callers, so use `tool_mode: seeded`.
+On Ollama, a seeded agent's final response is constrained to `compliance_common/narrative_schema.py`; it writes reasoning, examiner narrative,
+and follow-ups for its own domain case and decision record, while evidence, data-quality, change, and scope blocks come from code.
+`compliance_common/narrative.py:check_narrative` checks numbers, dates, identifiers, contradictions, and empty output, retries once, then uses a
+deterministic fallback if necessary. The decision record always governs.
 
 ### Logging
 

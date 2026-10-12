@@ -62,3 +62,38 @@ the old scorer counting guard-removed evidence as invented), 3-7 s per agent. Fi
 did not rescue the two HPML/VMI cases, so code wrote those narratives (accuracy of a fallback narrative is lower on the heuristic because it
 states figures less richly: 65-95). Earlier claims about hallucinated "compliance" and "invented evidence" were overstated: see MEMORY.md.
 Caveat: 16 cells, one loan; treat as direction, not a ranking.
+
+## Non-Gemma comparison and full pipeline (2026-10-12)
+
+The active Ollama service was configured with `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`,
+`OLLAMA_NUM_PARALLEL=1`, and `OLLAMA_MAX_LOADED_MODELS=1`. The process used context 32,768, `OLLAMA_NUM_THREAD=4`,
+temperature 0.2, and seeds 42 and 7. Each model ran once against each of the eight domain agents per seed, with `tool_mode: seeded`;
+all four models were already installed. The service settings were held constant and were not compared against an untuned baseline.
+
+| Model | Mean narrative score (population SD), 16 cells | Mean seconds / cell | Total seconds, 16 cells | Worst cell | Peak GPU memory | Guarded fallbacks |
+|---|---:|---:|---:|---:|---:|---:|
+| `granite4.1:3b` | 95.3 (8.0) | 6.2 | 99.8 | 70 | 3.63 GB | 1 |
+| `qwen3.5:4b` | 96.2 (8.0) | 9.5 | 151.3 | 70 | 4.25 GB | 1 |
+| `lfm2.5:8b` | 90.0 (14.0) | 3.2 | 51.7 | 60 | 5.27 GB | 1 |
+| `ministral-3:3b` | 94.4 (11.0) | 8.6 | 137.3 | 65 | 4.88 GB | 1 |
+
+Each model also ran once through all eight domain agents, the auditor, and the opt-in report writer. Summed agent/auditor elapsed times
+were 68.1 s (Granite), 91.8 s (Qwen), 55.4 s (LFM2.5), and 97.6 s (Ministral). The report-writing calls took approximately 38 s,
+65 s, 41 s, and 101 s respectively; these are inference durations, not end-to-end wall-clock measurements including process startup.
+
+The structured core decision outcomes and rule outcomes matched across models for all eight domains and the auditor. Each auditor
+decision was Non-Compliant for Multiple Cross-Regime Deficiencies; VMI was Non-Compliant, HMDA was Potential Issue, and the other
+domain outcomes matched as well. This is the expected boundary: code-owned evaluator results do not depend on which narrator runs.
+
+The guarded per-agent benchmark recorded one fallback among 16 cells for every model. In the full run, LFM2.5's TRID narrative was
+rejected after it introduced an unsupported number; the structured result carried that guard failure while the report used the
+deterministic fallback for TRID. The exported LFM2.5 Markdown also contained an inline `<think>` block and instruction-like prompt text.
+Granite and Ministral each needed one auditor narrative retry after their first attempt contradicted the auditor's Non-Compliant result;
+their retry passed. Qwen's auditor narrative passed on the first attempt. These reports are examples for human review, not validated
+examiner-ready output.
+
+**Interpretation.** Qwen had the highest mean heuristic score, while Granite was faster and used less GPU memory. LFM2.5 had the
+shortest cell latency but the lowest mean score, the largest measured peak GPU use, a guarded full-run TRID failure, and the contaminated
+Markdown output noted above. Ministral was slower than Granite and Qwen on this sample. With one loan and two seeds, these results do
+not establish a statistically reliable quality ranking or generalize to other inputs. A representative multi-loan evaluation and review
+of complete generated reports are needed before making a deployment choice.
