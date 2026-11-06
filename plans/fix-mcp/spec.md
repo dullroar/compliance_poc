@@ -4,7 +4,7 @@ gist: "Read when: repairing the MCP client/server lifecycle regression and its t
 
 # MCP lifecycle repair - specification and execution agreement
 
-Status: draft
+Status: approved (by Jim Lehmer, 2026-11-06)
 
 ## Goal and exclusions
 
@@ -62,7 +62,7 @@ Repair the local MCP execution path so deterministic evaluator calls complete an
 
 ## Escalate when
 
-No published compatible MCP/AnyIO pair can pass the bounded probes; the selected SDK requires a client/server API change outside the named adapters; a deterministic evaluator is no longer safe to execute directly in the async wrapper; a protected parity check changes; or a subprocess cannot be reliably cleaned up. Bring back the failing command, versions, and the smallest reproduction.
+No published compatible MCP/AnyIO pair can pass the bounded probes; the clean-environment gate cannot be completed with locally available distributions under the no-network constraint; the selected SDK requires a client/server API change outside the named adapters; a deterministic evaluator is no longer safe to execute directly in the async wrapper; a protected parity check changes; or a subprocess cannot be reliably cleaned up. Bring back the failing command, versions, and the smallest reproduction.
 
 ## Exceptions and retirements
 

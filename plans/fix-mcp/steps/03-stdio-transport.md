@@ -1,7 +1,7 @@
 ---
 id: 03-stdio-transport
 status: pending
-depends_on: [01-pin-mcp-runtime]
+depends_on: [01-pin-mcp-runtime, 02-async-server-adapter]
 touches:
   - compliance_common/mcp_client.py
   - tests/test_mcp_client_stdio.py
@@ -27,6 +27,7 @@ Adapt the MCP client helper to turn `StdioServerParameters` into the exact async
 ## Dependencies already satisfied
 
 - `01-pin-mcp-runtime` identifies the SDK API and supported dependency set used by this transport adapter.
+- `02-async-server-adapter` removes the worker-bridge stall from the real server used by this step's subprocess test.
 
 ## Completion criteria
 
