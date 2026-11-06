@@ -1,4 +1,5 @@
 anthropic>=0.25.0
+openai>=1.66.0
 jsonschema>=4.23.0
 python-dotenv>=1.0.0
 PyYAML>=6.0.0

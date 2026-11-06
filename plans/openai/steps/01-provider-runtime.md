@@ -1,6 +1,6 @@
 ---
 id: 01-provider-runtime
-status: pending
+status: done
 depends_on: []
 touches:
   - agents/backends.py
@@ -10,7 +10,7 @@ touches:
 lane: provider-runtime
 gate: python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py
 requirements: [R1, R2, R4]
-evidence: ""
+evidence: "2026-11-06: python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py passed; dependency-free fake Responses-client smoke passed. Existing tests.test_ybs_evaluator and tests.test_agent_runner were unavailable because mcp is not installed in this checkout."
 ---
 
 # Add the OpenAI runtime provider behind the existing backend interface

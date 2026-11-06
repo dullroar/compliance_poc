@@ -13,7 +13,7 @@ Chat mode talks to one agent in-process so the REPL can keep conversation histor
   python -m orchestrator.cli chat hmda
 
 Environment:
-  COMPLIANCE_PROVIDER optional, "anthropic" (default) or "ollama"
+  COMPLIANCE_PROVIDER optional, "anthropic" (default), "ollama", or "openai"
   COMPLIANCE_MODEL    optional, provider-specific model name
   OLLAMA_BASE_URL     optional, default http://localhost:11434
   OLLAMA_TIMEOUT      optional, request timeout in seconds, default 300
@@ -328,7 +328,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Compliance agent orchestrator")
     subparsers = parser.add_subparsers(dest="mode", required=True)
-    providers = ["anthropic", "ollama"]
+    providers = ["anthropic", "ollama", "openai"]
 
     def common(sub, config=True):
         if config:
