@@ -1,6 +1,6 @@
 ---
 id: 02-operator-configuration
-status: pending
+status: done
 depends_on: []
 touches:
   - README.md
@@ -9,7 +9,7 @@ touches:
 lane: operator-documentation
 gate: python3 scripts/check_context.py
 requirements: [R1, R3]
-evidence: ""
+evidence: "2026-11-06: python3 scripts/check_context.py passed (build_context_indexes.py, check_plan.py, check_links.py, and scan_context_secrets.py)."
 ---
 
 # Document safe OpenAI selection without changing the repository default

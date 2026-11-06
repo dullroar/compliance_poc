@@ -1,7 +1,7 @@
 # Compliance Agent Orchestrator
 
 A2A fan-out orchestrator for seven Farm Credit ACA compliance agents.
-Supports Anthropic and local Ollama models. Each agent is backed by a
+Supports Anthropic, local Ollama, and optional OpenAI runtime narrators. Each agent is backed by a
 system prompt in `prompts/<key>.md` (long-form specs are in `specs/`). Versions live
 inside the prompt header, not in filenames; git carries history.
 
@@ -186,6 +186,68 @@ OLLAMA_TIMEOUT=300
 
 No Ollama Python package or API key is required. Make sure `ollama serve` is
 running and that the selected model appears in `ollama list`.
+
+### Optional OpenAI runtime narrator
+
+OpenAI is an optional runtime narrator provider; Anthropic remains the default.
+Choose and record a model explicitly—there is no repository-wide OpenAI model
+default. Install the normal requirements, then keep these values in an
+untracked `.env` file or the process environment:
+
+```
+COMPLIANCE_PROVIDER=openai
+COMPLIANCE_MODEL=<approved OpenAI model identifier>
+OPENAI_API_KEY=<OpenAI API key>
+# Optional: request timeout in seconds (default 60) and SDK retry count (default 2)
+# OPENAI_TIMEOUT=60
+# OPENAI_MAX_RETRIES=2
+```
+
+For a global replacement of the locally started agent backends, use the
+environment above with a synthetic fixture first:
+
+```bash
+python -m orchestrator.cli batch sample_loan.json --spawn-local
+```
+
+OpenAI API use is billed separately from a ChatGPT subscription. Select a model
+only after the owner has approved the cost, quality, and data-handling scope.
+Start with synthetic or de-identified cases; a real record requires explicit
+owner authority and the applicable data-handling review. The provider sends
+`store: false` to the Responses API where supported, but that application
+setting is not a substitute for an approved data-handling decision.
+
+For a mixed-provider run, copy `agents.yaml` to an untracked local file, retain
+every existing entry, and change only the narrator roles. Do **not** set
+`COMPLIANCE_PROVIDER=openai` for this mode: it would select OpenAI for entries
+without their own provider. `seeded` is the preferred remote-narrator mode
+because code obtains the canonical decision record before the remote model
+receives it:
+
+```yaml
+# local/openai-narrators.yaml — copied from agents.yaml; excerpt only
+agents:
+  auditor:
+    url: "http://127.0.0.1:9108/"
+    provider: openai
+    model: <approved OpenAI model identifier>
+    tool_mode: seeded
+  narrative:
+    url: "http://127.0.0.1:9109/"
+    provider: openai
+    model: <approved OpenAI model identifier>
+    tool_mode: seeded
+```
+
+```bash
+python -m orchestrator.cli batch sample_loan.json \
+  --config local/openai-narrators.yaml --spawn-local \
+  --provider ollama --model gemma4:26b
+```
+
+This sends only `auditor` and `narrative` to OpenAI; the other copied agent
+entries use the selected Ollama provider and model. To retain another provider
+instead, replace the final `--provider` and `--model` values accordingly.
 
 ---
 
