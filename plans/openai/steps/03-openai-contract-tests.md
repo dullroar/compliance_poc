@@ -1,6 +1,6 @@
 ---
 id: 03-openai-contract-tests
-status: pending
+status: blocked
 depends_on: [01-provider-runtime]
 touches:
   - tests/test_openai_backend.py
@@ -8,7 +8,7 @@ touches:
 lane: provider-tests
 gate: python3 -m unittest tests.test_openai_backend tests.test_ybs_evaluator -v
 requirements: [R2, R4, R5]
-evidence: ""
+evidence: "2026-11-06: .venv/bin/python -m unittest tests.test_openai_backend tests.test_ybs_evaluator.YBSContractTests.test_openai_tool_loop_uses_the_same_deterministic_evaluator_offline tests.test_ybs_evaluator.ToolEnforcementFormatTests -v passed (12 tests), followed by python3 -m py_compile tests/test_openai_backend.py tests/test_ybs_evaluator.py. The named full gate was attempted with mcp 2.0.0 and 2.3.0 but did not complete: the unchanged YBSContractTests.test_all_provider_and_mcp_tools_share_one_contract_and_decision blocks while closing the in-process Client(ybs_server) after the evaluator returns. No production or protected-test behavior was changed to mask it."
 ---
 
 # Prove the OpenAI adapter cannot weaken evaluator or narrative safeguards

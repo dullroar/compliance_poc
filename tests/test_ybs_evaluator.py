@@ -7,7 +7,8 @@ from pathlib import Path
 import yaml
 
 from compliance_common.mcp_client import call_tool, list_tool_specs, stdio_target
-from compliance_common.tools import native_definition, run_anthropic_tool_loop, run_ollama_tool_loop, seed_anthropic, seed_ollama
+from compliance_common.tools import (native_definition, run_anthropic_tool_loop, run_ollama_tool_loop,
+                                     run_openai_tool_loop, seed_anthropic, seed_ollama, seed_openai)
 from compliance_mcp.ybs import (
     YBSValidationError,
     evaluate_ybs,
@@ -72,6 +73,27 @@ class _FakeAnthropic:
         self.messages = _FakeMessages(responses)
 
 
+class _OpenAIResponse:
+    def __init__(self, output, output_text=""):
+        self.output = output
+        self.output_text = output_text
+
+
+class _FakeOpenAIResponses:
+    def __init__(self, responses):
+        self.responses = iter(responses)
+        self.requests = []
+
+    def create(self, **kwargs):
+        self.requests.append(kwargs)
+        return next(self.responses)
+
+
+class _FakeOpenAI:
+    def __init__(self, responses):
+        self.responses = _FakeOpenAIResponses(responses)
+
+
 class YBSFixtureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -130,6 +152,9 @@ class YBSContractTests(unittest.TestCase):
         self.assertEqual(spec["name"], "ybs_evaluate")
         self.assertEqual(native_definition(spec, "anthropic")["input_schema"], spec["inputSchema"])
         self.assertEqual(native_definition(spec, "ollama")["function"]["parameters"], spec["inputSchema"])
+        openai = native_definition(spec, "openai")
+        self.assertEqual((openai["type"], openai["name"], openai["parameters"], openai["strict"]),
+                         ("function", "ybs_evaluate", spec["inputSchema"], False))
         for target in (ybs_server, stdio_target("ybs")):
             with self.subTest(target=type(target).__name__):
                 result = asyncio.run(call_tool(target, "ybs_evaluate", {"case": input_case}))
@@ -168,6 +193,23 @@ class YBSContractTests(unittest.TestCase):
         self.assertEqual(result["message"]["content"], "explained")
 
 
+    def test_openai_tool_loop_uses_the_same_deterministic_evaluator_offline(self):
+        input_case = case([person()])
+        expected = evaluate_ybs(input_case)["decision_id"]
+        spec = {"name": "ybs_evaluate", "description": "YBS evaluator", "inputSchema": {"type": "object"}}
+        call = type("FunctionCall", (), {"type": "function_call", "name": "ybs_evaluate",
+                                           "arguments": json.dumps({"case": input_case}), "call_id": "call-1"})()
+        openai = _FakeOpenAI([_OpenAIResponse([call]), _OpenAIResponse([], "explained")])
+        response = run_openai_tool_loop(openai, spec, lambda name, args: evaluate_ybs(args["case"]),
+                                        model="tool-model", system="system", messages=[], max_tokens=1, force_first=True)
+        self.assertEqual(response.output_text, "explained")
+        first, second = openai.responses.requests
+        self.assertEqual((first["tool_choice"], first["parallel_tool_calls"], first["store"]),
+                         ({"type": "function", "name": "ybs_evaluate"}, False, False))
+        self.assertEqual(second["input"][-1]["type"], "function_call_output")
+        self.assertEqual(json.loads(second["input"][-1]["output"])["decision_id"], expected)
+
+
 class ToolEnforcementFormatTests(unittest.TestCase):
     SPEC = {"name": "ybs_evaluate", "description": "d", "inputSchema": {"type": "object"}}
 
@@ -189,6 +231,11 @@ class ToolEnforcementFormatTests(unittest.TestCase):
         oll = seed_ollama(self.SPEC, {"case": {"a": 1}}, {"decision_id": "d"})
         self.assertEqual(oll[0]["tool_calls"][0]["function"], {"name": "ybs_evaluate", "arguments": {"case": {"a": 1}}})
         self.assertEqual((oll[1]["role"], oll[1]["tool_name"], json.loads(oll[1]["content"])), ("tool", "ybs_evaluate", {"decision_id": "d"}))
+        openai = seed_openai(self.SPEC, {"case": {"a": 1}}, {"decision_id": "d"})
+        self.assertEqual((openai[0]["type"], openai[0]["name"], json.loads(openai[0]["arguments"])),
+                         ("function_call", "ybs_evaluate", {"case": {"a": 1}}))
+        self.assertEqual((openai[1]["type"], openai[1]["call_id"], json.loads(openai[1]["output"])),
+                         ("function_call_output", openai[0]["call_id"], {"decision_id": "d"}))
 
     def test_a_seeded_ollama_conversation_goes_straight_to_the_final_answer(self):
         seen = []
