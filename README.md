@@ -5,7 +5,7 @@ Supports Anthropic and local Ollama models. Each agent is backed by a
 system prompt in `prompts/<key>.md` (long-form specs are in `specs/`). Versions live
 inside the prompt header, not in filenames; git carries history.
 
-For architectural decisions and constraints, see [DESIGN.md](DESIGN.md).
+For architectural decisions and constraints, see [docs/design/](docs/design/README.md).
 
 ---
 

@@ -60,7 +60,7 @@ one retry and then a code-written fallback. Evidence, data-quality and change bl
 granite4.1:3b, seeded, ctx 32768, 8 domain agents, seeds 42 and 7 (one run per cell): accuracy mean 92.5 and 88.8 (previous table: 84, with
 the old scorer counting guard-removed evidence as invented), 3-7 s per agent. First-attempt rejections: 2/8 (seed 42), 1/8 (seed 7); the retry
 did not rescue the two HPML/VMI cases, so code wrote those narratives (accuracy of a fallback narrative is lower on the heuristic because it
-states figures less richly: 65-95). Earlier claims about hallucinated "compliance" and "invented evidence" were overstated: see MEMORY.md.
+states figures less richly: 65-95). Earlier claims about hallucinated "compliance" and "invented evidence" were overstated: see memory/narrate-only-and-grounding-guards.md.
 Caveat: 16 cells, one loan; treat as direction, not a ranking.
 
 ## Non-Gemma comparison and full pipeline (2026-10-12)
