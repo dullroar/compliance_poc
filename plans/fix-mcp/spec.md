@@ -6,6 +6,8 @@ gist: "Read when: repairing the MCP client/server lifecycle regression and its t
 
 Status: approved (by Jim Lehmer, 2026-11-06)
 
+For the plan-specific Claude Code goal and execution protocol, see [goal.md](goal.md).
+
 ## Goal and exclusions
 
 Repair the local MCP execution path so deterministic evaluator calls complete and their clients shut down cleanly under a reproducible SDK environment. The diagnosed failure is not an evaluator decision failure: a synchronous registered MCP tool reaches the installed SDK's `anyio.to_thread.run_sync()` path, which stalls in this runtime. The current stdio helper also passes configuration where the installed MCP client requires a transport. This work does **not** change evaluator rules, packs, prompts, decisions, classifications, remote transports, or model-provider behavior.
