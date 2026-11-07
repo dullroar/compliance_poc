@@ -2,6 +2,8 @@
 
 Status: approved (by Jim Lehmer, 2026-11-06)
 
+For the plan-specific Claude Code goal and execution protocol, see [goal.md](goal.md).
+
 ## Goal and exclusions
 
 Add `openai` as a selectable remote inference provider for runtime compliance narratives, using only the OpenAI Responses API. It must coexist with Anthropic and local Ollama, without changing the deterministic evaluators' authority or existing defaults. This work does **not** add DigitalOcean infrastructure, OpenAI hosted agents or built-in tools, a scheduler, deployment automation, new regulatory rules, real-loan API calls, or OpenAI support for the builders.
