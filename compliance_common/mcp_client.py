@@ -33,16 +33,29 @@ def _decode(result: Any) -> dict[str, Any]:
     return json.loads(result.content[0].text)
 
 
+def _leaf(error: BaseException) -> BaseException:
+    """The first underlying error of an anyio task-group failure, so the tool's own message reaches the caller."""
+    while isinstance(error, BaseExceptionGroup) and error.exceptions:
+        error = error.exceptions[0]
+    return error
+
+
 async def list_tool_specs(target: Any) -> list[dict[str, Any]]:
     """Return MCP-shaped tool specs {name, description, inputSchema}."""
-    async with Client(_transport(target)) as client:
-        listing = await client.list_tools()
+    try:
+        async with Client(_transport(target)) as client:
+            listing = await client.list_tools()
+    except BaseExceptionGroup as group:
+        raise _leaf(group) from group
     return [{"name": t.name, "description": t.description or "", "inputSchema": t.input_schema} for t in listing.tools]
 
 
 async def call_tool(target: Any, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     log.trace("mcp call", extra={"tool": name}, payload=arguments)
-    async with Client(_transport(target)) as client:
-        result = _decode(await client.call_tool(name, arguments))
+    try:
+        async with Client(_transport(target)) as client:
+            result = _decode(await client.call_tool(name, arguments))
+    except BaseExceptionGroup as group:       # e.g. "MCP tool error: Invalid canonical HMDA input ..." instead of "unhandled errors in a TaskGroup"
+        raise _leaf(group) from group
     log.trace("mcp result", extra={"tool": name, "decision_id": result.get("decision_id", "")}, payload=result)
     return result

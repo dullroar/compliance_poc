@@ -47,7 +47,13 @@ async def _one(key: str, config: dict[str, dict], payload: Any, verbose: bool,
 
 
 def _as_text_or_parsed(results: dict[str, dict]) -> dict[str, Any]:
-    return {k: v["parsed"] if v.get("parsed") is not None else v.get("raw_text", "") for k, v in results.items()}
+    """What downstream stages see of each result: the parsed result, else the raw text, else the failure evidence.
+
+    A failed agent is never an empty string: absence must not read as a pass. The failure record has no `domain_determination`,
+    so the auditor still classes it as a failed agent."""
+    return {k: v["parsed"] if v.get("parsed") is not None else v.get("raw_text")
+            or {"agent_key": k, "status": "failed", "failure": v.get("parse_error") or "the agent returned no output"}
+            for k, v in results.items()}
 
 
 async def run_batch(loan_data: Any, config: dict[str, dict], agents: list[str] | None = None,

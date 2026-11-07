@@ -1,6 +1,7 @@
 # Compliance Agent Orchestrator
 
-A2A fan-out orchestrator for seven Farm Credit ACA compliance agents.
+A2A fan-out orchestrator for Farm Credit ACA compliance agents: eight deterministic-evaluator domain agents, a cross-regime
+auditor, and an optional narrative report agent.
 Supports Anthropic, local Ollama, and optional OpenAI runtime narrators. Each agent is backed by a
 system prompt in `prompts/<key>.md` (long-form specs are in `specs/`). Versions live
 inside the prompt header, not in filenames; git carries history.
@@ -17,11 +18,12 @@ For architectural decisions and constraints, see [docs/design/](docs/design/READ
 | `ecoa`     | ECOA Compliance Agent                     | Regulation B            |                                |
 | `hvcre`    | HVCRE Compliance Agent                    | FCA Capital Regs        |                                |
 | `hpml`     | HPML Compliance Agent                     | Regulation Z            |                                |
+| `trid`     | TRID Compliance Agent                     | Regulation Z §1026.19(e)/(f) |                           |
 | `fzd`      | Flood Zone Determination Compliance Agent | NFIA / FDPA             |                                |
 | `ybs`      | YBS Eligibility Compliance Agent          | 12 CFR §614.4165        |                                |
 | `vmi`      | VMI Compliance Agent                      | Regulation B §1002.13   |                                |
-| `auditor`  | Compliance Auditor                        | Cross-regime            | Runs automatically after batch |
-| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`     |
+| `auditor`  | Compliance Auditor                        | Cross-regime            | Runs automatically after batch; its own `auditor_evaluate` tool reviews the other agents' results |
+| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`; prompt-only, no tool or decision record |
 
 ---
 
@@ -112,7 +114,19 @@ domain's tests, `prompts/<key>.md`), and what the new version numbers are. Sourc
 fetched by script (e.g. the FFIEC APOR page, which blocks bots) are reported as `manual`. For local
 models set `OLLAMA_NUM_CTX` large enough for the builder prompts, or use a remote model.
 
-## Deterministic YBS pilot
+## Deterministic evaluator contract (YBS is the reference)
+
+Every domain agent, and the auditor over the other agents' results, follows the same runtime contract: the agent calls its
+evaluator's MCP tool (stdio server `python -m compliance_mcp.<domain>.server`), the harness pins the arguments to the canonical
+case in the payload, code assembles the result, and a narrative the model adds is verified before it is used. A payload without
+the canonical case yields `Unable To Determine` with no model call. `tests/test_agent_parity.py` proves this for every role in
+`agents.yaml` offline: direct evaluation, in-process MCP, stdio MCP and an A2A task return the same decision id and classification,
+in both tool modes, with the guard and fallback behavior. The auditor's input is the other agents' results rather than a
+`<domain>_case`, and the narrative agent is prompt-only (no tool, decision or guard); neither is required to look like a domain.
+The pilot section below describes YBS specifically. All packs, including YBS, are `draft_engineering_review` and need
+compliance review before reliance; passing these tests is not compliance approval.
+
+### YBS specifics
 
 The YBS agent is narrative-only. It calls the `ybs_evaluate` MCP tool, which is the
 authority for eligibility, thresholds, rule outcomes, and missing-fact status. The
@@ -148,7 +162,8 @@ and legacy `ybs_information` remain usable for discussion but produce `Unable To
 Determine` until a canonical case is supplied.
 
 The default suite runs deterministic fixtures, schema/source-manifest checks,
-and Anthropic/Ollama/MCP contract parity with local fakes. The opt-in Gemma test
+and Anthropic/Ollama/OpenAI/MCP contract parity with local fakes, including a registry-driven check of every role over
+direct, in-process MCP, stdio MCP and A2A. The opt-in Gemma test
 runs the full YBS prompt twice and asserts that the authoritative deterministic
 decision ID and classification replay identically; model prose is not assumed
 to be byte-identical. See [YBS_CHANGE_CONTROL.md](YBS_CHANGE_CONTROL.md) for
@@ -296,7 +311,9 @@ python -m orchestrator.cli batch sample_loan.json --json-out results.json --narr
 python -m orchestrator.cli batch sample_loan.json --agents hmda ecoa hpml
 ```
 
-A failing agent becomes a result with `parse_error` set; it does not stop the batch.
+A failing agent becomes a result with `parse_error` set; it does not stop the batch. The auditor lists it as missing (never as a
+pass) and the narrative agent is given the failure, not a blank. If the narrative stage itself fails, the batch JSON is still
+saved, no empty report is written, and the command exits 1.
 
 ### Chat / REPL mode — interactive session with one agent
 

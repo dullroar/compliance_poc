@@ -1,7 +1,10 @@
 """Expose one compliance agent as an A2A server (Agent Card + executor).
 
 Request: a user Message with a data Part {"payload": <loan dict | narrative str |
-auditor/narrative input>} (a bare text Part is also accepted as the payload).
+auditor/narrative input>} (a bare text Part is also accepted as the payload). A data Part is a protobuf
+Struct, which turns every integer into a float, so a client that needs the exact payload (the
+evaluators' decision ids and record text depend on int vs float) also sends it as JSON text in
+"payload_json"; the server prefers that field.
 Response: a Task with artifacts
   agent_result  data  the full result dict (parsed/assembled output, decision, guards)
   decision      data  the deterministic decision record (tool-backed agents only)
@@ -34,6 +37,7 @@ from .backends import Backend
 from .runner import run
 
 RESULT_ARTIFACT = "agent_result"
+PAYLOAD_JSON = "payload_json"
 
 
 def agent_card(agent_key: str, url: str) -> AgentCard:
@@ -58,6 +62,8 @@ def _payload(context: RequestContext) -> Any:
     for part in context.message.parts:
         if part.HasField("data"):
             data = MessageToDict(part.data)
+            if isinstance(data, dict) and isinstance(data.get(PAYLOAD_JSON), str):
+                return json.loads(data[PAYLOAD_JSON])
             return data["payload"] if isinstance(data, dict) and "payload" in data else data
     return context.get_user_input()
 
