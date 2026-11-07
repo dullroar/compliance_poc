@@ -87,6 +87,21 @@ class OpenAIBackendTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "explicit model"):
                 Backend("openai", client=_FakeOpenAI())
 
+    def test_chat_accepts_explicit_openai_model_without_model_environment_variable(self):
+        from orchestrator.cli import repl
+
+        constructed = []
+
+        class SDK:
+            def __init__(self, **kwargs):
+                constructed.append(kwargs)
+
+        with patch("agents.backends.OpenAI", SDK), patch.dict(
+            os.environ, {"OPENAI_API_KEY": "test-key", "COMPLIANCE_MODEL": ""}, clear=False,
+        ), patch("builtins.input", return_value="exit"), patch("builtins.print"):
+            repl("ybs", provider="openai", model="approved-model")
+        self.assertEqual(len(constructed), 1)
+
     def test_client_requires_a_key_and_uses_bounded_settings(self):
         constructed = []
 
@@ -133,6 +148,18 @@ class OpenAIBackendTests(unittest.TestCase):
         self.assertEqual((seeded["tool_choice"], seeded["parallel_tool_calls"], seeded["store"]), ("none", False, False))
         self.assertEqual([tool["name"] for tool in seeded["tools"]], ["ybs_evaluate"])
 
+    def test_model_tool_mode_requests_structured_narration(self):
+        client = _FakeOpenAI([
+            response(output=[function_call(json.dumps({"case": {}}))]),
+            response(json.dumps(NARRATIVE)),
+        ])
+        backend = Backend("openai", model="approved-model", client=client)
+        output = backend.complete_with_tool("system", [], YBS_SPEC, lambda *_: {"decision_id": "d"}, [])
+        self.assertEqual(json.loads(output), NARRATIVE)
+        for request in client.responses.requests:
+            self.assertEqual(request["text"], {"format": {"type": "json_schema", "name": "compliance_narrative",
+                                                           "strict": True, "schema": NARRATIVE_SCHEMA}})
+
     def test_model_tool_mode_forces_one_evaluator_and_runner_pins_canonical_facts(self):
         canonical = ybs_case([person()])
         payload = {"case_information": {"case_id": "YBS-OPENAI-TEST"}, "ybs_case": canonical}
@@ -167,6 +194,26 @@ class OpenAIBackendTests(unittest.TestCase):
         self.assertEqual(result["parsed"]["domain_determination"]["classification"], "Young + Beginning + Small")
         self.assertIn("rejected twice", result["parsed"]["narrative_warnings"][0])
         self.assertEqual(client.responses.requests[2]["text"]["format"]["type"], "json_schema")
+
+    def test_ungrounded_openai_narrative_is_retried_then_replaced(self):
+        canonical = ybs_case([person()])
+        payload = {"case_information": {"case_id": "YBS-OPENAI-TEST"}, "ybs_case": canonical}
+        invented = {"narrative": dict(NARRATIVE["narrative"], reasoning=GOOD_TEXT + " The unsupported amount is 987654321.")}
+        raw = json.dumps(invented)
+        client = _FakeOpenAI([
+            response(output=[function_call(json.dumps({"case": canonical}))]),
+            response(raw),
+            response(raw),
+        ])
+        with patch("agents.runner.list_tool_specs", _fake_list_tool_specs), patch("agents.runner.call_tool", _fake_call_tool):
+            result = run_agent("ybs", payload, Backend("openai", model="approved-model", client=client), tool_target=object())
+        self.assertEqual(result["decision"]["decision_id"], evaluate_ybs(canonical)["decision_id"])
+        self.assertEqual(result["narrative_guard"]["source"], "deterministic_fallback")
+        self.assertEqual(result["narrative_guard"]["attempts"], 2)
+        self.assertIn("987654321", client.responses.requests[2]["input"][-1]["content"])
+        self.assertEqual(result["raw_text"], raw)
+        self.assertNotIn("987654321", json.dumps(result["parsed"]["compliance_determination_summary"]))
+        self.assertIn("987654321", json.dumps(result["parsed"]["narrative_warnings"]))
 
     def test_refusal_or_malformed_output_is_observable(self):
         backend = Backend("openai", model="approved-model", client=_FakeOpenAI([response()]))

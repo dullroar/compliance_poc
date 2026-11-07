@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
     OpenAI = None
 
 from compliance_common.obs import get_logger
+from compliance_common.narrative_schema import NARRATIVE_SCHEMA
 from compliance_common.tools import (native_definition, run_anthropic_tool_loop, run_ollama_tool_loop,
                                      run_openai_tool_loop, seed_anthropic, seed_ollama, seed_openai)
 
@@ -179,7 +180,7 @@ class Backend:
         if self.provider == "openai":
             response = run_openai_tool_loop(self.client, spec, execute, model=self.model, system=system,
                                             messages=messages, max_tokens=MAX_TOKENS, calls_made=calls_made,
-                                            force_first=force_first)
+                                            force_first=force_first, schema=NARRATIVE_SCHEMA)
             return _openai_output_text(response)
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system,
                                            messages=messages, max_tokens=MAX_TOKENS, calls_made=calls_made, force_first=force_first)

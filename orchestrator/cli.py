@@ -56,8 +56,8 @@ AGENT_KEYS: list[str] = list(AGENTS.keys())
 DOMAIN_AGENT_KEYS: list[str] = [k for k in AGENT_KEYS if k not in ("auditor", "narrative")]
 
 
-def _client(provider: str | None = None) -> Any:
-    return Backend(provider or DEFAULT_PROVIDER).client
+def _client(provider: str | None = None, model: str | None = None) -> Any:
+    return Backend(provider or DEFAULT_PROVIDER, model).client
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ def repl(
     agent = AGENTS[agent_key]
     selected_provider = (provider or DEFAULT_PROVIDER).lower()
     selected_model = _model_name(selected_provider, model)
-    c = _client(selected_provider)
+    c = _client(selected_provider, selected_model)
     history: list[dict] = []
     last_result: dict | None = None
 

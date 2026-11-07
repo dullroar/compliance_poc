@@ -102,7 +102,8 @@ def run_ollama_tool_loop(request: Callable[[dict[str, Any]], dict[str, Any]], sp
 
 def run_openai_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, model: str, system: str,
                          messages: list[dict[str, Any]], max_tokens: int,
-                         calls_made: list[dict[str, Any]] | None = None, force_first: bool = False) -> Any:
+                         calls_made: list[dict[str, Any]] | None = None, force_first: bool = False,
+                         schema: dict[str, Any] | None = None) -> Any:
     """Run a stateless Responses API function loop using only the supplied evaluator function.
 
     Each response output is replayed in full because ``store=False`` prevents a continuation through
@@ -114,10 +115,14 @@ def run_openai_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, model
     while True:
         choice: str | dict[str, str] = ({"type": "function", "name": spec["name"]} if force_first and first else "auto")
         first = False
-        response = client.responses.create(
-            model=model, instructions=system, input=working, max_output_tokens=max_tokens, store=False,
-            tools=[tool], tool_choice=choice, parallel_tool_calls=False,
-        )
+        request: dict[str, Any] = {
+            "model": model, "instructions": system, "input": working, "max_output_tokens": max_tokens,
+            "store": False, "tools": [tool], "tool_choice": choice, "parallel_tool_calls": False,
+        }
+        if schema:
+            request["text"] = {"format": {"type": "json_schema", "name": "compliance_narrative",
+                                          "strict": True, "schema": schema}}
+        response = client.responses.create(**request)
         calls = [item for item in response.output if getattr(item, "type", None) == "function_call"]
         if not calls:
             return response

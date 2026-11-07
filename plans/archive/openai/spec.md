@@ -1,6 +1,6 @@
 # OpenAI narrative provider - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-06)
+Status: complete (approved by Jim Lehmer, 2026-11-06)
 
 For the plan-specific Claude Code goal and execution protocol, see [goal.md](goal.md).
 
@@ -12,31 +12,31 @@ Add `openai` as a selectable remote inference provider for runtime compliance na
 
 ### R1. OpenAI is a runtime narrator provider
 
-- Basis: documented ([scope boundary](../../docs/design/scope-and-repository-boundary.md), [provider premise](../../docs/design/provider-and-model-selection.md), and [OpenAI Responses overview](https://developers.openai.com/api/reference/responses/overview)); user-directed scope.
+- Basis: documented ([scope boundary](../../../docs/design/scope-and-repository-boundary.md), [provider premise](../../../docs/design/provider-and-model-selection.md), and [OpenAI Responses overview](https://developers.openai.com/api/reference/responses/overview)); user-directed scope.
 - Example: `COMPLIANCE_PROVIDER=openai` and an `OPENAI_API_KEY` create an OpenAI backend; an `agents.yaml` entry can instead select OpenAI only for `auditor` or `narrative` while the other agents retain their own provider/model.
 - Acceptance check: the offline backend tests prove `complete`, `complete_with_tool`, and `complete_seeded` work through the same `Backend` interface as the existing providers.
 
 ### R2. Deterministic decisions retain exclusive authority
 
-- Basis: documented ([code decides, agents narrate](../../docs/design/code-decides-agents-narrate.md), [narrative guard finding](../../memory/narrate-only-and-grounding-guards.md), and [function-calling guidance](https://developers.openai.com/api/docs/guides/function-calling)); user-directed scope.
+- Basis: documented ([code decides, agents narrate](../../../docs/design/code-decides-agents-narrate.md), [narrative guard finding](../../../memory/narrate-only-and-grounding-guards.md), and [function-calling guidance](https://developers.openai.com/api/docs/guides/function-calling)); user-directed scope.
 - Example: a model-supplied `ybs_evaluate` argument that differs from the canonical `ybs_case` is ignored; OpenAI only receives the evaluator result and returns the existing `NARRATIVE_SCHEMA` prose object.
 - Acceptance check: existing decision-authority/grounding tests pass, and new OpenAI tests cover seeded and model tool modes without changing evaluator results.
 
 ### R3. Remote use is explicit, bounded, and non-secret
 
-- Basis: documented ([agent contract](../../AGENTS.md), [OpenAI Python reference](https://developers.openai.com/api/reference/python)); user-directed scope.
+- Basis: documented ([agent contract](../../../AGENTS.md), [OpenAI Python reference](https://developers.openai.com/api/reference/python)); user-directed scope.
 - Example: `OPENAI_API_KEY` is read only from the environment or untracked `.env`; code and tracked configuration contain no key. Requests use a configurable timeout, disable Responses state storage where supported, use no OpenAI built-in tools, and begin only with synthetic or de-identified inputs.
 - Acceptance check: README and config comments document the variables, mixed-provider example, data boundary, and separate API billing; repository secret/context scans pass.
 
 ### R4. Failures remain observable and safe
 
-- Basis: documented ([raw and parsed results retained](../../docs/design/raw-and-parsed-results-retained.md)); inferred (the remote transport needs bounded retry behavior, subject to implementation review).
+- Basis: documented ([raw and parsed results retained](../../../docs/design/raw-and-parsed-results-retained.md)); inferred (the remote transport needs bounded retry behavior, subject to implementation review).
 - Example: an OpenAI timeout, rate limit, malformed tool call, or nonconforming narrative cannot alter the decision record; it follows the existing retry/guard/fallback or failed-task behavior and leaves observable error evidence.
 - Acceptance check: fake-client tests exercise timeout/API failures and malformed output; the result still retains provider/model/raw-output or parse/guard evidence as the established contracts require.
 
 ### R5. The change is reproducibly verified without a live API call
 
-- Basis: documented ([agent contract validation rules](../../AGENTS.md)); user-directed no-infrastructure scope.
+- Basis: documented ([agent contract validation rules](../../../AGENTS.md)); user-directed no-infrastructure scope.
 - Example: a fake Responses client asserts exact requests, tool-result continuation, structured-output format, and error handling, so CI does not need an API key or network access.
 - Acceptance check: the focused test module and the full offline suite pass; `python3 scripts/check_context.py` and `python3 scripts/check_plan.py` pass.
 

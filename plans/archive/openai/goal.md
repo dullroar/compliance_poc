@@ -4,6 +4,8 @@ gist: "Read when: running or resuming the approved OpenAI provider plan with a C
 
 # OpenAI provider goal and execution protocol
 
+This completed plan has been archived. The command below records its original execution location.
+
 From the repository root on a branch containing the MCP repair, start Claude Code and enter:
 
 ```text

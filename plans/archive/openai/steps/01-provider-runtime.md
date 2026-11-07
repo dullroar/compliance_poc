@@ -10,7 +10,9 @@ touches:
 lane: provider-runtime
 gate: python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py
 requirements: [R1, R2, R4]
-evidence: "2026-11-06: python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py passed; dependency-free fake Responses-client smoke passed. Existing tests.test_ybs_evaluator and tests.test_agent_runner were unavailable because mcp is not installed in this checkout."
+evidence: >-
+  2026-11-06: python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py passed; dependency-free fake Responses-client smoke passed. Existing tests.test_ybs_evaluator and tests.test_agent_runner were unavailable because mcp is not installed in this checkout.
+  2026-11-06: Requirement review found that chat client construction discarded the explicit model and model-driven OpenAI tool requests did not request the narrative schema. Corrected both within the runtime scope. With `export PATH="$PWD/.venv/bin:$PATH"` selecting Python 3.12.3, `python3 -m py_compile agents/backends.py compliance_common/tools.py orchestrator/cli.py` passed. Focused behavioral evidence is recorded in step 03 and integrated validation in step 04.
 ---
 
 # Add the OpenAI runtime provider behind the existing backend interface
