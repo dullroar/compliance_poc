@@ -1,0 +1,60 @@
+# Higher-priced mortgage loans, 12 CFR 1026.35. The APOR and the conforming limit are looked up by the institution, not given by the customer.
+rules:
+  - match: HPML-SCOPE
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1026.35(a)
+    requirement: Section 1026.35 covers closed-end consumer credit secured by the consumer's principal dwelling.
+    action: Record the credit type, the purpose and whether the principal dwelling secures the loan.
+    who: loan operations
+    refer: The facts that show whether this loan is in scope are missing.
+  - match: HPML-SPREAD
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1026.35(a)(1)
+    requirement: A first-lien loan is higher-priced when the APR exceeds the APOR by the regulatory margin; the APOR and its source are needed.
+    action: Record the APOR with its table date, product and source, and the conforming loan limit when the amount is above the pinned baseline.
+    who: loan operations
+    refer: The APOR or the conforming loan limit is missing.
+  - match: HPML-ESCROW
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.35(b)(1)
+    requirement: Escrow for property taxes and required insurance must be established before consummation on a first-lien higher-priced loan.
+    action: Record the escrow set-up date, or the exemption that applies under 1026.35(b)(2).
+    who: closing staff
+    refer: Escrow for taxes and insurance is not shown as set up before closing.
+  - match: HPML-APPRAISAL
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.35(c)
+    requirement: A higher-priced loan needs an appraisal that meets 1026.35(c), unless an exemption in 1026.35(c)(2) applies.
+    action: Record the appraisal and the review that shows the 1026.35(c) requirements were met, or the exemption relied on.
+    who: closing staff
+    refer: The appraisal requirements for a higher-priced loan are not shown as met.
+fields:
+  - match: apor
+    rule: HPML-SPREAD
+    route: refer
+    label: the APOR
+    why: The institution must look up the average prime offer rate and record its source.
+  - match: applicable_conforming_limit
+    rule: HPML-SPREAD
+    route: refer
+    label: the conforming loan limit
+    why: The institution must record the Freddie Mac loan limit for this loan amount.
+  - match: rate_set_date
+    rule: HPML-SPREAD
+    route: refer
+    label: the rate-set date
+    why: The institution must record a rate-set date that falls in a pinned threshold period.
+  - match: escrow_established_before_consummation
+    rule: HPML-ESCROW
+    route: refer
+    label: escrow set-up
+    why: Closing staff must record whether escrow was set up before closing.
+  - match: appraisal_requirements_met
+    rule: HPML-APPRAISAL
+    route: refer
+    label: appraisal review
+    why: Closing staff must record whether the appraisal rules for higher-priced loans were met.

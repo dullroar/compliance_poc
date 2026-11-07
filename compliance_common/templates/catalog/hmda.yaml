@@ -1,0 +1,680 @@
+# HMDA, Regulation C (12 CFR part 1003). The 38 LAR item entries follow the pinned item table (compliance_mcp/hmda/pack/lar_items.yaml).
+rules:
+  - match: HMDA-INSTITUTION
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.2(g)
+    requirement: Regulation C applies only to a financial institution as defined in 1003.2(g).
+    action: Record whether the institution meets the financial institution definition.
+    who: loan operations
+    refer: Whether the institution is a financial institution is not recorded.
+  - match: HMDA-DWELLING
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.2(d), (o)
+    requirement: A covered loan is a closed-end mortgage loan or open-end line of credit secured by a lien on a dwelling.
+    action: Record whether a lien on a dwelling secures the loan.
+    who: loan operations
+    refer: Whether a dwelling secures the loan is not recorded.
+  - match: HMDA-COVERAGE
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)
+    requirement: A transaction is covered unless an exclusion in 1003.3(c) applies, so each exclusion must be tested and the purpose settled.
+    action: Record each exclusion flag, the farm or business purpose, and the prior-year origination counts.
+    who: loan officer
+    refer: Coverage cannot be settled because an exclusion fact is missing or the purpose is not decided.
+  - match: HMDA-EXCL-VOLUME
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)(11), (12)
+    requirement: A loan is excluded when the institution made fewer than the minimum number of originations in one of the two preceding calendar years.
+    action: Record the origination counts for the two preceding calendar years.
+    who: loan operations
+    refer: The origination counts for the two preceding years are missing.
+  - match: HMDA-EXCL-AMOUNT
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)(7)
+    requirement: A transaction with a total dollar amount under the pinned minimum is an excluded transaction.
+    action: Record the total dollar amount of the transaction.
+    who: loan operations
+    refer: The total dollar amount of the transaction is missing.
+  - match: HMDA-EXCL-AGRICULTURAL
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)(9)
+    requirement: A loan used primarily for agricultural purposes is excluded from Regulation C.
+    action: Record whether the loan is used primarily for agricultural purposes.
+    who: loan officer
+    refer: Whether the loan is used mainly for farm purposes is not decided.
+  - match: HMDA-EXCL-BUSINESS
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)(10)
+    requirement: A loan primarily for business or commercial purposes is excluded, unless it is a home purchase, home improvement or refinancing.
+    action: Record the business or commercial purpose and the loan purpose.
+    who: loan officer
+    refer: Whether the loan is mainly for business purposes is not decided.
+  - match: HMDA-EXCL-*
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.3(c)
+    requirement: A transaction of the type "{1}" is an excluded transaction under 1003.3(c).
+    action: Record whether this excluded-transaction type applies.
+    who: loan operations
+    refer: Whether this excluded-transaction type applies is not recorded.
+  - match: HMDA-ACTION
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(8)
+    requirement: The action taken and its date must be recorded, and the action date may not come before the application date.
+    action: Correct the action date or the application date, and record both from the loan file.
+    who: loan operations
+    refer: The action date comes before the application date, or the application date is missing.
+  - match: HMDA-RATE-SPREAD
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(12)
+    requirement: The reported rate spread must equal the APR minus the APOR for a loan that is subject to Regulation Z.
+    action: Record the APR and the APOR, and report the rate spread they give.
+    who: loan operations
+    refer: The reported rate spread differs from the APR minus the APOR, or an input is missing.
+  - match: HMDA-PARTIAL-EXEMPTION
+    kind: R
+    basis: regulation
+    cite: 12 CFR 1003.3(d)
+    requirement: An institution may omit optional data only with a valid partial exemption, based on its type, its volume and its CRA rating.
+    action: Record the institution type, the origination volume and the CRA rating that support the exemption, or report the optional data.
+    who: compliance reviewer
+    refer: The claimed partial exemption is not valid or cannot be checked.
+  - match: HMDA-LAR-ITEMS
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)
+    requirement: The register must report all 38 items of 1003.4(a) that apply; this roll-up counts the items that fail.
+    action: Resolve the failing items listed with this roll-up.
+    who: loan operations
+    refer: Some register items fail; see each item.
+  - match: HMDA-LAR-01
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(1)
+    requirement: The register must report universal loan identifier and application date for a covered loan, with an allowed value.
+    action: Record universal loan identifier and application date from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for universal loan identifier and application date is missing or not valid.
+  - match: HMDA-LAR-02
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(2)
+    requirement: The register must report government insurance or guarantee program for a covered loan, with an allowed value.
+    action: Record government insurance or guarantee program from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for government insurance or guarantee program is missing or not valid.
+  - match: HMDA-LAR-03
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(3)
+    requirement: The register must report loan purpose for a covered loan, with an allowed value.
+    action: Record loan purpose from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for loan purpose is missing or not valid.
+  - match: HMDA-LAR-04
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(4)
+    requirement: The register must report preapproval request for a covered loan, with an allowed value.
+    action: Record preapproval request from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for preapproval request is missing or not valid.
+  - match: HMDA-LAR-05
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(5)
+    requirement: The register must report construction method for a covered loan, with an allowed value.
+    action: Record construction method from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for construction method is missing or not valid.
+  - match: HMDA-LAR-06
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(6)
+    requirement: The register must report occupancy type for a covered loan, with an allowed value.
+    action: Record occupancy type from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for occupancy type is missing or not valid.
+  - match: HMDA-LAR-07
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(7)
+    requirement: The register must report loan amount for a covered loan, with an allowed value.
+    action: Record loan amount from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for loan amount is missing or not valid.
+  - match: HMDA-LAR-08
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(8)
+    requirement: The register must report action taken and date for a covered loan, with an allowed value.
+    action: Record action taken and date from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for action taken and date is missing or not valid.
+  - match: HMDA-LAR-09
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(9)
+    requirement: The register must report property location for a covered loan, with an allowed value.
+    action: Record property location from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for property location is missing or not valid.
+  - match: HMDA-LAR-10
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(10)
+    requirement: The register must report applicant ethnicity, race, sex, age and income for a covered loan, with an allowed value.
+    action: Record applicant ethnicity, race, sex, age and income from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for applicant ethnicity, race, sex, age and income is missing or not valid.
+  - match: HMDA-LAR-11
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(11)
+    requirement: The register must report type of purchaser for a covered loan, with an allowed value.
+    action: Record type of purchaser from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for type of purchaser is missing or not valid.
+  - match: HMDA-LAR-12
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(12)
+    requirement: The register must report rate spread for a covered loan, with an allowed value.
+    action: Record rate spread from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for rate spread is missing or not valid.
+  - match: HMDA-LAR-13
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(13)
+    requirement: The register must report hOEPA status for a covered loan, with an allowed value.
+    action: Record hOEPA status from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for hOEPA status is missing or not valid.
+  - match: HMDA-LAR-14
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(14)
+    requirement: The register must report lien status for a covered loan, with an allowed value.
+    action: Record lien status from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for lien status is missing or not valid.
+  - match: HMDA-LAR-15
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(15)
+    requirement: The register must report credit score and scoring model for a covered loan, with an allowed value.
+    action: Record credit score and scoring model from the file, or correct the value that was reported.
+    who: credit analyst
+    refer: The register value for credit score and scoring model is missing or not valid.
+  - match: HMDA-LAR-16
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(16)
+    requirement: The register must report denial reasons for a covered loan, with an allowed value.
+    action: Record denial reasons from the file, or correct the value that was reported.
+    who: credit operations
+    refer: The register value for denial reasons is missing or not valid.
+  - match: HMDA-LAR-17
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(17)
+    requirement: The register must report total loan costs or total points and fees for a covered loan, with an allowed value.
+    action: Record total loan costs or total points and fees from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for total loan costs or total points and fees is missing or not valid.
+  - match: HMDA-LAR-18
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(18)
+    requirement: The register must report total of borrower-paid itemized amounts at or before closing for a covered loan, with an allowed value.
+    action: Record total of borrower-paid itemized amounts at or before closing from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for total of borrower-paid itemized amounts at or before closing is missing or not valid.
+  - match: HMDA-LAR-19
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(19)
+    requirement: The register must report discount points for a covered loan, with an allowed value.
+    action: Record discount points from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for discount points is missing or not valid.
+  - match: HMDA-LAR-20
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(20)
+    requirement: The register must report lender credits for a covered loan, with an allowed value.
+    action: Record lender credits from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for lender credits is missing or not valid.
+  - match: HMDA-LAR-21
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(21)
+    requirement: The register must report interest rate for a covered loan, with an allowed value.
+    action: Record interest rate from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for interest rate is missing or not valid.
+  - match: HMDA-LAR-22
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(22)
+    requirement: The register must report prepayment penalty term for a covered loan, with an allowed value.
+    action: Record prepayment penalty term from the file, or correct the value that was reported.
+    who: closing staff
+    refer: The register value for prepayment penalty term is missing or not valid.
+  - match: HMDA-LAR-23
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(23)
+    requirement: The register must report debt-to-income ratio for a covered loan, with an allowed value.
+    action: Record debt-to-income ratio from the file, or correct the value that was reported.
+    who: credit analyst
+    refer: The register value for debt-to-income ratio is missing or not valid.
+  - match: HMDA-LAR-24
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(24)
+    requirement: The register must report combined loan-to-value ratio for a covered loan, with an allowed value.
+    action: Record combined loan-to-value ratio from the file, or correct the value that was reported.
+    who: credit analyst
+    refer: The register value for combined loan-to-value ratio is missing or not valid.
+  - match: HMDA-LAR-25
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(25)
+    requirement: The register must report loan term for a covered loan, with an allowed value.
+    action: Record loan term from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for loan term is missing or not valid.
+  - match: HMDA-LAR-26
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(26)
+    requirement: The register must report introductory rate period for a covered loan, with an allowed value.
+    action: Record introductory rate period from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for introductory rate period is missing or not valid.
+  - match: HMDA-LAR-27
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(27)
+    requirement: The register must report non-amortizing features for a covered loan, with an allowed value.
+    action: Record non-amortizing features from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for non-amortizing features is missing or not valid.
+  - match: HMDA-LAR-28
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(28)
+    requirement: The register must report property value for a covered loan, with an allowed value.
+    action: Record property value from the file, or correct the value that was reported.
+    who: credit analyst
+    refer: The register value for property value is missing or not valid.
+  - match: HMDA-LAR-29
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(29)
+    requirement: The register must report manufactured home secured property type for a covered loan, with an allowed value.
+    action: Record manufactured home secured property type from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for manufactured home secured property type is missing or not valid.
+  - match: HMDA-LAR-30
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(30)
+    requirement: The register must report manufactured home land property interest for a covered loan, with an allowed value.
+    action: Record manufactured home land property interest from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for manufactured home land property interest is missing or not valid.
+  - match: HMDA-LAR-31
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(31)
+    requirement: The register must report total units for a covered loan, with an allowed value.
+    action: Record total units from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for total units is missing or not valid.
+  - match: HMDA-LAR-32
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(32)
+    requirement: The register must report multifamily affordable units for a covered loan, with an allowed value.
+    action: Record multifamily affordable units from the file, or correct the value that was reported.
+    who: loan officer
+    refer: The register value for multifamily affordable units is missing or not valid.
+  - match: HMDA-LAR-33
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(33)
+    requirement: The register must report application channel for a covered loan, with an allowed value.
+    action: Record application channel from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for application channel is missing or not valid.
+  - match: HMDA-LAR-34
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(34)
+    requirement: The register must report nMLS identifier for a covered loan, with an allowed value.
+    action: Record nMLS identifier from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for nMLS identifier is missing or not valid.
+  - match: HMDA-LAR-35
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(35)
+    requirement: The register must report automated underwriting system and result for a covered loan, with an allowed value.
+    action: Record automated underwriting system and result from the file, or correct the value that was reported.
+    who: credit analyst
+    refer: The register value for automated underwriting system and result is missing or not valid.
+  - match: HMDA-LAR-36
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(36)
+    requirement: The register must report reverse mortgage flag for a covered loan, with an allowed value.
+    action: Record reverse mortgage flag from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for reverse mortgage flag is missing or not valid.
+  - match: HMDA-LAR-37
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(37)
+    requirement: The register must report open-end line of credit flag for a covered loan, with an allowed value.
+    action: Record open-end line of credit flag from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for open-end line of credit flag is missing or not valid.
+  - match: HMDA-LAR-38
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1003.4(a)(38)
+    requirement: The register must report business or commercial purpose flag for a covered loan, with an allowed value.
+    action: Record business or commercial purpose flag from the file, or correct the value that was reported.
+    who: loan operations
+    refer: The register value for business or commercial purpose flag is missing or not valid.
+fields:
+  - match: agricultural_purpose
+    rule: HMDA-COVERAGE
+    route: customer
+    label: farm use of the loan
+    why: Regulation C may not cover a farm loan. We need to know if the customer will use this loan mainly for farm purposes.
+  - match: business_commercial_purpose
+    rule: HMDA-COVERAGE
+    route: customer
+    label: business use of the loan
+    why: Regulation C may not cover a business loan. We need to know if the customer will use this loan mainly for business purposes.
+  - match: loan_purpose
+    rule: HMDA-COVERAGE
+    route: customer
+    label: loan purpose
+    why: A business loan is covered only if it buys a home, improves a home or refinances. We need the purpose of the loan.
+  - match: exclusions.*
+    rule: HMDA-EXCL-*
+    route: refer
+    label: excluded-transaction check
+    why: The institution must record whether the transaction type "{1}" applies.
+  - match: prior_year_originations.*
+    rule: HMDA-EXCL-VOLUME
+    route: refer
+    label: origination counts
+    why: The institution must record its {1} originations for the two preceding years.
+  - match: application_date
+    rule: HMDA-ACTION
+    route: refer
+    label: application date
+    why: Loan operations must record the application date to check the order of events.
+  - match: apr/apor
+    rule: HMDA-RATE-SPREAD
+    route: refer
+    label: APR and APOR
+    why: Loan operations must record the APR and the APOR to compute the rate spread.
+  - match: reported_rate_spread
+    rule: HMDA-RATE-SPREAD
+    route: refer
+    label: reported rate spread
+    why: Loan operations must record the rate spread that the register reports.
+  - match: lar.applicant
+    rule: HMDA-LAR-10
+    route: customer
+    label: applicant ethnicity, race and sex
+    decline: true
+    why: The register needs the applicant's ethnicity, race and sex. Ask; the applicant may decline; record the decline.
+  - match: lar.co_applicant
+    rule: HMDA-LAR-10
+    route: customer
+    label: co-applicant ethnicity, race and sex
+    decline: true
+    why: The register needs the co-applicant's ethnicity, race and sex. Ask; the co-applicant may decline; record the decline.
+  - match: lar.co-applicant.*
+    rule: HMDA-LAR-10
+    route: refer
+    label: how the co-applicant's information was collected
+    why: The loan officer must record whether visual observation or surname was used.
+  - match: lar.applicant.*
+    rule: HMDA-LAR-10
+    route: refer
+    label: how the applicant's information was collected
+    why: The loan officer must record whether visual observation or surname was used.
+  - match: lar.age
+    rule: HMDA-LAR-10
+    route: customer
+    label: age of the applicant
+    why: The register needs the applicant's age. We use the date of birth on the application.
+  - match: lar.income
+    rule: HMDA-LAR-10
+    route: customer
+    label: gross annual income
+    why: The register needs the income that we used in the credit decision. We need the gross yearly income.
+  - match: lar.property_address
+    rule: HMDA-LAR-09
+    route: customer
+    label: property address
+    why: The register needs the street address of the property. We need the full address, with city, state and ZIP code.
+  - match: lar.property_state
+    rule: HMDA-LAR-09
+    route: refer
+    label: property state
+    why: Loan operations must record the state of the property.
+  - match: lar.property_county
+    rule: HMDA-LAR-09
+    route: refer
+    label: property county
+    why: Loan operations must record the county of the property.
+  - match: lar.property_census_tract
+    rule: HMDA-LAR-09
+    route: refer
+    label: census tract
+    why: Loan operations must record the 11-digit census tract of the property.
+  - match: lar.loan_purpose
+    rule: HMDA-LAR-03
+    route: customer
+    label: purpose of the loan
+    why: The register needs the purpose of the loan, such as a home purchase. We need to know what the loan is for.
+  - match: lar.preapproval
+    rule: HMDA-LAR-04
+    route: customer
+    label: preapproval request
+    why: For a home purchase, the register needs to know if the customer asked for a preapproval. We need their answer.
+  - match: lar.construction_method
+    rule: HMDA-LAR-05
+    route: customer
+    label: construction method
+    why: The register needs to know if the home is site-built or a manufactured home. We need the type of home.
+  - match: lar.occupancy_type
+    rule: HMDA-LAR-06
+    route: customer
+    label: how the home will be used
+    why: The register needs to know if the home is a main home, a second home or an investment. We need how the customer will use it.
+  - match: lar.total_units
+    rule: HMDA-LAR-31
+    route: customer
+    label: number of units
+    why: The register needs the number of units in the property. We need how many units the property has.
+  - match: lar.manufactured_home_secured_property_type
+    rule: HMDA-LAR-29
+    route: customer
+    label: manufactured home and land
+    why: For a manufactured home, the register needs to know if the loan covers the home and the land. We need what the loan secures.
+  - match: lar.manufactured_home_land_property_interest
+    rule: HMDA-LAR-30
+    route: customer
+    label: land ownership
+    why: For a manufactured home, the register needs how the customer holds the land. We need whether they own it or lease it.
+  - match: lar.multifamily_affordable_units
+    rule: HMDA-LAR-32
+    route: refer
+    label: affordable units
+    why: The loan officer must record the number of income-restricted units in the property.
+  - match: lar.loan_type_government_program
+    rule: HMDA-LAR-02
+    route: refer
+    label: government program
+    why: Loan operations must record the government insurance or guarantee program, if any.
+  - match: lar.uli
+    rule: HMDA-LAR-01
+    route: refer
+    label: universal loan identifier
+    why: Loan operations must record the universal loan identifier.
+  - match: lar.loan_amount
+    rule: HMDA-LAR-07
+    route: refer
+    label: loan amount
+    why: Loan operations must record the amount of the loan.
+  - match: lar.purchaser_type
+    rule: HMDA-LAR-11
+    route: refer
+    label: type of purchaser
+    why: Loan operations must record who bought the loan.
+  - match: lar.hoepa_status
+    rule: HMDA-LAR-13
+    route: refer
+    label: high-cost status
+    why: Loan operations must record the HOEPA status of the loan.
+  - match: lar.lien_status
+    rule: HMDA-LAR-14
+    route: refer
+    label: lien status
+    why: Loan operations must record whether the lien is first or subordinate.
+  - match: lar.credit_scores
+    rule: HMDA-LAR-15
+    route: refer
+    label: credit score
+    why: The credit analyst must record the credit score and the scoring model.
+  - match: lar.total_loan_costs
+    rule: HMDA-LAR-17
+    route: refer
+    label: total loan costs
+    why: Closing staff must record the total loan costs from the Closing Disclosure.
+  - match: lar.total_borrower_paid_charges
+    rule: HMDA-LAR-18
+    route: refer
+    label: total borrower-paid charges
+    why: Closing staff must record the total of the charges the borrower paid.
+  - match: lar.discount_points
+    rule: HMDA-LAR-19
+    route: refer
+    label: discount points
+    why: Closing staff must record the discount points.
+  - match: lar.lender_credits
+    rule: HMDA-LAR-20
+    route: refer
+    label: lender credits
+    why: Closing staff must record the lender credits.
+  - match: lar.interest_rate
+    rule: HMDA-LAR-21
+    route: refer
+    label: interest rate
+    why: Closing staff must record the interest rate.
+  - match: lar.prepayment_penalty_term_months
+    rule: HMDA-LAR-22
+    route: refer
+    label: prepayment penalty term
+    why: Closing staff must record the prepayment penalty term in months.
+  - match: lar.debt_to_income_ratio
+    rule: HMDA-LAR-23
+    route: refer
+    label: debt-to-income ratio
+    why: The credit analyst must record the debt-to-income ratio used in the decision.
+  - match: lar.combined_loan_to_value_ratio
+    rule: HMDA-LAR-24
+    route: refer
+    label: combined loan-to-value ratio
+    why: The credit analyst must record the combined loan-to-value ratio used in the decision.
+  - match: lar.loan_term_months
+    rule: HMDA-LAR-25
+    route: refer
+    label: loan term
+    why: Loan operations must record the loan term in months.
+  - match: lar.introductory_rate_period_months
+    rule: HMDA-LAR-26
+    route: refer
+    label: introductory rate period
+    why: Loan operations must record the introductory rate period in months.
+  - match: lar.non_amortizing_features
+    rule: HMDA-LAR-27
+    route: refer
+    label: non-amortizing features
+    why: Loan operations must record whether the loan has a balloon payment or similar features.
+  - match: lar.property_value
+    rule: HMDA-LAR-28
+    route: refer
+    label: property value
+    why: The credit analyst must record the property value used in the decision.
+  - match: lar.application_channel
+    rule: HMDA-LAR-33
+    route: refer
+    label: application channel
+    why: Loan operations must record how the application was submitted and to whom the note was payable.
+  - match: lar.nmls_identifier
+    rule: HMDA-LAR-34
+    route: refer
+    label: NMLS identifier
+    why: Loan operations must record the NMLS identifier of the loan originator.
+  - match: lar.automated_underwriting
+    rule: HMDA-LAR-35
+    route: refer
+    label: automated underwriting result
+    why: The credit analyst must record the automated underwriting system and its result.
+  - match: lar.reverse_mortgage
+    rule: HMDA-LAR-36
+    route: refer
+    label: reverse mortgage flag
+    why: Loan operations must record whether the loan is a reverse mortgage.
+  - match: lar.open_end_line_of_credit
+    rule: HMDA-LAR-37
+    route: refer
+    label: open-end line of credit flag
+    why: Loan operations must record whether the loan is an open-end line of credit.
+  - match: lar.business_or_commercial_purpose
+    rule: HMDA-LAR-38
+    route: refer
+    label: business purpose flag
+    why: Loan operations must record whether the loan is for a business or commercial purpose.
+  - match: lar.denial_reasons
+    rule: HMDA-LAR-16
+    route: refer
+    label: denial reasons
+    why: Credit operations must record one to four principal reasons for the denial.
+  - match: lar_context.*
+    rule: HMDA-LAR-*
+    route: refer
+    label: register context flag
+    why: Loan operations must record the register context flag "{1}".
+  - match: lar.nuli
+    rule: HMDA-LAR-01
+    route: refer
+    label: non-universal loan identifier
+    why: Loan operations must record the non-universal loan identifier when no universal identifier applies.
+  - match: lar.total_points_and_fees
+    rule: HMDA-LAR-17
+    route: refer
+    label: total points and fees
+    why: Closing staff must record the total points and fees when no Closing Disclosure applies.

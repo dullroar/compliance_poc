@@ -1,0 +1,120 @@
+# High volatility commercial real estate, 12 CFR 628.2. Pinned definition paragraphs only; the Appendix A loan-to-value limit is not pinned.
+rules:
+  - match: HVCRE-EFFECTIVE
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (3)
+    requirement: An HVCRE exposure does not include a loan made before the effective date of the definition.
+    action: Record the date the loan was made.
+    who: credit analyst
+    refer: The date the loan was made is missing.
+  - match: HVCRE-RECLASSIFIED
+    kind: R
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraphs (4), (6)
+    requirement: A facility reclassified by the institution as a non-HVCRE exposure is no longer treated as HVCRE.
+    action: Record the reclassification and the evidence that supports it.
+    who: compliance reviewer
+    refer: A reclassification of the facility needs a reviewer check.
+  - match: HVCRE-DEFINITION
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (1)
+    requirement: A facility is HVCRE when it finances acquisition, development or construction, aims at income-producing property, and depends on future income for repayment.
+    action: Record the answer to each of the three prongs.
+    who: credit analyst
+    refer: One of the three prongs of the HVCRE test is not recorded.
+  - match: HVCRE-EXCL-RESIDENTIAL
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(i)(A)
+    requirement: A loan for a one- to four-family residential property is excluded when the dwelling is at least 50 percent of the collateral value.
+    action: Record the property type and the dwelling share of the appraised collateral value.
+    who: credit analyst
+    refer: The property type or the dwelling share of collateral value is not recorded.
+  - match: HVCRE-EXCL-AGRICULTURAL
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(i)(C)
+    requirement: Financing for the agricultural needs of a bona fide farmer, rancher or producer is excluded.
+    action: Record whether the loan finances agricultural land for a bona fide farmer, rancher or producer.
+    who: loan officer
+    refer: Whether the loan finances a bona fide farmer's needs is not recorded.
+  - match: HVCRE-EXCL-EXISTING-INCOME
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(ii)
+    requirement: A loan to acquire or refinance existing income-producing property is excluded when cash flow supports permanent financing.
+    action: Record whether the property already produces income and whether cash flow meets permanent-financing criteria.
+    who: credit analyst
+    refer: Whether the property already produces income, or its cash flow, is not recorded.
+  - match: HVCRE-EXCL-EXISTING-IMPROVEMENTS
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(iii)
+    requirement: A loan for improvements to existing income-producing property is excluded when cash flow supports permanent financing.
+    action: Record whether this is an improvement to income-producing property and whether cash flow meets the criteria.
+    who: credit analyst
+    refer: Whether this improves an income-producing property, or its cash flow, is not recorded.
+  - match: HVCRE-EXCL-CAPITAL
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(iv)
+    requirement: A project is excluded when loan-to-value is within the limit and the borrower contributed and kept 15 percent capital.
+    action: Record the loan-to-value ratio and limit, the as-completed value, the contributions, and the timing and retention of the capital.
+    who: credit analyst
+    refer: The capital test cannot be done because a value, a contribution or the loan-to-value limit is missing.
+  - match: HVCRE-EXCL-SMALL-LOAN
+    kind: G
+    basis: regulation
+    cite: 12 CFR 628.2, HVCRE exposure paragraph (2)(v)
+    requirement: A loan under the pinned small-loan amount is excluded.
+    action: Record the amount of the credit facility.
+    who: credit analyst
+    refer: The amount of the credit facility is missing.
+fields:
+  - match: primarily_finances_adc
+    rule: HVCRE-DEFINITION
+    route: refer
+    label: acquisition, development or construction purpose
+    why: The credit analyst must record whether the loan finances acquisition, development or construction.
+  - match: purpose_income_producing
+    rule: HVCRE-DEFINITION
+    route: refer
+    label: income-producing purpose
+    why: The credit analyst must record whether the aim is income-producing property.
+  - match: dependent_on_future_income_or_sales
+    rule: HVCRE-DEFINITION
+    route: refer
+    label: repayment from future income
+    why: The credit analyst must record whether repayment depends on future income or sales.
+  - match: credit_facility_amount
+    rule: HVCRE-EXCL-SMALL-LOAN
+    route: refer
+    label: credit facility amount
+    why: The credit analyst must record the amount of the credit facility.
+  - match: property.agricultural_land_bona_fide_farmer
+    rule: HVCRE-EXCL-AGRICULTURAL
+    route: customer
+    label: farm use of the land
+    why: To check an exclusion, we need to know if the land is for the farmer's own farm needs.
+  - match: property.*
+    rule: HVCRE-EXCL-*
+    route: refer
+    label: property fact
+    why: 'The credit analyst must record this property fact: {1}.'
+  - match: capital.*
+    rule: HVCRE-EXCL-CAPITAL
+    route: refer
+    label: capital contribution fact
+    why: 'The credit analyst must record this capital fact: {1}.'
+  - match: capital.ltv_ratio**
+    rule: HVCRE-EXCL-CAPITAL
+    route: refer
+    label: loan-to-value ratio and limit
+    why: The credit analyst must record the loan-to-value ratio and the Appendix A limit with its source.
+  - match: capital.as_completed_value**
+    rule: HVCRE-EXCL-CAPITAL
+    route: refer
+    label: as-completed value and contributions
+    why: The credit analyst must record the as-completed value and the borrower's capital contributions.

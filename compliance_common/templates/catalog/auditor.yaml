@@ -1,0 +1,88 @@
+# Cross-regime consistency checks. These findings are internal; the customer is never asked to resolve a cross-regime difference.
+rules:
+  - match: AUD-AGENTS
+    kind: G
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: Every expected regime must report a result; a missing agent is never assumed to pass.
+    action: Rerun or repair the regime whose result is missing.
+    who: loan operations
+    refer: A regime did not report a result.
+  - match: AUD-RATE-SPREAD
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy; 12 CFR 1003.4(a)(12)
+    requirement: The rate spread reported for HMDA must agree with the spread computed from the APR minus the APOR.
+    action: Correct the reported rate spread or the APR or APOR input that differs.
+    who: loan operations
+    refer: The HMDA rate spread differs from the spread computed from APR minus APOR.
+  - match: AUD-PRICING
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: The APR, APOR and rate-set evidence must be the same in the HPML and HMDA cases.
+    action: Correct the pricing input that differs between the cases.
+    who: loan operations
+    refer: The pricing figures differ between the HPML and HMDA cases.
+  - match: AUD-AMOUNT
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: The loan amount must be the same in every case.
+    action: Correct the loan amount that differs between the cases.
+    who: loan operations
+    refer: The loan amount differs between cases.
+  - match: AUD-DATES
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: The application, decision and closing dates must be consistent across the cases.
+    action: Correct the date that differs between the cases.
+    who: loan operations
+    refer: A date differs between cases.
+  - match: AUD-CASE-ID
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: One loan must carry one case id in every case.
+    action: Correct the case id that differs.
+    who: loan operations
+    refer: The case id differs between cases.
+  - match: AUD-DEMOGRAPHICS
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy; 12 CFR 1002.13, 12 CFR 1003.4(a)(10)
+    requirement: Demographic data recorded as provided or declined for monitoring must also appear in the HMDA register.
+    action: Carry the monitoring record into the HMDA register, or explain the difference.
+    who: loan operations
+    refer: Monitoring data and the HMDA register disagree on demographic items.
+  - match: AUD-OCCUPANCY
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: The principal-residence fact must agree across the VMI, HPML and HMDA cases.
+    action: Correct the occupancy fact that differs between the cases.
+    who: loan operations
+    refer: The occupancy fact differs between cases.
+  - match: AUD-SCOPE
+    kind: V
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: The VMI reportability flag must agree with the HMDA coverage result.
+    action: Correct the reportability flag or the HMDA coverage input.
+    who: loan operations
+    refer: VMI and HMDA disagree on whether the loan is reportable.
+  - match: AUD-SHARED-GAP
+    kind: G
+    basis: institution policy
+    cite: Institution audit policy
+    requirement: A fact missing in more than one regime is one gap and is closed once.
+    action: Obtain the fact once and supply it to every regime that lists it.
+    who: loan operations
+    refer: One missing fact blocks more than one regime.
+fields:
+  - match: agent:*
+    rule: AUD-AGENTS
+    route: refer
+    label: regime result
+    why: The {1} regime gave no result; loan operations must rerun it.

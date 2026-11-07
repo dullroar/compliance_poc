@@ -14,11 +14,19 @@ from agents.a2a_server import build_app
 from .config import is_local
 
 
+AGENT_OPTIONS = ("tool_mode", "include_regulations", "max_regulation_chars", "templates")
+
+
+def agent_options(entry: dict) -> dict:
+    """The agents.yaml keys that configure how one agent runs (see agents.runner.DEFAULT_OPTIONS)."""
+    return {k: entry[k] for k in AGENT_OPTIONS if k in entry}
+
+
 def serve_one(key: str, entry: dict, provider: str | None = None, model: str | None = None) -> None:
     """Run one agent server in the foreground (blocking)."""
     import uvicorn
     url = urlparse(entry["url"])
-    options = {k: entry[k] for k in ("tool_mode", "include_regulations", "max_regulation_chars") if k in entry}
+    options = agent_options(entry)
     app = build_app(key, entry["url"], provider=entry.get("provider") or provider, model=entry.get("model") or model, options=options or None)
     uvicorn.run(app, host=url.hostname, port=url.port, log_level="warning")
 

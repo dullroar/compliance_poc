@@ -173,7 +173,7 @@ class Backend:
         return _anthropic_output_text(response)
 
     def complete_with_tool(self, system: str, messages: list[dict], spec: dict, execute, calls_made: list,
-                           force_first: bool = True) -> str:
+                           force_first: bool = True, schema: dict | None = None) -> str:
         """The model is given the tool and is expected to call it. Anthropic and OpenAI force the first call; Ollama
         has no equivalent, so a model that does not call the tool is handled by the runner (see agents.runner)."""
         if self.provider == "ollama":
@@ -184,7 +184,7 @@ class Backend:
         if self.provider == "openai":
             response = run_openai_tool_loop(self.client, spec, execute, model=self.model, system=system,
                                             messages=messages, max_tokens=MAX_TOKENS, calls_made=calls_made,
-                                            force_first=force_first, schema=NARRATIVE_SCHEMA)
+                                            force_first=force_first, schema=schema or NARRATIVE_SCHEMA)
             return _openai_output_text(response)
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system,
                                            messages=messages, max_tokens=ANTHROPIC_MAX_TOKENS, calls_made=calls_made, force_first=force_first)

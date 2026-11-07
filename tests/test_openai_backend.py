@@ -15,7 +15,7 @@ from compliance_mcp.ybs import evaluate_ybs
 
 GOOD_TEXT = ("The deterministic review classified this case as Young + Beginning + Small with the result Compliant. "
              "Every rule in the decision record was satisfied or did not apply, and the record lists no missing facts.")
-NARRATIVE = {"narrative": {"reasoning": GOOD_TEXT, "examiner_narrative": GOOD_TEXT, "data_gaps_followups": []}}
+NARRATIVE = {"narrative": {"reasoning": GOOD_TEXT, "examiner_narrative": GOOD_TEXT, "data_gaps_followups": []}, "examiner_paragraphs": []}
 
 
 def person(**changes):

@@ -1,0 +1,141 @@
+# ECOA / Regulation B, 12 CFR part 1002. Almost every ECOA fact is about what the institution did, so it is never a customer request:
+# telling a loan officer to "obtain" marital status could cause the violation that 1002.5(d)(1) tests.
+rules:
+  - match: ECOA-ADVERSE-ACTION
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1002.9(a)(1)
+    requirement: Adverse action starts the notice duties of 1002.9, so the decision type and the counteroffer outcome must be recorded.
+    action: Record the decision type, and for a counteroffer whether it was accepted or the response period passed.
+    who: credit operations
+    refer: The decision type or the counteroffer result is not recorded.
+  - match: ECOA-NOTICE-TIMING-COUNTEROFFER
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1002.9(a)(1)(iv)
+    requirement: After an unaccepted counteroffer, adverse action notice is due within 90 days of the counteroffer notice.
+    action: Record the counteroffer notice date and the adverse action notice date, or send the late notice.
+    who: credit operations
+    refer: The notice after the counteroffer is late or its dates are missing.
+  - match: ECOA-NOTICE-TIMING
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1002.9(a)(1), (c)(1)
+    requirement: The creditor must notify the applicant of the action taken, or of an incomplete application, within 30 days of the trigger date.
+    action: Record the notice date and the date the 30 days start, or send the late notice.
+    who: credit operations
+    refer: The notice was sent after the 30-day limit, or a date is missing.
+  - match: ECOA-NOTICE-CONTENT
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.9(a)(2), (b)(1), (c)(2)
+    requirement: The notice must state the action, creditor, ECOA notice, agency address, and reasons or the right to them.
+    action: Record which required elements the notice has, and re-issue a notice that lacks one.
+    who: credit operations
+    refer: The notice lacks a required element or the record of its content is incomplete.
+  - match: ECOA-REASONS-SPECIFIC
+    kind: R
+    basis: regulation
+    cite: 12 CFR 1002.9(b)(2)
+    requirement: Statements of reasons for adverse action must be specific and indicate the principal reasons.
+    action: A reviewer checks the stated reasons against the decision and records whether they are specific.
+    who: compliance reviewer
+    refer: A reviewer must decide if the stated reasons are specific enough.
+  - match: ECOA-NOTICE-RECIPIENT
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.9(f)
+    requirement: When there is more than one applicant, the notice goes to the primary applicant.
+    action: Record who received the notice, and send the notice to the primary applicant if it went elsewhere.
+    who: credit operations
+    refer: The notice did not go to the primary applicant, or the recipient is not recorded.
+  - match: ECOA-MARITAL-INQUIRY
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.5(d)(1)
+    requirement: A creditor may not ask about marital status on individual unsecured credit outside community property; allowed terms are married, unmarried, separated.
+    action: Record whether marital status was asked in the credit decision process, and for what type of credit.
+    who: compliance reviewer
+    refer: The record does not show whether marital status was asked; compliance must check this.
+  - match: ECOA-SPOUSE-SIGNATURE
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.7(d)
+    requirement: A creditor may not require the signature of a spouse or other person when the applicant qualifies alone, except as 1002.7(d) allows.
+    action: Record whether a signature was required, who signed, and whether the applicant qualified alone.
+    who: compliance reviewer
+    refer: The record does not show if a spouse signature was required; compliance must check this.
+  - match: ECOA-AGE-PUBLIC-ASSISTANCE
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.6(b)(2)
+    requirement: Age and public-assistance income may be used only as 1002.6(b)(2) permits.
+    action: Record how age and public-assistance income were treated in the decision.
+    who: compliance reviewer
+    refer: The record does not show how age or public-assistance income was used; compliance must check this.
+fields:
+  - match: marital_status_inquiry
+    rule: ECOA-MARITAL-INQUIRY
+    route: refer
+    label: whether marital status was asked
+    why: Compliance must record whether the institution asked about marital status.
+  - match: marital_status_inquiry.credit_type
+    rule: ECOA-MARITAL-INQUIRY
+    route: refer
+    label: credit type of the marital status question
+    why: Compliance must record the type of credit when marital status was asked.
+  - match: spouse_signature
+    rule: ECOA-SPOUSE-SIGNATURE
+    route: refer
+    label: whether a spouse signature was required
+    why: Compliance must record whether the institution required a spouse or other person to sign.
+  - match: spouse_signature.*
+    rule: ECOA-SPOUSE-SIGNATURE
+    route: refer
+    label: who signed and why
+    why: Compliance must record who signed and whether the applicant qualified alone.
+  - match: age_public_assistance
+    rule: ECOA-AGE-PUBLIC-ASSISTANCE
+    route: refer
+    label: use of age and public-assistance income
+    why: Compliance must record how the decision treated age and public-assistance income.
+  - match: notice.date**
+    rule: ECOA-NOTICE-TIMING
+    route: refer
+    label: notice date
+    why: Credit operations must record the date the notice was sent and the date the 30 days start.
+  - match: counteroffer.notice_date**
+    rule: ECOA-NOTICE-TIMING
+    route: refer
+    label: counteroffer notice date
+    why: Credit operations must record the counteroffer notice date and the date the application was complete.
+  - match: counteroffer.accepted**
+    rule: ECOA-ADVERSE-ACTION
+    route: refer
+    label: counteroffer result
+    why: Credit operations must record whether the counteroffer was accepted or the response period passed.
+  - match: notice.written
+    rule: ECOA-NOTICE-CONTENT
+    route: refer
+    label: written notice
+    why: Credit operations must record whether a written notice was sent.
+  - match: notice.contents.*
+    rule: ECOA-NOTICE-CONTENT
+    route: refer
+    label: notice content
+    why: 'Credit operations must record whether the notice has this element: {1}.'
+  - match: incompleteness_notice.*
+    rule: ECOA-NOTICE-CONTENT
+    route: refer
+    label: incompleteness notice content
+    why: 'Credit operations must record whether the incompleteness notice has this element: {1}.'
+  - match: notice.specific_reasons
+    rule: ECOA-REASONS-SPECIFIC
+    route: refer
+    label: specific reasons
+    why: A reviewer must record whether the stated reasons are specific.
+  - match: notice.delivered_to
+    rule: ECOA-NOTICE-RECIPIENT
+    route: refer
+    label: notice recipient
+    why: Credit operations must record who received the notice.
