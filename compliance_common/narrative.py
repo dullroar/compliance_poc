@@ -13,6 +13,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from .assemble import contradicts_result
+from .templates import examiner
 
 MIN_NARRATIVE_CHARS = 120
 _BAD = ("not_satisfied", "unable_to_determine", "review_required", "not_eligible")
@@ -90,18 +91,10 @@ def allowed_numbers(*sources: str) -> set[str]:
     return found
 
 
-def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], case: Any, regulations: str,
-                    cross_regime: bool = False) -> list[str]:
-    """Violations in a model narrative (empty list = acceptable). The decision record, the case and the regulation text are the
-    only sources of fact; the narrative may restate them, never extend them."""
-    if not isinstance(narrative, dict):
-        return ["the reply did not contain the required narrative object"]
-    parts = [str(narrative.get(k, "")) for k in ("reasoning", "examiner_narrative", "status_change_narrative")]
-    parts += [str(x) for x in narrative.get("data_gaps_followups") or []]
-    text = "\n".join(p for p in parts if p)
-    if len(text.strip()) < MIN_NARRATIVE_CHARS:
-        return ["the narrative is empty or too short to explain the decision record"]
-    source = json.dumps(decision, default=str) + json.dumps(case, default=str) + regulations
+def grounding_violations(text: str, decision: dict[str, Any], case: Any, regulations: str, cross_regime: bool = False, extra: str = "") -> list[str]:
+    """Numbers, dates and identifiers in `text` that the decision record, the case, the regulation text (and `extra`, wording the catalog
+    supplies) do not contain, and a claim that contradicts the code-decided result."""
+    source = json.dumps(decision, default=str) + json.dumps(case, default=str) + regulations + extra
     violations = []
     known = allowed_numbers(source)
     for token in dict.fromkeys(_NUMBER.findall(text)):
@@ -119,6 +112,47 @@ def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], 
     if note:
         violations.append(note)
     return violations
+
+
+def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], case: Any, regulations: str,
+                    cross_regime: bool = False) -> list[str]:
+    """Violations in a model narrative (empty list = acceptable). The decision record, the case and the regulation text are the
+    only sources of fact; the narrative may restate them, never extend them."""
+    if not isinstance(narrative, dict):
+        return ["the reply did not contain the required narrative object"]
+    parts = [str(narrative.get(k, "")) for k in ("reasoning", "examiner_narrative", "status_change_narrative")]
+    parts += [str(x) for x in narrative.get("data_gaps_followups") or []]
+    text = "\n".join(p for p in parts if p)
+    if len(text.strip()) < MIN_NARRATIVE_CHARS:
+        return ["the narrative is empty or too short to explain the decision record"]
+    return grounding_violations(text, decision, case, regulations, cross_regime)
+
+
+def check_paragraphs(reply: Any, expected: list[dict[str, Any]], decision: dict[str, Any], case: Any, regulations: str, domain: str) -> dict[str, list[str]]:
+    """{rule_id: violations} for each expected examiner paragraph (empty list = acceptable), judged on the model's `examiner_paragraphs`.
+
+    Each paragraph must have the five parts in order, the rule id and citation, the record's own words, the outcome and result words, an
+    action and a length between the floor and the regime limit (templates.examiner.check_paragraph), add no number, date or identifier that
+    the record, the case, the regulation text or the catalog entry lacks, and not contradict the result. Entries the code did not ask for are ignored."""
+    if not expected:
+        return {}
+    entries = reply.get("examiner_paragraphs") if isinstance(reply, dict) else None
+    found: dict[str, list[Any]] = {}
+    for entry in entries if isinstance(entries, list) else []:
+        if isinstance(entry, dict) and isinstance(entry.get("rule_id"), str):
+            found.setdefault(entry["rule_id"], []).append(entry.get("text"))
+    out: dict[str, list[str]] = {}
+    for paragraph in expected:
+        key = paragraph["rule_id"]
+        texts = found.get(key, [])
+        if len(texts) != 1:
+            out[key] = ["no paragraph was written for this finding" if not texts else "more than one paragraph was written for this finding"]
+            continue
+        problems = examiner.check_paragraph(texts[0], paragraph, decision, domain)
+        if isinstance(texts[0], str) and texts[0].strip():
+            problems += grounding_violations(texts[0], decision, case, regulations, domain == "auditor", examiner.catalog_text(paragraph))
+        out[key] = problems
+    return out
 
 
 def retry_message(violations: list[str]) -> str:

@@ -266,23 +266,15 @@ def cost_table(rows: list[dict]) -> dict:
                                                   "cost_usd": None if total["unknown"] else str(total["cost"]), **{k: total[k] for k in USAGE_KEYS}}}
 
 
-# Owner-approved (plans/archive/live-parity/exception-record.md, 2026-11-07, review by 2026-12-07): the narrative report is longer than the
-# output cap on this model. It is still detected, recorded and reported; it no longer fails the gate. No other role is excused.
-TOLERATED_TRUNCATION = frozenset({"narrative"})
-
-
-def flag_truncation(out: dict, phase: str, truncated: set, tolerated: frozenset = TOLERATED_TRUNCATION) -> None:
-    """A reply cut off at max_tokens is not a finished narrative, even when some text came back: fail that role and phase,
-    except for a role named in the exception record, which is marked `tolerated` instead."""
+def flag_truncation(out: dict, phase: str, truncated: set) -> None:
+    """A reply cut off at max_tokens is not a finished narrative, even when some text came back: fail that role and phase.
+    No role is excused (the narrative role's tolerance, plans/archive/live-parity/exception-record.md exception 1, was closed when the
+    report became bounded templates; see plans/response-templates)."""
     for record in out["records"]:
         if (record["role"], phase) in truncated:
-            if record["role"] in tolerated:
-                record["tolerated"] = ["truncated_at_max_tokens"]
-            else:
-                record["checks"]["not_truncated"] = False
+            record["checks"]["not_truncated"] = False
     summary = out["summary"]
     summary["failed"] = {r["role"]: role_failures(r) for r in out["records"] if role_failures(r)}
-    summary["tolerated"] = {r["role"]: r["tolerated"] for r in out["records"] if r.get("tolerated")}
     summary["ok"] = not summary["failed"] and len(out["records"]) == len(registry_roles())
 
 
@@ -325,12 +317,11 @@ def live_run(sdk, *, ledger: Path | str = estimator.LEDGER, runs_path: Path | st
                      "elapsed_seconds": round(time.monotonic() - started, 3), "requests": guard.sent, "reservation_usd": str(bound),
                      "settlement_usd": settlement, "reservation_retained": settlement is None,
                      "roles": [{"role": r["role"], "phase": r["phase"], "narrative_source": r["narrative_source"],
-                                "guard_attempts": r["guard_attempts"], "violation_kinds": r["violation_kinds"], "tolerated": r.get("tolerated", []), "tool_calls": r["tool_calls"],
+                                "guard_attempts": r["guard_attempts"], "violation_kinds": r["violation_kinds"], "tool_calls": r["tool_calls"],
                                 "failed_checks": role_failures(r),
                                 "elapsed_seconds": r["elapsed_seconds"]} for r in records],
                      "fallbacks": [f"{r['role']}/{r['phase']}" for r in records if r["narrative_source"] == "deterministic_fallback"],
                      "successful_narratives": good, "cost_table": table,
-                     "tolerated": [f"{r['role']}/{r['phase']}: {', '.join(r['tolerated'])}" for r in records if r.get("tolerated")],
                      "cost_per_successful_narrative_usd": str(Decimal(per_run_cost) / good) if per_run_cost is not None and good else None})
     return {"run_id": run_id, "reservation_id": reservation_id, "outputs": outputs, "settlement": settlement, "table": table}
 

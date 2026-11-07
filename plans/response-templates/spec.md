@@ -4,7 +4,7 @@ gist: "Read when: planning or auditing the loan-officer and examiner response te
 
 # Response templates - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-07). Confirmed by Jim 2026-11-07: the five-part examiner order and the proposed word limits as the starting values (step 03 still calibrates and asks again), and that examiner paragraphs are written inside each domain agent's existing call (R5). Other rules marked inferred still need confirmation.
+Status: approved (by Jim Lehmer, 2026-11-07). Confirmed by Jim 2026-11-07: the five-part examiner order and the proposed word limits as the starting values (step 03 still calibrates and asks again), and that examiner paragraphs are written inside each domain agent's existing call (R5). Step 03 calibration, confirmed by Jim 2026-11-07: the word limits stay as proposed except VMI, raised from 80 to 100; and when one HMDA result has more than 20 findings, the HMDA LAR item findings are grouped by LAR section (one paragraph per section that has failing items; the section partition is the executor's inferred draft in the catalog and still needs Jim's or compliance's review). Other rules marked inferred still need confirmation.
 
 See [goal.md](goal.md) for the goal command and [inventory.md](inventory.md) for what can fail in each regime and why.
 
@@ -45,7 +45,7 @@ This work does NOT: change any rule, threshold, rule pack, `decision_id`, classi
 
 - Basis: inferred. Order follows the audit convention of criteria, condition, cause, effect, action, mapped to the record. Limits are set from the number of facts a finding must carry and from the density of the regime ([inventory](inventory.md)).
 - Order: (1) **Requirement**: the rule and its citation. (2) **Condition**: what the record shows, with the record's own figures. (3) **Basis**: why this outcome (threshold test failed, fact absent, evidence conflicts, judgment needed). (4) **Effect**: classification and compliance result as the record states them. (5) **Action**: what evidence or correction closes it.
-- Word limit per paragraph (inferred, to be confirmed or recalibrated in step 03 against rendered fixtures): YBS 70, VMI 80, HPML 90, FZD 90, HVCRE 90, ECOA 100, TRID 100, auditor 110, HMDA 130. HMDA is highest because one finding often combines a coverage condition, an Appendix B or C value test and a citation; YBS is lowest because it compares at most three figures to three policy limits. A paragraph also has a floor of 25 words so it cannot be a bare label.
+- Word limit per paragraph (inferred, to be confirmed or recalibrated in step 03 against rendered fixtures): YBS 70, VMI 100 (raised from 80 in step 03), HPML 90, FZD 90, HVCRE 90, ECOA 100, TRID 100, auditor 110, HMDA 130. HMDA is highest because one finding often combines a coverage condition, an Appendix B or C value test and a citation; YBS is lowest because it compares at most three figures to three policy limits. A paragraph also has a floor of 25 words so it cannot be a bare label.
 - Example: a late Loan Estimate gives one paragraph of at most 100 words that cites 1026.19(e)(1)(iii), states the delivery date and the deadline from the record, says the result is Non-Compliant, and names the delivery record that would close it.
 - Acceptance check: `tests/test_examiner_finding.py` asserts the five elements are present (rule id and citation, a figure or named missing fact from the record, outcome word, result word, an action clause), the floor and the regime limit, and one paragraph per finding with none omitted or merged.
 
@@ -78,7 +78,7 @@ This work does NOT: change any rule, threshold, rule pack, `decision_id`, classi
 ## Domain challenge
 
 - *Suspicious - explain it:* the same missing fact can be a customer request in one regime and a record of an institution action in another (marital status: VMI requests it, ECOA records whether it was asked). Resolution (inferred): route by the rule id and kind, not by the field name. Confirm with: Jim or compliance.
-- *Suspicious - explain it:* HMDA may produce dozens of findings for one loan (38 LAR items). One paragraph each could be long. Resolution (inferred): keep one paragraph per finding as asked; measure total length in step 03; if a loan produces more than 20 findings, propose grouping by LAR section as a decision for Jim. Do not group silently.
+- *Suspicious - explain it:* HMDA may produce dozens of findings for one loan (38 LAR items). One paragraph each could be long. Resolution: keep one paragraph per finding as asked; measured in step 03: an HMDA result with an empty register gives 29-36 findings. Jim decided on 2026-11-07 to group the LAR item findings by LAR section only when one result has more than 20 findings; never group silently below that, and never drop a finding (each rule id appears in exactly one paragraph).
 - *Suspicious - explain it:* a paragraph that is correct but over the word limit. Resolution: it is rejected and rewritten by code from the catalog, never cut mid-sentence.
 - *Suspicious - explain it:* YBS `Not Eligible` is `Not Applicable` and not a defect. Resolution: it is not a finding, so it produces no examiner paragraph and no customer request.
 - *Contradicts a confirmed rule:* letting a model choose which findings exist, or alter an outcome. Resolution: findings come from the record; the model only phrases.

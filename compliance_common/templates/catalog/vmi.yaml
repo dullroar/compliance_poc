@@ -1,0 +1,152 @@
+# Monitoring information, 12 CFR 1002.13. The loan officer asks; the applicant may decline; the decline is recorded.
+rules:
+  - match: VMI-COVERAGE
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1002.13(a)(1)
+    requirement: Monitoring information must be requested for a purchase or refinancing of a one- to four-unit principal residence secured by that dwelling.
+    action: Record the loan purpose, the occupancy, the lien and the number of dwelling units.
+    who: loan officer
+    refer: The facts that show whether monitoring information must be requested are missing.
+  - match: VMI-PERMITTED
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1002.13(a)(1); 12 CFR 1003.4(a)(10)
+    requirement: Where collection is not required but the loan is reportable under Regulation C, collection is permitted.
+    action: Record whether the loan is reportable under Regulation C.
+    who: loan operations
+    refer: Whether the loan is reportable under Regulation C is not recorded.
+  - match: VMI-PROHIBITED
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.5(d)(1)
+    requirement: A creditor may not request marital status for individual unsecured credit outside a community property context.
+    action: Stop requesting marital status for this credit type and record the correction.
+    who: compliance reviewer
+    refer: Marital status was requested for credit where the rule forbids it.
+  - match: VMI-SUBSTITUTE
+    kind: R
+    basis: regulation
+    cite: 12 CFR 1002.13(d)
+    requirement: A substitute monitoring program is allowed only when an agency required it.
+    action: A reviewer confirms the agency requirement and records it.
+    who: compliance reviewer
+    refer: A reviewer must confirm that an agency required the substitute program.
+  - match: VMI-REQUEST
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.13(a)(1)
+    requirement: Where collection is required, the request for each item must be recorded.
+    action: Record the monitoring request for each item.
+    who: loan officer
+    refer: No record of the monitoring request exists.
+  - match: VMI-REQUEST-*
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1002.13(a)(1), (b)
+    requirement: The creditor must request {1} as part of the application, and must note a declination.
+    action: Request {1}, record the answer or the declination, and note it on the form.
+    who: loan officer
+    refer: The record does not show that {1} was requested, or the declination is not noted.
+  - match: VMI-OBSERVATION-*
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.13(b)
+    requirement: If the applicant declines to give {1}, the creditor must note it by visual observation or surname, to the extent possible.
+    action: Note {1} by visual observation or surname, and record that you did.
+    who: loan officer
+    refer: The record does not show that {1} was noted by observation or surname.
+  - match: VMI-MARITAL-TERMS
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.13(a)(1)(iii)
+    requirement: Marital status must use only the terms married, unmarried and separated.
+    action: Correct the form to use only those terms.
+    who: loan officer
+    refer: The form uses marital status terms that the rule does not allow.
+  - match: VMI-DISCLOSURE
+    kind: P
+    basis: regulation
+    cite: 12 CFR 1002.13(c)
+    requirement: The applicant must be told why the information is requested, and that a declination is noted by observation or surname.
+    action: Record that the disclosure was given, and give it if it was not.
+    who: loan officer
+    refer: The record does not show the monitoring disclosure was given.
+  - match: VMI-USE
+    kind: P
+    basis: institution policy
+    cite: Institution policy; see 12 CFR 1002.4 and 1002.6
+    requirement: Monitoring information must not be used in the credit decision.
+    action: Record whether the data was used in underwriting, and remove any use.
+    who: compliance reviewer
+    refer: The record does not show that monitoring data stayed out of the credit decision.
+  - match: VMI-FIREWALL
+    kind: P
+    basis: institution policy
+    cite: Institution policy; see 12 CFR 1002.4 and 1002.6
+    requirement: Monitoring data must be kept apart from underwriting by restricted access, decision-makers without access, and access logging.
+    action: Record each firewall control, and put in place any that is missing.
+    who: compliance reviewer
+    refer: A control that keeps monitoring data apart from underwriting is missing or not recorded.
+fields:
+  - match: primarily_purchase_or_refinance
+    rule: VMI-COVERAGE
+    route: customer
+    label: purchase or refinance
+    why: We must ask for monitoring information on a purchase or refinance. We need to know which this loan is.
+  - match: principal_residence
+    rule: VMI-COVERAGE
+    route: customer
+    label: main home
+    why: We must ask for monitoring information on a main home. We need to know if this is the customer's main home.
+  - match: secured_by_dwelling
+    rule: VMI-COVERAGE
+    route: refer
+    label: dwelling lien
+    why: Loan operations must record whether the home secures the loan.
+  - match: dwelling_units
+    rule: VMI-COVERAGE
+    route: customer
+    label: number of units
+    why: We must ask for monitoring information on a home with one to four units. We need the number of units.
+  - match: monitoring
+    rule: VMI-REQUEST
+    route: refer
+    label: monitoring request record
+    why: The loan officer must record whether the monitoring information was requested.
+  - match: monitoring.disclosure_given
+    rule: VMI-DISCLOSURE
+    route: refer
+    label: monitoring disclosure
+    why: The loan officer must record whether the applicant was told why the information is requested.
+  - match: monitoring.items.*.requested
+    rule: VMI-REQUEST-*
+    route: refer
+    label: request record for {1}
+    why: The loan officer must record whether {1} was requested.
+  - match: monitoring.items.*.declination_noted
+    rule: VMI-REQUEST-*
+    route: refer
+    label: declination note for {1}
+    why: The loan officer must record whether the declination of {1} was noted on the form.
+  - match: monitoring.items.*.observation_or_surname_noted
+    rule: VMI-OBSERVATION-*
+    route: refer
+    label: observation note for {1}
+    why: The loan officer must record whether {1} was noted by observation or surname.
+  - match: monitoring.items.*
+    rule: VMI-REQUEST-*
+    route: customer
+    label: "{1}"
+    decline: true
+    why: We must ask for {1}. The applicant may decline; record the decline.
+  - match: data_use.used_in_underwriting
+    rule: VMI-USE
+    route: refer
+    label: use of monitoring data
+    why: Compliance must record whether monitoring data was used in underwriting.
+  - match: firewall.*
+    rule: VMI-FIREWALL
+    route: refer
+    label: firewall control
+    why: 'Compliance must record whether this control is in place: {1}.'

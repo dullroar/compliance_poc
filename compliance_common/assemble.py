@@ -54,11 +54,13 @@ def contradicts_result(compliance_result: str, text: str, cross_regime: bool = F
 
 
 def assemble(agent: dict[str, Any], decision: dict[str, Any], model_output: dict[str, Any] | None,
-             extras: dict[str, Any] | None = None, case: dict[str, Any] | None = None, narrative_source: str = "model") -> dict[str, Any]:
+             extras: dict[str, Any] | None = None, case: dict[str, Any] | None = None, narrative_source: str = "model",
+             response_templates: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build the result object downstream consumers (auditor, narrative) expect.
 
     `model_output["narrative"]` is the narrative that survived verification (or the deterministic fallback); `narrative_source` says which.
-    Evidence, data-quality and change blocks are derived from the record and the case, never taken from the model."""
+    Evidence, data-quality and change blocks are derived from the record and the case, never taken from the model.
+    `response_templates` ({loan_officer, examiner}, built by the runner) is attached as given."""
     from .narrative import derived_assessments        # local import: narrative.py imports contradicts_result from this module
     model_output = model_output if isinstance(model_output, dict) else {}
     narrative = model_output.get("narrative") if isinstance(model_output.get("narrative"), dict) else {}
@@ -98,6 +100,8 @@ def assemble(agent: dict[str, Any], decision: dict[str, Any], model_output: dict
         "missing_facts": decision.get("missing_facts", []),
         "narrative_source": narrative_source,
     }
+    if response_templates is not None:
+        result["response_templates"] = response_templates
     if extras:
         result.update(extras)
     if agent.get("key") == "auditor":                    # the auditor's contract names its narrative block differently

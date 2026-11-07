@@ -102,34 +102,29 @@ class TruncationTests(Base):
         self.assertEqual(guard.truncated, {(role, "model")})
         return guard, out
 
-    def test_a_truncated_narrative_is_tolerated_but_still_detected_and_reported(self):
+    def test_a_truncated_narrative_fails_like_any_other_role(self):
         guard, out = self.drive("narrative")
         flag_truncation(out, "model", guard.truncated)
-        self.assertTrue(out["summary"]["ok"])
-        self.assertEqual(out["summary"]["failed"], {})
-        self.assertEqual(out["summary"]["tolerated"], {"narrative": ["truncated_at_max_tokens"]})
-        self.assertEqual([r["role"] for r in out["records"] if r.get("tolerated")], ["narrative"])
+        self.assertFalse(out["summary"]["ok"])
+        self.assertEqual(out["summary"]["failed"], {"narrative": ["not_truncated"]})
 
-    def test_every_other_role_cut_off_at_max_tokens_still_fails(self):
-        for role in ("hmda", "auditor"):
+    def test_every_role_cut_off_at_max_tokens_fails(self):
+        for role in ("hmda", "auditor", "narrative"):
             with self.subTest(role=role):
                 guard, out = self.drive(role)
                 flag_truncation(out, "model", guard.truncated)
                 self.assertFalse(out["summary"]["ok"])
                 self.assertEqual(out["summary"]["failed"], {role: ["not_truncated"]})
-                self.assertEqual(out["summary"]["tolerated"], {})
 
-    def test_the_tolerance_names_exactly_the_recorded_exception_and_no_other_phase_is_touched(self):
-        from test_anthropic_live_parity import TOLERATED_TRUNCATION
-        self.assertEqual(TOLERATED_TRUNCATION, frozenset({"narrative"}))
-        record = (ROOT / "plans/archive/live-parity/exception-record.md").read_text(encoding="utf-8")
-        self.assertIn("TOLERATED_TRUNCATION", record)
-        self.assertIn("Review by", record)
+    def test_no_truncation_tolerance_remains_and_only_the_truncated_phase_is_flagged(self):
+        import test_anthropic_live_parity as live
+        self.assertFalse(hasattr(live, "TOLERATED_TRUNCATION"))
         guard, out = self.drive("narrative")
-        flag_truncation(out, "seeded", set())
-        self.assertEqual(out["summary"]["tolerated"], {})
-        flag_truncation(out, "model", guard.truncated, frozenset())               # without the exception the same truncation fails
+        flag_truncation(out, "seeded", set())                                     # nothing was truncated in the seeded phase
+        self.assertTrue(out["summary"]["ok"])
+        flag_truncation(out, "model", guard.truncated)
         self.assertEqual(out["summary"]["failed"], {"narrative": ["not_truncated"]})
+        self.assertNotIn("tolerated", out["summary"])
 
 
 class GuardLimitTests(Base):

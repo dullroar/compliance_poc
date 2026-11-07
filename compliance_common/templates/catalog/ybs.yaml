@@ -1,0 +1,106 @@
+# Young, Beginning and Small farmer classification. The thresholds are institution pilot policy;
+# 12 CFR 614.4165 requires the program but does not supply them (compliance_mcp/ybs/pack/thresholds.yaml).
+rules:
+  - match: YBS-PERSON-*-PRODUCER
+    kind: G
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: Only an agricultural producer can be {1}.
+    action: Record producer status, with the application as evidence.
+    who: loan officer
+    refer: The producer status of a person is not recorded.
+  - match: YBS-PERSON-YOUNG-DOB
+    kind: G
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: Young means under the policy age limit, so the date of birth is required.
+    action: Record the date of birth from the signed application or an ID.
+    who: loan officer
+    refer: The date of birth of a person is not recorded.
+  - match: YBS-PERSON-YOUNG-AGE
+    kind: V
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: Young means under the policy age limit.
+    action: Confirm the date of birth; Young stays Not Eligible unless it changes.
+    who: loan officer
+    refer: The recorded age does not meet the Young limit.
+  - match: YBS-PERSON-BEGINNING-EXPERIENCE
+    kind: G
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: Beginning means farming years within the policy limit.
+    action: Record the years farmed, with the application as evidence.
+    who: loan officer
+    refer: The years of farming experience are not recorded.
+  - match: YBS-PERSON-SMALL-SALES
+    kind: G
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: Small means annual gross farm sales within the policy limit.
+    action: Record annual gross farm sales, with tax records as evidence.
+    who: loan officer
+    refer: The annual gross agricultural sales are not recorded.
+  - match: YBS-ENTITY-*-CONFLICT
+    kind: R
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: An entity is {1} only from documented, consistent ownership and control.
+    action: A reviewer resolves the conflict and records who the entity is attributed to.
+    who: compliance reviewer
+    refer: The evidence about who owns or controls this entity conflicts.
+  - match: YBS-ENTITY-*-TRUST
+    kind: R
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: A trust is {1} only when its trustee and controlling person are documented.
+    action: Obtain the trust document; record the trustee and controlling person.
+    who: compliance reviewer
+    refer: The trustee or the controlling person of this trust is not documented.
+  - match: YBS-ENTITY-*-SUCCESSION
+    kind: R
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: A successor entity is {1} only from documented attribution.
+    action: Obtain the succession documents; record the attributed people.
+    who: compliance reviewer
+    refer: This successor or reorganized entity has no documented attribution.
+  - match: YBS-ENTITY-*-ATTRIBUTION
+    kind: R
+    basis: institution policy
+    cite: Institution YBS policy (12 CFR 614.4165)
+    requirement: An entity is {1} only from the people who own, control or run it.
+    action: Document the entity's owners, controllers and operators.
+    who: compliance reviewer
+    refer: The people who own, control or operate this entity are not documented.
+fields:
+  - match: is_agricultural_producer
+    rule: YBS-PERSON-*-PRODUCER
+    route: customer
+    label: producer status
+    why: To classify the person as Young, Beginning or Small, we need to know if they farm or ranch. We only test people who produce agricultural goods.
+  - match: date_of_birth
+    rule: YBS-PERSON-YOUNG-DOB
+    route: customer
+    label: date of birth
+    why: To be classified as Young, we need the date of birth. We use it to check the age against the Farm Credit limit.
+  - match: years_farming
+    rule: YBS-PERSON-BEGINNING-EXPERIENCE
+    route: customer
+    label: years of farming
+    why: To be classified as Beginning, we need the number of years farming. We use it to check the experience against the Farm Credit limit.
+  - match: annual_gross_ag_sales
+    rule: YBS-PERSON-SMALL-SALES
+    route: customer
+    label: annual gross farm sales
+    why: To be classified as Small, we need the yearly gross farm sales. We use them to check the sales against the Farm Credit limit.
+  - match: attribution
+    rule: YBS-ENTITY-*-ATTRIBUTION
+    route: refer
+    label: who owns or controls the entity
+    why: The people who own, control or operate this entity are not documented or the evidence conflicts.
+  - match: attribution.subject_id
+    rule: YBS-ENTITY-*-ATTRIBUTION
+    route: refer
+    label: a person linked to the entity
+    why: The entity names a person who is not in the case file.

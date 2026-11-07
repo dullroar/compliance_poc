@@ -308,6 +308,8 @@ def _batch(args: argparse.Namespace) -> None:
         if not narrative.get("raw_text"):      # the narrative stage failed: say so rather than leave an empty report that looks written
             print(f"[Narrative report NOT written: {narrative.get('parse_error') or 'the narrative agent returned no text'}]", file=sys.stderr)
             sys.exit(1)
+        if narrative.get("summary_source") == "code":
+            print(f"[Narrative summary written by code: {'; '.join(narrative.get('summary_violations') or ['the model gave none'])[:200]}]", file=sys.stderr)
         with open(args.narrative_out, "w", encoding="utf-8") as f:
             f.write(narrative["raw_text"])
         print(f"[Narrative report written to {args.narrative_out}]", file=sys.stderr)

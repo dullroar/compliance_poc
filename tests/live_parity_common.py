@@ -26,6 +26,7 @@ from agents.runner import DEFAULT_OPTIONS
 from compliance_common.assemble import DECISION_OWNED
 from compliance_common.narrative import deterministic_narrative
 from compliance_common.narrative_schema import NARRATIVE_SCHEMA
+from compliance_common.templates import examiner
 from orchestrator import batch
 from orchestrator.a2a_client import send as a2a_send
 from orchestrator.batch import AUDITOR_KEYS, domain_keys, run_batch, run_narrative
@@ -334,7 +335,10 @@ class ScriptedProvider:
         narrative = deterministic_narrative(decision, AGENTS[self.role]["tool"].removesuffix("_evaluate"))
         if self.narrative == "ungrounded":
             narrative["reasoning"] += " The borrower also owes 987654321 dollars under file ZZ-987654321."
-        return json.dumps({"narrative": narrative})
+        domain = AGENTS[self.role]["tool"].removesuffix("_evaluate")
+        record = {k: v for k, v in decision.items() if k != "examiner_paragraph_drafts"}
+        paragraphs = [{"rule_id": d["rule_id"], "text": d["draft"]} for d in examiner.drafts(record, domain)]     # a faithful model echoes the drafts
+        return json.dumps({"narrative": narrative, "examiner_paragraphs": paragraphs})
 
     @staticmethod
     def _after_marker(body: dict) -> bool:

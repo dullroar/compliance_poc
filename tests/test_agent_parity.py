@@ -25,6 +25,7 @@ from agents.runner import run, run_agent
 from compliance_common.mcp_client import call_tool, list_tool_specs, stdio_target
 from compliance_common.narrative import deterministic_narrative
 from compliance_common.narrative_schema import NARRATIVE_SCHEMA
+from compliance_common.templates import examiner
 from orchestrator.a2a_client import AgentTaskError, send
 from orchestrator.config import load_agents
 
@@ -60,7 +61,9 @@ class FakeModel:
 
     def __init__(self, key, decision, *, calls_tool=True, tamper=None, extra=None, reply=None):
         self.calls_tool, self.tamper = calls_tool, tamper
-        self.output = reply if reply is not None else {"narrative": deterministic_narrative(decision, key), **(extra or {})}
+        self.output = reply if reply is not None else {"narrative": deterministic_narrative(decision, key),
+                                                       "examiner_paragraphs": [{"rule_id": d["rule_id"], "text": d["draft"]} for d in examiner.drafts(decision, key)],
+                                                       **(extra or {})}
         self.seeded, self.prompts, self.schemas = [], [], []
 
     def complete_with_tool(self, system, messages, spec, execute, calls_made, force_first=True):

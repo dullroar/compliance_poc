@@ -9,6 +9,10 @@
 #              puts it in the conversation as the agent's own first step (native tool-call format); preferred for a
 #              remote narrator because code obtains the canonical decision before sending it, and right for small local models.
 #   include_regulations  true (default): the pinned regulation text from the rule pack is added to the system prompt.
+#   templates  model | code (default model). Every failing check gets a loan-officer sheet (always written by code) and one examiner
+#              paragraph per finding. model: the narrative call also rephrases a code-written draft of each paragraph; a paragraph
+#              that fails the checks gets one retry, then code writes it. code: no paragraph is requested from the model (no extra
+#              output, no extra request); code writes them all.
 # concurrency: agent calls in flight at once. 1 is right for a single local model; raise it for remote models.
 concurrency: 1
 agents:
