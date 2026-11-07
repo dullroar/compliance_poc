@@ -61,6 +61,7 @@ htmlcov/
 logs/
 *.jsonl
 !plans/archive/openai-smoketest/runs.jsonl
+!usage/anthropic-api-ledger.jsonl
 builds/
 *:Zone.Identifier
 benchmarks/results.jsonl

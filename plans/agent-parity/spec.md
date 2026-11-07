@@ -6,7 +6,7 @@ gist: "Read when: bringing remaining compliance agents and orchestration to appl
 
 Status: approved (by Jim Lehmer, 2026-11-06)
 
-See [goal.md](goal.md) for the goal command and execution protocol.
+See [goal.md](goal.md) for the assistant-agnostic execution prompt and protocol.
 
 ## Goal and exclusions
 

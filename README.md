@@ -169,8 +169,8 @@ Create a `.env` file in this directory:
 ```
 COMPLIANCE_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-# Optional — defaults to claude-sonnet-4-20250514
-# COMPLIANCE_MODEL=claude-sonnet-4-20250514
+# Optional — defaults to claude-haiku-5-5
+# COMPLIANCE_MODEL=claude-haiku-5-5
 ```
 
 For Ollama running in the same WSL environment:

@@ -28,7 +28,7 @@ from compliance_common.tools import (native_definition, run_anthropic_tool_loop,
                                      run_openai_tool_loop, seed_anthropic, seed_ollama, seed_openai)
 
 log = get_logger("backend", "1")
-DEFAULT_MODELS = {"anthropic": "claude-sonnet-4-20250514", "ollama": "gemma4:26b"}
+DEFAULT_MODELS = {"anthropic": "claude-haiku-5-5", "ollama": "gemma4:26b"}
 SUPPORTED_PROVIDERS = frozenset({*DEFAULT_MODELS, "openai"})
 MAX_TOKENS = 8192
 
@@ -166,7 +166,7 @@ class Backend:
                 request["text"] = {"format": {"type": "json_object"}}
             return _openai_output_text(self.client.responses.create(**request))
         response = self.client.messages.create(model=self.model, max_tokens=MAX_TOKENS, system=system, messages=messages)
-        return response.content[0].text.strip()
+        return _anthropic_output_text(response)
 
     def complete_with_tool(self, system: str, messages: list[dict], spec: dict, execute, calls_made: list,
                            force_first: bool = True) -> str:
@@ -184,7 +184,7 @@ class Backend:
             return _openai_output_text(response)
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system,
                                            messages=messages, max_tokens=MAX_TOKENS, calls_made=calls_made, force_first=force_first)
-        return "".join(getattr(b, "text", "") for b in response.content).strip()
+        return _anthropic_output_text(response)
 
     def complete_seeded(self, system: str, messages: list[dict], spec: dict, execute, calls_made: list,
                         arguments: dict, result: dict, schema: dict | None = None) -> str:
@@ -212,7 +212,19 @@ class Backend:
         seeded = [*messages, *seed_anthropic(spec, arguments, result)]
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system, messages=seeded,
                                            max_tokens=MAX_TOKENS, calls_made=calls_made)
-        return "".join(getattr(b, "text", "") for b in response.content).strip()
+        return _anthropic_output_text(response)
+
+
+def _anthropic_output_text(response: Any) -> str:
+    """Select text blocks explicitly: newer models can return thinking first."""
+    stop_reason = getattr(response, "stop_reason", None)
+    if stop_reason in {"refusal", "model_context_window_exceeded"}:
+        raise RuntimeError(f"Anthropic stopped without a usable response: {stop_reason}")
+    text = "".join(getattr(block, "text", "") for block in response.content
+                   if getattr(block, "type", None) == "text").strip()
+    if not text:
+        raise RuntimeError("Anthropic returned no output text")
+    return text
 
 
 def _openai_output_text(response: Any) -> str:
