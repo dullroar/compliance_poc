@@ -7,7 +7,7 @@ touches:
   - plans/openai-smoketest/steps/03-combined-validation.md
 lane: serial
 gate: python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py
-requirements: [R3]
+requirements: [R4]
 evidence: ""
 ---
 
@@ -15,7 +15,7 @@ evidence: ""
 
 ## Change
 
-- Run the exact gate with `RUN_LIVE_OPENAI_TESTS` unset. Review all step evidence, including the separately completed non-skipped live gate. Update this step and the spec status only after all checks and requirements pass.
+- Run the exact gate with `RUN_LIVE_OPENAI_TESTS` unset. Review all step evidence, including the separately completed non-skipped live gate and its usage ledger. Update this step and the spec status only after all checks and requirements pass.
 
 ## Do not change
 
