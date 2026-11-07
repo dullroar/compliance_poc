@@ -22,7 +22,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'usage/anthropic-api-ledger.jsonl'
 BUDGET = Decimal('20')
-PRICE_CHECKED = '2026-11-06'
+PRICE_CHECKED = '2026-11-07'
 PRICE_URL = 'https://platform.claude.com/docs/en/about-claude/pricing'
 # USD per million tokens, standard Messages API. Conservative cost assumes every
 # input token is a 1-hour cache write and applies the 10% US geography premium.

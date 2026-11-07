@@ -82,5 +82,39 @@ class AnthropicBackendTests(unittest.TestCase):
                     backend.complete('system', [])
 
 
+class AnthropicEffortDefaultTests(unittest.TestCase):
+    """Claude 5-family narration asks for low effort so thinking does not consume the whole output cap."""
+    SPEC = {'name': 'ybs_evaluate', 'description': 'evaluate', 'inputSchema': {'type': 'object'}}
+
+    def test_every_anthropic_request_path_asks_for_low_effort_on_the_5_family(self):
+        tool = SimpleNamespace(type='tool_use', name='ybs_evaluate', input={'case': {}}, id='call-1')
+        for model in ('claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5'):
+            with self.subTest(model=model):
+                plain, looped, seeded = (FakeClient([response(text('a'))]), FakeClient([response(tool, stop_reason='tool_use'), response(text('a'))]),
+                                         FakeClient([response(text('a'))]))
+                Backend('anthropic', model, client=plain).complete('system', [])
+                Backend('anthropic', model, client=looped).complete_with_tool('system', [], self.SPEC, lambda *_: {'decision_id': 'd'}, [])
+                Backend('anthropic', model, client=seeded).complete_seeded('system', [], self.SPEC, lambda *_: {}, [], {'case': {}}, {'decision_id': 'd'})
+                for client in (plain, looped, seeded):
+                    for request in client.messages.requests:
+                        self.assertEqual(request['output_config'], {'effort': 'low'})
+                        self.assertEqual(request['max_tokens'], 16384)
+                        self.assertNotIn('thinking', request)
+
+    def test_the_anthropic_cap_is_larger_than_the_shared_one_and_the_other_providers_keep_theirs(self):
+        from agents.backends import ANTHROPIC_MAX_TOKENS, MAX_TOKENS
+        self.assertEqual((MAX_TOKENS, ANTHROPIC_MAX_TOKENS), (8192, 16384))
+
+    def test_other_models_are_sent_no_effort_field(self):
+        for model in ('custom-model', 'claude-sonnet-4-6', 'claude-haiku-4-5', ''):
+            with self.subTest(model=model):
+                client = FakeClient([response(text('a'))])
+                Backend('anthropic', model or 'custom-model', client=client).complete('system', [])
+                self.assertNotIn('output_config', client.messages.requests[0])
+        from compliance_common.tools import anthropic_request_options
+        self.assertEqual(anthropic_request_options(''), {})
+        self.assertEqual(anthropic_request_options(None), {})
+
+
 if __name__ == '__main__':
     unittest.main()

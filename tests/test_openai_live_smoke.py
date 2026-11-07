@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'plans/archive/openai-smoketest/runs.jsonl'
 MODEL = 'gpt-6-luna'
 PRICING_URL = 'https://developers.openai.com/api/docs/models/gpt-6-luna'
-PRICE_CHECKED = '2026-11-06'
+PRICE_CHECKED = '2026-11-07'
 BUDGET = Decimal('20')
 MAX_REQUESTS = 6
 # Model context window is a hard ceiling. Include long-context prices, 12-hour
@@ -39,6 +39,12 @@ SHORT_RATES = {'input': '0.10', 'cached_input': '0.01', 'cache_write_30m': '0.12
 REQUEST_BOUND = ((Decimal(CONTEXT_LIMIT) * Decimal(RATES['cache_write_12h'])
                   + Decimal(OUTPUT_LIMIT) * Decimal(RATES['output'])) * Decimal(RATES['uplift']) / Decimal(1_000_000))
 COMMAND = 'RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v'
+# Registry-wide live parity profile (plans/archive/live-parity): a cycle may carry its own request count, per-request bound and input
+# bound. Legacy rows carry the constants above and replay to identical totals.
+PARITY_INPUT_BOUND_TOKENS = 100_000          # UTF-8 bytes bound tokens from above; the guarded client refuses larger requests
+PARITY_MAX_REQUESTS = 80
+PARITY_REQUEST_BOUND = ((Decimal(PARITY_INPUT_BOUND_TOKENS) * Decimal(RATES['cache_write_12h'])
+                         + Decimal(OUTPUT_LIMIT) * Decimal(RATES['output'])) * Decimal(RATES['uplift']) / Decimal(1_000_000))
 
 
 class BudgetError(Exception):
@@ -139,7 +145,7 @@ class Ledger:
             if kind == 'cycle_reservation':
                 if cid in cycles:
                     raise BudgetError('Duplicate cycle in ledger')
-                cycles[cid] = {'bound': Decimal(row['request_bound_usd']), 'slots': MAX_REQUESTS,
+                cycles[cid] = {'bound': Decimal(row['request_bound_usd']), 'slots': row.get('max_requests', MAX_REQUESTS),
                                'starts': {}, 'resolved': {}, 'released': 0, 'ended': False}
             elif kind in ('request_reservation', 'request_outcome', 'cycle_end'):
                 if cid not in cycles:
@@ -147,7 +153,7 @@ class Ledger:
                 c = cycles[cid]
                 if kind == 'request_reservation':
                     seq = row['sequence']
-                    if c['ended'] or seq in c['starts'] or len(c['starts']) >= MAX_REQUESTS:
+                    if c['ended'] or seq in c['starts'] or len(c['starts']) >= c['slots']:
                         raise BudgetError('Invalid request reservation')
                     c['starts'][seq] = row
                 elif kind == 'request_outcome':
@@ -159,43 +165,49 @@ class Ledger:
                     if c['ended']:
                         raise BudgetError('Duplicate cycle end')
                     c['ended'] = True
-                    c['released'] = MAX_REQUESTS - len(c['starts'])
+                    c['released'] = c['slots'] - len(c['starts'])
         incurred, reserved = Decimal(0), Decimal(0)
         for c in cycles.values():
             known = [Decimal(x['budget_charge_usd']) for x in c['resolved'].values()
                      if x.get('budget_charge_usd') is not None]
             incurred += sum(known, Decimal(0))
-            reserved += c['bound'] * (MAX_REQUESTS - c['released'] - len(known))
+            reserved += c['bound'] * (c['slots'] - c['released'] - len(known))
         return cycles, incurred, reserved
 
-    def start_cycle(self, cycle_id):
+    def start_cycle(self, cycle_id, max_requests=None, request_bound=None, input_bound_tokens=None, command=None):
+        max_requests = MAX_REQUESTS if max_requests is None else max_requests
+        request_bound = REQUEST_BOUND if request_bound is None else request_bound
+        input_bound_tokens = CONTEXT_LIMIT if input_bound_tokens is None else input_bound_tokens
+        if type(max_requests) is not int or not 1 <= max_requests <= PARITY_MAX_REQUESTS or request_bound <= 0 or not 0 < input_bound_tokens <= CONTEXT_LIMIT:
+            raise BudgetError('Invalid cycle bounds')
         with self.locked() as (f, rows):
             cycles, incurred, reserved = self.state(rows)
-            if cycle_id in cycles or incurred + reserved + MAX_REQUESTS * REQUEST_BOUND > BUDGET:
+            if cycle_id in cycles or incurred + reserved + max_requests * request_bound > BUDGET:
                 raise BudgetError('Cycle reservation would exceed cumulative budget')
             self.append(f, {'event': 'cycle_reservation', 'cycle_id': cycle_id, 'model': MODEL,
-                            'service_tier': 'default', 'max_requests': MAX_REQUESTS,
-                            'request_bound_usd': str(REQUEST_BOUND), 'cycle_bound_usd': str(MAX_REQUESTS * REQUEST_BOUND),
-                            'input_bound_tokens': CONTEXT_LIMIT, 'output_bound_tokens': OUTPUT_LIMIT,
+                            'service_tier': 'default', 'max_requests': max_requests,
+                            'request_bound_usd': str(request_bound), 'cycle_bound_usd': str(max_requests * request_bound),
+                            'input_bound_tokens': input_bound_tokens, 'output_bound_tokens': OUTPUT_LIMIT,
                             'pricing_url': PRICING_URL, 'pricing_checked': PRICE_CHECKED,
                             'short_rates_usd_per_million': SHORT_RATES, 'long_rates_usd_per_million': RATES,
                             'long_context_threshold_input_tokens': 272000,
                             'python_version': sys.version.split()[0], 'sdk_version': importlib.metadata.version('openai'),
-                            'command': COMMAND, 'cumulative_incurred_usd': str(incurred),
-                            'cumulative_reserved_usd': str(reserved + MAX_REQUESTS * REQUEST_BOUND)})
+                            'command': command or COMMAND, 'cumulative_incurred_usd': str(incurred),
+                            'cumulative_reserved_usd': str(reserved + max_requests * request_bound)})
 
-    def start_request(self, cycle_id, mode):
+    def start_request(self, cycle_id, mode, role=None):
         with self.locked() as (f, rows):
             cycles, incurred, reserved = self.state(rows)
             c = cycles[cycle_id]
-            if c['ended'] or len(c['starts']) >= MAX_REQUESTS or incurred + reserved > BUDGET:
+            if c['ended'] or len(c['starts']) >= c['slots'] or incurred + reserved > BUDGET:
                 raise BudgetError('Request limit or budget exceeded')
             seq = len(c['starts']) + 1
             self.append(f, {'event': 'request_reservation', 'cycle_id': cycle_id, 'mode': mode, 'sequence': seq,
-                            'model': MODEL, 'service_tier': 'default', 'reservation_usd': str(c['bound'])})
+                            'model': MODEL, 'service_tier': 'default', 'reservation_usd': str(c['bound']),
+                            **({'role': role} if role is not None else {})})
             return seq
 
-    def outcome(self, cycle_id, mode, seq, outcome, usage, elapsed, service_tier=None):
+    def outcome(self, cycle_id, mode, seq, outcome, usage, elapsed, service_tier=None, role=None):
         # Only settle against the budget when the actual processing tier is
         # reported and matches the explicitly requested standard tier.
         cost = estimate(usage) if usage and service_tier == 'default' else None
@@ -206,7 +218,7 @@ class Ledger:
             if seq not in c['starts'] or seq in c['resolved'] or (cost is not None and cost > c['bound']):
                 raise BudgetError('Invalid outcome or charge exceeds reservation')
             self.append(f, {'event': 'request_outcome', 'cycle_id': cycle_id, 'mode': mode, 'sequence': seq,
-                            'outcome': outcome, 'elapsed_seconds': round(elapsed, 3), 'usage': usage,
+                            **({'role': role} if role is not None else {}), 'outcome': outcome, 'elapsed_seconds': round(elapsed, 3), 'usage': usage,
                             'service_tier': service_tier,
                             'estimated_cost_usd': str(actual) if actual is not None else None,
                             'budget_charge_usd': str(cost) if cost is not None else None,
@@ -214,7 +226,7 @@ class Ledger:
                             'unknown_explanation': 'API usage or service tier missing, inconsistent, or unexpected' if cost is None else
                                 ('Some usage breakdown fields not reported' if any(v is None for v in usage.values()) else None)})
 
-    def end_cycle(self, cycle_id, outcomes, elapsed):
+    def end_cycle(self, cycle_id, outcomes, elapsed, successes=None, expected_successes=2):
         with self.locked() as (f, rows):
             cycles, incurred, reserved = self.state(rows)
             c = cycles[cycle_id]
@@ -239,12 +251,13 @@ class Ledger:
                                'estimated_cost_usd': str(exact_mode) if exact_mode is not None else None,
                                'unknown_requests': len(starts)-len(known), 'usage_totals': aggregate(results),
                                'outcome': outcomes.get(mode)}
-            released = c['bound'] * (MAX_REQUESTS-len(c['starts']))
+            released = c['bound'] * (c['slots']-len(c['starts']))
             all_results = [c['resolved'].get(x) for x in c['starts']]
             exact_costs = [x.get('estimated_cost_usd') if x else None for x in all_results]
             exact_total = sum((Decimal(x) for x in exact_costs), Decimal(0)) if exact_costs and all(x is not None for x in exact_costs) else None
-            successes = sum(1 for x in outcomes.values() if x and x.get('passed'))
-            completed = successes == 2
+            if successes is None:
+                successes = sum(1 for x in outcomes.values() if x and x.get('passed'))
+            completed = successes == expected_successes
             self.append(f, {'event': 'cycle_end', 'cycle_id': cycle_id, 'modes': modes,
                             'elapsed_seconds': round(elapsed, 3), 'requests': len(c['starts']),
                             'usage_totals': aggregate(all_results),

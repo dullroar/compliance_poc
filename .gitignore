@@ -61,6 +61,8 @@ htmlcov/
 logs/
 *.jsonl
 !plans/archive/openai-smoketest/runs.jsonl
+!plans/archive/live-parity/runs-anthropic.jsonl
+!plans/archive/live-parity/runs-openai.jsonl
 !usage/anthropic-api-ledger.jsonl
 builds/
 *:Zone.Identifier

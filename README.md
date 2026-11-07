@@ -248,6 +248,24 @@ runs; deleting or replacing it defeats the cumulative budget check. Recheck
 pricing and update its checked date and rates before running on a later day.
 Normal test discovery skips the live gate unless explicitly enabled.
 
+Two further opt-in gates run the whole registry (every domain role, the auditor and
+the narrative role, in the model-directed and seeded phases) on the synthetic sample
+loan and report per-role cost, latency and narrative sources:
+
+```bash
+RUN_LIVE_ANTHROPIC_PARITY=1 python3 -m unittest discover -s tests -p test_anthropic_live_parity.py -v
+RUN_LIVE_OPENAI_PARITY=1 python3 -m unittest discover -s tests -p test_openai_live_parity.py -v
+```
+
+Each reserves its worst case first and then runs through a guarded client (no SDK
+retries, a finite timeout, request and input-size caps, a model/tool/format
+allow-list). Anthropic spend is tracked in `usage/anthropic-api-ledger.jsonl`, which
+needs an owner-confirmed baseline recorded with
+`scripts/anthropic_cost_estimator.py baseline`; OpenAI shares the ledger above. Both
+ledgers are append-only plan evidence, and each gate must be preceded by a rate and
+date recheck. Results and tolerated findings are in `plans/archive/live-parity/results.md`.
+Normal discovery skips both.
+
 For a mixed-provider run, copy `agents.yaml` to an untracked local file, retain
 every existing entry, and change only the narrator roles. Do **not** set
 `COMPLIANCE_PROVIDER=openai` for this mode: it would select OpenAI for entries

@@ -24,13 +24,16 @@ except ImportError:  # pragma: no cover
 
 from compliance_common.obs import get_logger
 from compliance_common.narrative_schema import NARRATIVE_SCHEMA
-from compliance_common.tools import (native_definition, run_anthropic_tool_loop, run_ollama_tool_loop,
+from compliance_common.tools import (anthropic_request_options, native_definition, run_anthropic_tool_loop, run_ollama_tool_loop,
                                      run_openai_tool_loop, seed_anthropic, seed_ollama, seed_openai)
 
 log = get_logger("backend", "1")
 DEFAULT_MODELS = {"anthropic": "claude-haiku-5-5", "ollama": "gemma4:26b"}
 SUPPORTED_PROVIDERS = frozenset({*DEFAULT_MODELS, "openai"})
 MAX_TOKENS = 8192
+# Claude's tokenizer yields about 1.7x the tokens of OpenAI's for the same text, and the narrative report needs
+# ~9k of them, so the shared 8192 cap truncated it. The Messages API bills only the tokens produced.
+ANTHROPIC_MAX_TOKENS = 16384
 
 
 def default_provider() -> str:
@@ -165,7 +168,8 @@ class Backend:
             elif json_mode:
                 request["text"] = {"format": {"type": "json_object"}}
             return _openai_output_text(self.client.responses.create(**request))
-        response = self.client.messages.create(model=self.model, max_tokens=MAX_TOKENS, system=system, messages=messages)
+        response = self.client.messages.create(model=self.model, max_tokens=ANTHROPIC_MAX_TOKENS, system=system, messages=messages,
+                                               **anthropic_request_options(self.model))
         return _anthropic_output_text(response)
 
     def complete_with_tool(self, system: str, messages: list[dict], spec: dict, execute, calls_made: list,
@@ -183,7 +187,7 @@ class Backend:
                                             force_first=force_first, schema=NARRATIVE_SCHEMA)
             return _openai_output_text(response)
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system,
-                                           messages=messages, max_tokens=MAX_TOKENS, calls_made=calls_made, force_first=force_first)
+                                           messages=messages, max_tokens=ANTHROPIC_MAX_TOKENS, calls_made=calls_made, force_first=force_first)
         return _anthropic_output_text(response)
 
     def complete_seeded(self, system: str, messages: list[dict], spec: dict, execute, calls_made: list,
@@ -211,7 +215,7 @@ class Backend:
             return _openai_output_text(self.client.responses.create(**request))
         seeded = [*messages, *seed_anthropic(spec, arguments, result)]
         response = run_anthropic_tool_loop(self.client, spec, execute, model=self.model, system=system, messages=seeded,
-                                           max_tokens=MAX_TOKENS, calls_made=calls_made)
+                                           max_tokens=ANTHROPIC_MAX_TOKENS, calls_made=calls_made)
         return _anthropic_output_text(response)
 
 

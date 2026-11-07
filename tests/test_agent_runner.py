@@ -183,6 +183,48 @@ class ContradictionWatchdogTests(unittest.TestCase):
         self.assertIsNone(contradicts_result("Compliant", "The file is compliant; all deadlines were met."))
         self.assertIsNone(contradicts_result("Potential Issue", "Some facts are missing."))
 
+    CROSS_REGIME = ("The cross-regime review is Non-Compliant. The TRID agent reported Compliant and the HPML agent reported Not Applicable, "
+                    "while the HMDA agent and the VMI agent reported issues that need follow-up.")
+
+    def test_a_cross_regime_narrative_may_name_the_regimes_that_are_compliant(self):
+        from compliance_common.assemble import contradicts_result
+        self.assertIsNone(contradicts_result("Non-Compliant", self.CROSS_REGIME, cross_regime=True))
+        self.assertIsNotNone(contradicts_result("Non-Compliant", self.CROSS_REGIME))                    # every single-regime role keeps the check
+        self.assertIsNotNone(contradicts_result("Non-Compliant", self.CROSS_REGIME, cross_regime=False))
+        # the other direction still applies to the cross-regime role
+        self.assertIsNotNone(contradicts_result("Compliant", "There are serious violations and deficiencies in the file.", cross_regime=True))
+
+    def test_check_narrative_applies_the_cross_regime_allowance_only_when_asked(self):
+        from compliance_common.narrative import check_narrative
+        decision = {"compliance_result": "Non-Compliant", "final_classification": "Multiple Cross-Regime Deficiencies", "decision_id": "d", "rule_results": []}
+        narrative = {"reasoning": self.CROSS_REGIME, "examiner_narrative": self.CROSS_REGIME, "data_gaps_followups": []}
+        self.assertEqual(check_narrative(narrative, decision, {}, "", cross_regime=True), [])
+        self.assertTrue(any("claims compliance" in v for v in check_narrative(narrative, decision, {}, "")))
+
+    def test_the_auditor_narrative_naming_compliant_regimes_is_accepted_but_a_domain_agent_is_not_excused(self):
+        from compliance_mcp.auditor.server import server as auditor_server
+        from test_auditor_evaluator import SAMPLE, assembled
+        payload = {"loan_data": SAMPLE, "agent_results": assembled(SAMPLE)}
+        text = dict(NARRATIVE["narrative"], reasoning=self.CROSS_REGIME, examiner_narrative=self.CROSS_REGIME)
+
+        class Backend:
+            provider, model = "fake", "fake-1"
+            retries = 0
+
+            def complete_with_tool(self, system, messages, spec, execute, calls_made, force_first=True):
+                calls_made.append({"name": spec["name"], "arguments": {}, "result": execute(spec["name"], {})})
+                return json.dumps({"narrative": text})
+
+            def complete(self, system, messages, json_mode=True, schema=None):
+                self.retries += 1
+                return json.dumps({"narrative": text})
+
+        backend = Backend()
+        result = run_agent("auditor", payload, backend, tool_target=auditor_server)
+        self.assertEqual(result["decision"]["compliance_result"], "Non-Compliant")
+        self.assertEqual((result["parsed"]["narrative_source"], result["narrative_guard"]["attempts"], backend.retries), ("model", 1, 0))
+        self.assertEqual(result["narrative_guard"]["violations"], [])
+
     def test_a_narrative_claiming_compliance_on_a_non_compliant_result_is_rejected_then_replaced_by_code(self):
         wrong = dict(NARRATIVE["narrative"], reasoning="The loan is fully compliant and meets all criteria. " * 4)
         VMI = {"vmi_case": {"evaluation_date": "2024-05-01", "primarily_purchase_or_refinance": True, "principal_residence": True, "secured_by_dwelling": True,

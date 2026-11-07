@@ -8,10 +8,24 @@ evaluator call in tests.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 
 ToolSpec = dict[str, Any]
 Execute = Callable[[str, dict[str, Any]], dict[str, Any]]
+
+
+# Claude 5-family models think adaptively, and thinking tokens share `max_tokens` with the answer. At the default effort
+# (medium) Haiku 5.5 spent most of the 8192-token cap thinking about the long narrative report and truncated or lost
+# the text. The deterministic evaluators decide and the model only narrates, so request low effort. Models outside the
+# family do not take `output_config.effort` and are left untouched.
+ANTHROPIC_EFFORT = "low"
+_EFFORT_MODELS = re.compile(r"^claude-(haiku|sonnet|opus|fable)-5")
+
+
+def anthropic_request_options(model: str) -> dict[str, Any]:
+    """Extra Messages API fields for `model`: the narration effort for the 5 family, nothing for other models."""
+    return {"output_config": {"effort": ANTHROPIC_EFFORT}} if _EFFORT_MODELS.match(model or "") else {}
 
 
 def native_definition(spec: ToolSpec, provider: str) -> dict[str, Any]:
@@ -63,7 +77,7 @@ def run_anthropic_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, mo
         first = False
         response = client.messages.create(
             model=model, max_tokens=max_tokens, system=system, messages=working,
-            tools=[native_definition(spec, "anthropic")], tool_choice=choice,
+            tools=[native_definition(spec, "anthropic")], tool_choice=choice, **anthropic_request_options(model),
         )
         calls = [block for block in response.content if getattr(block, "type", None) == "tool_use"]
         if not calls:
