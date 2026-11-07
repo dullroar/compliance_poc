@@ -17,7 +17,12 @@ def loan(subjects):
 
 GOOD_TEXT = ("The deterministic review classified this case as Young + Beginning + Small with the result Compliant. "
              "Every rule in the decision record was satisfied or did not apply, and the record lists no missing facts.")
-NARRATIVE = {"narrative": {"reasoning": GOOD_TEXT, "examiner_narrative": GOOD_TEXT, "data_gaps_followups": []}}
+NARRATIVE = {"narrative": {"reasoning": GOOD_TEXT, "examiner_narrative": GOOD_TEXT, "data_gaps_followups": []}, "examiner_paragraphs": []}
+
+
+def echo_drafts(result):
+    """What a faithful model replies for the examiner paragraphs: each draft in the tool result, unchanged."""
+    return [{"rule_id": d["rule_id"], "text": d["draft"]} for d in result.get("examiner_paragraph_drafts", [])]
 
 
 class FakeBackend:
@@ -213,11 +218,12 @@ class ContradictionWatchdogTests(unittest.TestCase):
 
             def complete_with_tool(self, system, messages, spec, execute, calls_made, force_first=True):
                 calls_made.append({"name": spec["name"], "arguments": {}, "result": execute(spec["name"], {})})
-                return json.dumps({"narrative": text})
+                self.paragraphs = echo_drafts(calls_made[-1]["result"])
+                return json.dumps({"narrative": text, "examiner_paragraphs": self.paragraphs})
 
             def complete(self, system, messages, json_mode=True, schema=None):
                 self.retries += 1
-                return json.dumps({"narrative": text})
+                return json.dumps({"narrative": text, "examiner_paragraphs": self.paragraphs})
 
         backend = Backend()
         result = run_agent("auditor", payload, backend, tool_target=auditor_server)

@@ -1,0 +1,131 @@
+# Flood hazard rules for Farm Credit lenders, 12 CFR part 614 subpart S.
+rules:
+  - match: FZD-APPLICABILITY
+    kind: G
+    basis: regulation
+    cite: 12 CFR 614.4925
+    requirement: 'The flood rules apply to a designated loan: a building or mobile home in a special flood hazard area where insurance is available.'
+    action: Record the collateral structure, the SFHA status from the standard determination, and whether flood insurance is available.
+    who: loan officer
+    refer: The facts that show whether the flood rules apply are missing or unreliable.
+  - match: FZD-DETERMINATION
+    kind: V
+    basis: regulation
+    cite: 12 CFR 614.4940
+    requirement: The institution must complete a standard flood hazard determination on the standard form before the transaction, and keep it.
+    action: Obtain or complete the standard determination form, date it, and retain it.
+    who: closing staff
+    refer: The standard flood hazard determination is missing, incomplete or not retained.
+  - match: FZD-INSURANCE
+    kind: V
+    basis: regulation
+    cite: 12 CFR 614.4930(a)
+    requirement: For a designated loan, flood insurance must cover the lesser of the loan balance and the maximum available, for the full term.
+    action: Record the policy, its amount and its term, and require coverage that meets the minimum.
+    who: loan officer
+    refer: Flood coverage is missing, too low or does not cover the term.
+  - match: FZD-NOTICE
+    kind: V
+    basis: regulation
+    cite: 12 CFR 614.4955
+    requirement: The borrower must get a timely notice of special flood hazards with the required elements, and the lender must keep proof of receipt.
+    action: Send a complete notice, record its date and content, and retain proof of receipt.
+    who: closing staff
+    refer: The flood hazard notice is late, incomplete or has no record of receipt.
+  - match: FZD-ESCROW
+    kind: V
+    basis: regulation
+    cite: 12 CFR 614.4935(a)
+    requirement: A designated loan on residential improved real estate or a mobile home must escrow flood premiums, unless an exception applies.
+    action: Record whether premiums are escrowed and the credit purpose, or set up the escrow.
+    who: closing staff
+    refer: Flood premiums are not escrowed, or the escrow facts are missing.
+  - match: FZD-FORCE-PLACEMENT
+    kind: V
+    basis: regulation
+    cite: 12 CFR 614.4945(a)
+    requirement: If the borrower does not cure a lapse within 45 days of notice, the institution must force-place insurance.
+    action: Record the borrower notice date and the review date, and force-place coverage if the lapse is not cured.
+    who: servicing
+    refer: A lapse in flood cover was not cured or force-placed, or its dates are missing.
+fields:
+  - match: collateral.structure
+    rule: FZD-APPLICABILITY
+    route: customer
+    label: building on the property
+    why: To check flood rules, we need to know if a building or mobile home is on the property.
+  - match: sfha.in_sfha
+    rule: FZD-APPLICABILITY
+    route: refer
+    label: flood zone status
+    why: Closing staff must record the flood zone status from the standard determination form.
+  - match: sfha.flood_insurance_available
+    rule: FZD-APPLICABILITY
+    route: refer
+    label: flood insurance availability
+    why: Closing staff must record whether flood insurance is available for this property.
+  - match: determination.*
+    rule: FZD-DETERMINATION
+    route: refer
+    label: flood determination record
+    why: 'Closing staff must record this item of the standard determination: {1}.'
+  - match: insurance.coverage_amount
+    rule: FZD-INSURANCE
+    route: customer
+    label: flood coverage amount
+    why: We need the amount of flood insurance coverage. Ask for the policy or the insurance declarations page.
+  - match: insurance.effective_date
+    rule: FZD-INSURANCE
+    route: customer
+    label: flood policy start date
+    why: We need the date the flood insurance policy starts. Ask for the policy or the insurance declarations page.
+  - match: insurance.expiration_date
+    rule: FZD-INSURANCE
+    route: customer
+    label: flood policy end date
+    why: We need the date the flood insurance policy ends. Ask for the policy or the insurance declarations page.
+  - match: insurance.max_available_coverage
+    rule: FZD-INSURANCE
+    route: refer
+    label: maximum flood coverage available
+    why: Closing staff must record the maximum flood coverage available for this property.
+  - match: loan_balance
+    rule: FZD-INSURANCE
+    route: refer
+    label: loan balance
+    why: Closing staff must record the loan balance to compare it with the coverage.
+  - match: notice.borrower_date
+    rule: FZD-NOTICE
+    route: refer
+    label: flood notice date
+    why: Closing staff must record the date the borrower got the flood hazard notice.
+  - match: notice.servicer_date
+    rule: FZD-NOTICE
+    route: refer
+    label: servicer notice date
+    why: Servicing must record the date the servicer was notified.
+  - match: notice.record_retained
+    rule: FZD-NOTICE
+    route: refer
+    label: notice receipt record
+    why: Closing staff must record whether a receipt record of the notice is kept.
+  - match: notice.contents.*
+    rule: FZD-NOTICE
+    route: refer
+    label: notice content
+    why: 'Closing staff must record whether the notice has this element: {1}.'
+  - match: credit_purpose
+    rule: FZD-ESCROW
+    route: customer
+    label: credit purpose
+    why: To check the escrow exception, we need to know if the loan is for business or farm use.
+  - match: escrow.escrowed
+    rule: FZD-ESCROW
+    route: refer
+    label: flood premium escrow
+    why: Closing staff must record whether flood premiums are escrowed.
+  - match: monitoring.**
+    rule: FZD-FORCE-PLACEMENT
+    route: refer
+    label: lapse follow-up dates
+    why: Servicing must record the borrower notice date and the review date for the lapse.

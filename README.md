@@ -23,7 +23,7 @@ For architectural decisions and constraints, see [docs/design/](docs/design/READ
 | `ybs`      | YBS Eligibility Compliance Agent          | 12 CFR §614.4165        |                                |
 | `vmi`      | VMI Compliance Agent                      | Regulation B §1002.13   |                                |
 | `auditor`  | Compliance Auditor                        | Cross-regime            | Runs automatically after batch; its own `auditor_evaluate` tool reviews the other agents' results |
-| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`; prompt-only, no tool or decision record |
+| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`; no tool or decision record. Writes one summary of at most 150 words; code assembles the rest of the report |
 
 ---
 
@@ -367,7 +367,27 @@ key. At run time the agent's system prompt also gets `## Regulations As Given`: 
 pack (excerpted by the `excerpt` markers in its manifest), with citation, issue date and hash recorded in each result as
 `regulations_given`. `agents.yaml` options per agent: `tool_mode: model` (default; the first Anthropic call is forced to use the tool;
 otherwise the harness covers a model that does not call it) or `seeded` (the harness makes the call and presents it as the agent's own
-first step; use it for small local models, which do not call tools reliably), and `include_regulations`.
+first step; use it for small local models, which do not call tools reliably), `include_regulations`, and `templates`.
+
+### Response templates: the loan-officer sheet and the examiner findings
+
+Every result carries `response_templates` next to the decision record, both written from the record and the catalog in
+`compliance_common/templates/catalog/` (outside every rule pack, so editing a sentence never changes a `decision_id`):
+
+- `loan_officer`: what the customer's file still needs (`needed_from_customer`, short plain sentences; where the applicant may decline,
+  it says to ask, that they may decline, and to record the decline) and what to refer to compliance (`refer_to_compliance`: facts about
+  what the institution did, reviewer judgments and values that break a rule). A fact about what the institution did is never a customer request.
+- `examiner`: one paragraph per finding in the order Requirement, Condition, Basis, Effect, Action, under a per-regime word limit
+  (YBS 70, VMI 100, HPML 90, FZD 90, HVCRE 90, ECOA 100, TRID 100, auditor 110, HMDA 130; floor 25). An HMDA result with more than 20
+  findings groups the LAR item findings by LAR section.
+
+`templates: model` (default in `agents.yaml`) shows the model a code-written draft of each paragraph in the tool result and asks the same
+narrative call to rephrase it. Each paragraph is checked on its own (parts and order, rule id and citation, the record's own words, the
+outcome and result, length, no number, date or identifier the record lacks, no contradiction); one that fails drives the single retry, and
+then code writes it. Each paragraph's `source` is `model`, `model_retry` or `code`. `templates: code` asks the model for nothing extra (no
+extra output or request) and code writes every paragraph, which is the arm to compare when measuring a model. The sheet is always code.
+A report is `batch ... --narrative-out`: code assembles the summary, the results table, the sheets and the findings; the model writes
+only the summary, and if it is over 150 words or adds a fact, code writes the summary and the CLI says so.
 `OLLAMA_THINK=true` turns on hidden reasoning for models that have it (off by default: it multiplies latency).
 
 ### Choosing a local model (accuracy, then speed, then fit)

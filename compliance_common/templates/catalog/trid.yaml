@@ -1,0 +1,89 @@
+# TRID, 12 CFR 1026.19(e) and (f). Delivery dates and charges are institution records; the borrower is not asked for anything.
+rules:
+  - match: TRID-SCOPE
+    kind: G
+    basis: regulation
+    cite: 12 CFR 1026.19(e)(1)(i)
+    requirement: The integrated disclosure rules cover closed-end credit secured by real property or a cooperative unit.
+    action: Record the credit type, the collateral and the application date.
+    who: closing staff
+    refer: The facts that show whether TRID applies are missing.
+  - match: TRID-LE-3DAY
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(e)(1)(iii)(A)
+    requirement: The creditor must deliver or place in the mail the Loan Estimate within 3 business days after receiving the application.
+    action: Record the Loan Estimate delivery date and method, or the evidence that shows it was timely.
+    who: closing staff
+    refer: The Loan Estimate is not shown as delivered within 3 business days of the application.
+  - match: TRID-LE-7DAY
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(e)(1)(iii)(B)
+    requirement: The Loan Estimate must be delivered or mailed no later than 7 business days before consummation.
+    action: Record the Loan Estimate delivery date and method, or the documented emergency that waived the wait.
+    who: closing staff
+    refer: The Loan Estimate is not shown as delivered 7 business days before closing.
+  - match: TRID-CD-3DAY
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(f)(1)(ii)
+    requirement: The consumer must receive the Closing Disclosure no later than 3 business days before consummation.
+    action: Record the Closing Disclosure delivery date and method, or move the closing date to restore the wait.
+    who: closing staff
+    refer: The Closing Disclosure is not shown as received 3 business days before closing.
+  - match: TRID-CD-REVISED-3DAY
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(f)(2)(ii)
+    requirement: A change to the APR, the loan product or a prepayment penalty needs a corrected Closing Disclosure and a new 3-business-day wait.
+    action: Record the revised Closing Disclosure and its delivery date, or move the closing date to restore the wait.
+    who: closing staff
+    refer: A change after the Closing Disclosure needs a new Closing Disclosure and a new 3-day wait.
+  - match: TRID-CD-CORRECTED
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(f)(2)(i)
+    requirement: A corrected Closing Disclosure for other changes must be received by consummation.
+    action: Record the corrected Closing Disclosure and its delivery date.
+    who: closing staff
+    refer: The corrected Closing Disclosure is not shown as received by closing.
+  - match: TRID-TOLERANCE
+    kind: V
+    basis: regulation
+    cite: 12 CFR 1026.19(e)(3); refund under (f)(2)(v)
+    requirement: Charges may not exceed the disclosed amount for zero-tolerance charges, or 10 percent in total for the 10-percent group, unless cured.
+    action: Record the charge amounts, and the refund made within 60 days of consummation if a tolerance was exceeded.
+    who: closing staff
+    refer: Charges are above the tolerance limit, or the charge amounts are not recorded.
+fields:
+  - match: charges
+    rule: TRID-TOLERANCE
+    route: refer
+    label: charge amounts
+    why: Closing staff must record the disclosed and actual amount of each charge.
+  - match: loan_estimate
+    rule: TRID-LE-3DAY
+    route: refer
+    label: Loan Estimate delivery record
+    why: Closing staff must record when and how the Loan Estimate was delivered.
+  - match: closing_disclosure
+    rule: TRID-CD-3DAY
+    route: refer
+    label: Closing Disclosure delivery record
+    why: Closing staff must record when and how the Closing Disclosure was delivered.
+  - match: revised_closing_disclosure
+    rule: TRID-CD-REVISED-3DAY
+    route: refer
+    label: revised Closing Disclosure record
+    why: Closing staff must record the revised Closing Disclosure that a change requires.
+  - match: application_received_date
+    rule: TRID-SCOPE
+    route: refer
+    label: application date
+    why: The application date falls before the TRID window in the rule pack.
+  - match: timeshare
+    rule: TRID-SCOPE
+    route: refer
+    label: timeshare timing
+    why: Timeshare timing is not tested here; a reviewer must apply it.
