@@ -1,7 +1,8 @@
 # Compliance Agent Orchestrator
 
-A2A fan-out orchestrator for seven Farm Credit ACA compliance agents.
-Supports Anthropic and local Ollama models. Each agent is backed by a
+A2A fan-out orchestrator for Farm Credit ACA compliance agents: eight deterministic-evaluator domain agents, a cross-regime
+auditor, and an optional narrative report agent.
+Supports Anthropic, local Ollama, and optional OpenAI runtime narrators. Each agent is backed by a
 system prompt in `prompts/<key>.md` (long-form specs are in `specs/`). Versions live
 inside the prompt header, not in filenames; git carries history.
 
@@ -17,11 +18,12 @@ For architectural decisions and constraints, see [docs/design/](docs/design/READ
 | `ecoa`     | ECOA Compliance Agent                     | Regulation B            |                                |
 | `hvcre`    | HVCRE Compliance Agent                    | FCA Capital Regs        |                                |
 | `hpml`     | HPML Compliance Agent                     | Regulation Z            |                                |
+| `trid`     | TRID Compliance Agent                     | Regulation Z §1026.19(e)/(f) |                           |
 | `fzd`      | Flood Zone Determination Compliance Agent | NFIA / FDPA             |                                |
 | `ybs`      | YBS Eligibility Compliance Agent          | 12 CFR §614.4165        |                                |
 | `vmi`      | VMI Compliance Agent                      | Regulation B §1002.13   |                                |
-| `auditor`  | Compliance Auditor                        | Cross-regime            | Runs automatically after batch |
-| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`     |
+| `auditor`  | Compliance Auditor                        | Cross-regime            | Runs automatically after batch; its own `auditor_evaluate` tool reviews the other agents' results |
+| `narrative`| Narrative Agent                           | Report generation       | Requires `--narrative-out`; prompt-only, no tool or decision record |
 
 ---
 
@@ -112,7 +114,19 @@ domain's tests, `prompts/<key>.md`), and what the new version numbers are. Sourc
 fetched by script (e.g. the FFIEC APOR page, which blocks bots) are reported as `manual`. For local
 models set `OLLAMA_NUM_CTX` large enough for the builder prompts, or use a remote model.
 
-## Deterministic YBS pilot
+## Deterministic evaluator contract (YBS is the reference)
+
+Every domain agent, and the auditor over the other agents' results, follows the same runtime contract: the agent calls its
+evaluator's MCP tool (stdio server `python -m compliance_mcp.<domain>.server`), the harness pins the arguments to the canonical
+case in the payload, code assembles the result, and a narrative the model adds is verified before it is used. A payload without
+the canonical case yields `Unable To Determine` with no model call. `tests/test_agent_parity.py` proves this for every role in
+`agents.yaml` offline: direct evaluation, in-process MCP, stdio MCP and an A2A task return the same decision id and classification,
+in both tool modes, with the guard and fallback behavior. The auditor's input is the other agents' results rather than a
+`<domain>_case`, and the narrative agent is prompt-only (no tool, decision or guard); neither is required to look like a domain.
+The pilot section below describes YBS specifically. All packs, including YBS, are `draft_engineering_review` and need
+compliance review before reliance; passing these tests is not compliance approval.
+
+### YBS specifics
 
 The YBS agent is narrative-only. It calls the `ybs_evaluate` MCP tool, which is the
 authority for eligibility, thresholds, rule outcomes, and missing-fact status. The
@@ -148,7 +162,8 @@ and legacy `ybs_information` remain usable for discussion but produce `Unable To
 Determine` until a canonical case is supplied.
 
 The default suite runs deterministic fixtures, schema/source-manifest checks,
-and Anthropic/Ollama/MCP contract parity with local fakes. The opt-in Gemma test
+and Anthropic/Ollama/OpenAI/MCP contract parity with local fakes, including a registry-driven check of every role over
+direct, in-process MCP, stdio MCP and A2A. The opt-in Gemma test
 runs the full YBS prompt twice and asserts that the authoritative deterministic
 decision ID and classification replay identically; model prose is not assumed
 to be byte-identical. See [YBS_CHANGE_CONTROL.md](YBS_CHANGE_CONTROL.md) for
@@ -169,8 +184,8 @@ Create a `.env` file in this directory:
 ```
 COMPLIANCE_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-# Optional — defaults to claude-sonnet-4-20250514
-# COMPLIANCE_MODEL=claude-sonnet-4-20250514
+# Optional — defaults to claude-haiku-5-5
+# COMPLIANCE_MODEL=claude-haiku-5-5
 ```
 
 For Ollama running in the same WSL environment:
@@ -186,6 +201,102 @@ OLLAMA_TIMEOUT=300
 
 No Ollama Python package or API key is required. Make sure `ollama serve` is
 running and that the selected model appears in `ollama list`.
+
+### Optional OpenAI runtime narrator
+
+OpenAI is an optional runtime narrator provider; Anthropic remains the default.
+Choose and record a model explicitly—there is no repository-wide OpenAI model
+default. Install the normal requirements, then keep these values in an
+untracked `.env` file or the process environment:
+
+```
+COMPLIANCE_PROVIDER=openai
+COMPLIANCE_MODEL=<approved OpenAI model identifier>
+OPENAI_API_KEY=<OpenAI API key>
+# Optional: request timeout in seconds (default 60) and SDK retry count (default 2)
+# OPENAI_TIMEOUT=60
+# OPENAI_MAX_RETRIES=2
+```
+
+For a global replacement of the locally started agent backends, use the
+environment above with a synthetic fixture first:
+
+```bash
+python -m orchestrator.cli batch sample_loan.json --spawn-local
+```
+
+OpenAI API use is billed separately from a ChatGPT subscription. Select a model
+only after the owner has approved the cost, quality, and data-handling scope.
+Start with synthetic or de-identified cases; a real record requires explicit
+owner authority and the applicable data-handling review. The provider sends
+`store: false` to the Responses API where supported, but that application
+setting is not a substitute for an approved data-handling decision.
+
+The approved synthetic YBS smoke-test plan has a separate, opt-in gate:
+
+```bash
+RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v
+```
+
+It uses `gpt-6-luna`, the repository's synthetic YBS fixture, an in-process A2A
+transport and real MCP evaluator. It sends the fixture, YBS prompt, pinned
+regulation text and generated decision record to the OpenAI API. It limits each
+cycle to six Responses requests and reserves against a cumulative $20 budget in
+`plans/archive/openai-smoketest/runs.jsonl` before making requests. Unknown usage retains
+its reservation. The ledger is tracked as plan evidence and must be preserved across
+runs; deleting or replacing it defeats the cumulative budget check. Recheck
+pricing and update its checked date and rates before running on a later day.
+Normal test discovery skips the live gate unless explicitly enabled.
+
+Two further opt-in gates run the whole registry (every domain role, the auditor and
+the narrative role, in the model-directed and seeded phases) on the synthetic sample
+loan and report per-role cost, latency and narrative sources:
+
+```bash
+RUN_LIVE_ANTHROPIC_PARITY=1 python3 -m unittest discover -s tests -p test_anthropic_live_parity.py -v
+RUN_LIVE_OPENAI_PARITY=1 python3 -m unittest discover -s tests -p test_openai_live_parity.py -v
+```
+
+Each reserves its worst case first and then runs through a guarded client (no SDK
+retries, a finite timeout, request and input-size caps, a model/tool/format
+allow-list). Anthropic spend is tracked in `usage/anthropic-api-ledger.jsonl`, which
+needs an owner-confirmed baseline recorded with
+`scripts/anthropic_cost_estimator.py baseline`; OpenAI shares the ledger above. Both
+ledgers are append-only plan evidence, and each gate must be preceded by a rate and
+date recheck. Results and tolerated findings are in `plans/archive/live-parity/results.md`.
+Normal discovery skips both.
+
+For a mixed-provider run, copy `agents.yaml` to an untracked local file, retain
+every existing entry, and change only the narrator roles. Do **not** set
+`COMPLIANCE_PROVIDER=openai` for this mode: it would select OpenAI for entries
+without their own provider. `seeded` is the preferred remote-narrator mode
+because code obtains the canonical decision record before the remote model
+receives it:
+
+```yaml
+# local/openai-narrators.yaml — copied from agents.yaml; excerpt only
+agents:
+  auditor:
+    url: "http://127.0.0.1:9108/"
+    provider: openai
+    model: <approved OpenAI model identifier>
+    tool_mode: seeded
+  narrative:
+    url: "http://127.0.0.1:9109/"
+    provider: openai
+    model: <approved OpenAI model identifier>
+    tool_mode: seeded
+```
+
+```bash
+python -m orchestrator.cli batch sample_loan.json \
+  --config local/openai-narrators.yaml --spawn-local \
+  --provider ollama --model gemma4:26b
+```
+
+This sends only `auditor` and `narrative` to OpenAI; the other copied agent
+entries use the selected Ollama provider and model. To retain another provider
+instead, replace the final `--provider` and `--model` values accordingly.
 
 ---
 
@@ -218,7 +329,9 @@ python -m orchestrator.cli batch sample_loan.json --json-out results.json --narr
 python -m orchestrator.cli batch sample_loan.json --agents hmda ecoa hpml
 ```
 
-A failing agent becomes a result with `parse_error` set; it does not stop the batch.
+A failing agent becomes a result with `parse_error` set; it does not stop the batch. The auditor lists it as missing (never as a
+pass) and the narrative agent is given the failure, not a blank. If the narrative stage itself fails, the batch JSON is still
+saved, no empty report is written, and the command exits 1.
 
 ### Chat / REPL mode — interactive session with one agent
 

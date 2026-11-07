@@ -40,12 +40,15 @@ _POSITIVE = re.compile(r"(?<!non-)(?<!non )(?<!not )\b(?:fully\s+)?compliant\b|\
                        r"\bsatisf(?:ies|ied) (?:all|each|every)\b|\bsatisf(?:ies|ied) the (?:statutory|regulatory) requirements of (?:each|all|every)\b|\bno deficiencies\b", re.I)
 
 
-def contradicts_result(compliance_result: str, text: str) -> str | None:
+def contradicts_result(compliance_result: str, text: str, cross_regime: bool = False) -> str | None:
     """A heuristic watchdog (the decision record, not the prose, is authoritative): does the narrative claim the opposite of the
-    code-decided compliance result? (Not Applicable is never contradicted by negative words: "fails to exceed the spread" is normal there.) Returns a short note, or None."""
+    code-decided compliance result? (Not Applicable is never contradicted by negative words: "fails to exceed the spread" is normal there.) Returns a short note, or None.
+
+    `cross_regime` is for the auditor, whose narrative summarizes the other regimes and so legitimately says that some are
+    compliant while its own result is Non-Compliant; the "claims compliance" check cannot tell the two apart, so it is skipped there."""
     if compliance_result == "Compliant" and _NEGATIVE.search(text) and not _POSITIVE.search(text):
         return "the narrative describes violations or deficiencies, but the decision record's result is " + compliance_result
-    if compliance_result == "Non-Compliant" and _POSITIVE.search(text):
+    if compliance_result == "Non-Compliant" and not cross_regime and _POSITIVE.search(text):
         return "the narrative claims compliance, but the decision record's result is Non-Compliant"
     return None
 

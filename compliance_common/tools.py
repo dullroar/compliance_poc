@@ -1,26 +1,46 @@
 """Provider tool adapters and tool loops, generic over an MCP-style tool spec.
 
 A tool spec is the MCP shape: {"name", "description", "inputSchema"}. The same spec
-is exposed natively to Anthropic and Ollama, so every transport sees one contract.
+is exposed natively to Anthropic, Ollama, and OpenAI, so every transport sees one contract.
 `execute(name, arguments)` is injected: an MCP client call in production, a direct
 evaluator call in tests.
 """
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 
 ToolSpec = dict[str, Any]
 Execute = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
+# Claude 5-family models think adaptively, and thinking tokens share `max_tokens` with the answer. At the default effort
+# (medium) Haiku 5.5 spent most of the 8192-token cap thinking about the long narrative report and truncated or lost
+# the text. The deterministic evaluators decide and the model only narrates, so request low effort. Models outside the
+# family do not take `output_config.effort` and are left untouched.
+ANTHROPIC_EFFORT = "low"
+_EFFORT_MODELS = re.compile(r"^claude-(haiku|sonnet|opus|fable)-5")
+
+
+def anthropic_request_options(model: str) -> dict[str, Any]:
+    """Extra Messages API fields for `model`: the narration effort for the 5 family, nothing for other models."""
+    return {"output_config": {"effort": ANTHROPIC_EFFORT}} if _EFFORT_MODELS.match(model or "") else {}
+
+
 def native_definition(spec: ToolSpec, provider: str) -> dict[str, Any]:
-    """Return the native function declaration for Anthropic or Ollama."""
+    """Return the native function declaration for a supported provider."""
     if provider == "anthropic":
         return {"name": spec["name"], "description": spec["description"], "input_schema": spec["inputSchema"]}
     if provider == "ollama":
         return {"type": "function", "function": {"name": spec["name"], "description": spec["description"], "parameters": spec["inputSchema"]}}
-    raise ValueError("Supported providers are anthropic and ollama")
+    if provider == "openai":
+        # MCP input schemas can contain optional fields, which is incompatible with OpenAI strict function schemas.
+        # The runner still pins every evaluator input to the canonical loan payload, so non-strict model arguments
+        # cannot influence a decision.
+        return {"type": "function", "name": spec["name"], "description": spec["description"],
+                "parameters": spec["inputSchema"], "strict": False}
+    raise ValueError("Supported providers are anthropic, ollama, and openai")
 
 
 def seed_anthropic(spec: ToolSpec, arguments: dict[str, Any], result: dict[str, Any]) -> list[dict[str, Any]]:
@@ -33,6 +53,13 @@ def seed_anthropic(spec: ToolSpec, arguments: dict[str, Any], result: dict[str, 
 def seed_ollama(spec: ToolSpec, arguments: dict[str, Any], result: dict[str, Any]) -> list[dict[str, Any]]:
     return [{"role": "assistant", "content": "", "tool_calls": [{"function": {"name": spec["name"], "arguments": arguments}}]},
             {"role": "tool", "tool_name": spec["name"], "content": json.dumps(result)}]
+
+
+def seed_openai(spec: ToolSpec, arguments: dict[str, Any], result: dict[str, Any]) -> list[dict[str, Any]]:
+    """A completed Responses API function exchange, as if the model had called the evaluator."""
+    call_id = "call_seeded_1"
+    return [{"type": "function_call", "call_id": call_id, "name": spec["name"], "arguments": json.dumps(arguments)},
+            {"type": "function_call_output", "call_id": call_id, "output": json.dumps(result)}]
 
 
 def run_anthropic_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, model: str, system: str,
@@ -50,7 +77,7 @@ def run_anthropic_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, mo
         first = False
         response = client.messages.create(
             model=model, max_tokens=max_tokens, system=system, messages=working,
-            tools=[native_definition(spec, "anthropic")], tool_choice=choice,
+            tools=[native_definition(spec, "anthropic")], tool_choice=choice, **anthropic_request_options(model),
         )
         calls = [block for block in response.content if getattr(block, "type", None) == "tool_use"]
         if not calls:
@@ -85,3 +112,43 @@ def run_ollama_tool_loop(request: Callable[[dict[str, Any]], dict[str, Any]], sp
             if calls_made is not None:
                 calls_made.append({"name": function["name"], "arguments": arguments, "result": result})
             working["messages"].append({"role": "tool", "tool_name": function["name"], "content": json.dumps(result)})
+
+
+def run_openai_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, model: str, system: str,
+                         messages: list[dict[str, Any]], max_tokens: int,
+                         calls_made: list[dict[str, Any]] | None = None, force_first: bool = False,
+                         schema: dict[str, Any] | None = None) -> Any:
+    """Run a stateless Responses API function loop using only the supplied evaluator function.
+
+    Each response output is replayed in full because ``store=False`` prevents a continuation through
+    ``previous_response_id``. Parallel calls are disabled: this POC exposes one deterministic evaluator only.
+    """
+    working: list[Any] = list(messages)
+    first = True
+    tool = native_definition(spec, "openai")
+    while True:
+        choice: str | dict[str, str] = ({"type": "function", "name": spec["name"]} if force_first and first else "auto")
+        first = False
+        request: dict[str, Any] = {
+            "model": model, "instructions": system, "input": working, "max_output_tokens": max_tokens,
+            "store": False, "tools": [tool], "tool_choice": choice, "parallel_tool_calls": False,
+        }
+        if schema:
+            request["text"] = {"format": {"type": "json_schema", "name": "compliance_narrative",
+                                          "strict": True, "schema": schema}}
+        response = client.responses.create(**request)
+        calls = [item for item in response.output if getattr(item, "type", None) == "function_call"]
+        if not calls:
+            return response
+        working.extend(response.output)
+        for call in calls:
+            try:
+                arguments = json.loads(call.arguments)
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise RuntimeError("OpenAI returned malformed function arguments") from exc
+            if not isinstance(arguments, dict):
+                raise RuntimeError("OpenAI returned function arguments that were not an object")
+            result = execute(call.name, arguments)
+            if calls_made is not None:
+                calls_made.append({"name": call.name, "arguments": arguments, "result": result})
+            working.append({"type": "function_call_output", "call_id": call.call_id, "output": json.dumps(result)})

@@ -13,7 +13,7 @@ Chat mode talks to one agent in-process so the REPL can keep conversation histor
   python -m orchestrator.cli chat hmda
 
 Environment:
-  COMPLIANCE_PROVIDER optional, "anthropic" (default) or "ollama"
+  COMPLIANCE_PROVIDER optional, "anthropic" (default), "ollama", or "openai"
   COMPLIANCE_MODEL    optional, provider-specific model name
   OLLAMA_BASE_URL     optional, default http://localhost:11434
   OLLAMA_TIMEOUT      optional, request timeout in seconds, default 300
@@ -56,8 +56,8 @@ AGENT_KEYS: list[str] = list(AGENTS.keys())
 DOMAIN_AGENT_KEYS: list[str] = [k for k in AGENT_KEYS if k not in ("auditor", "narrative")]
 
 
-def _client(provider: str | None = None) -> Any:
-    return Backend(provider or DEFAULT_PROVIDER).client
+def _client(provider: str | None = None, model: str | None = None) -> Any:
+    return Backend(provider or DEFAULT_PROVIDER, model).client
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ def repl(
     agent = AGENTS[agent_key]
     selected_provider = (provider or DEFAULT_PROVIDER).lower()
     selected_model = _model_name(selected_provider, model)
-    c = _client(selected_provider)
+    c = _client(selected_provider, selected_model)
     history: list[dict] = []
     last_result: dict | None = None
 
@@ -305,6 +305,9 @@ def _batch(args: argparse.Namespace) -> None:
     else:
         print(json.dumps(results, indent=2))
     if narrative is not None:
+        if not narrative.get("raw_text"):      # the narrative stage failed: say so rather than leave an empty report that looks written
+            print(f"[Narrative report NOT written: {narrative.get('parse_error') or 'the narrative agent returned no text'}]", file=sys.stderr)
+            sys.exit(1)
         with open(args.narrative_out, "w", encoding="utf-8") as f:
             f.write(narrative["raw_text"])
         print(f"[Narrative report written to {args.narrative_out}]", file=sys.stderr)
@@ -328,7 +331,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Compliance agent orchestrator")
     subparsers = parser.add_subparsers(dest="mode", required=True)
-    providers = ["anthropic", "ollama"]
+    providers = ["anthropic", "ollama", "openai"]
 
     def common(sub, config=True):
         if config:

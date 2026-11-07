@@ -1,6 +1,7 @@
 """Send a payload to a compliance agent over A2A and return its result dict."""
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any
 
@@ -11,7 +12,7 @@ from a2a.client import ClientConfig, create_client
 from a2a.helpers.proto_helpers import new_data_part
 from a2a.types.a2a_pb2 import Message, Role, SendMessageRequest, TaskState
 
-from agents.a2a_server import RESULT_ARTIFACT
+from agents.a2a_server import PAYLOAD_JSON, RESULT_ARTIFACT
 
 AGENT_TIMEOUT = 1800.0  # local models are slow; a full ollama agent run can take minutes
 
@@ -35,8 +36,9 @@ async def send(url: str, payload: Any, httpx_client: httpx.AsyncClient | None = 
     http = httpx_client or httpx.AsyncClient(timeout=AGENT_TIMEOUT)
     try:
         client = await create_client(url, ClientConfig(httpx_client=http, streaming=False))
+        # The data part is a protobuf Struct, which turns every integer into a float; the JSON text keeps the payload exact.
         request = SendMessageRequest(message=Message(
-            message_id=str(uuid.uuid4()), role=Role.ROLE_USER, parts=[new_data_part({"payload": payload})]))
+            message_id=str(uuid.uuid4()), role=Role.ROLE_USER, parts=[new_data_part({"payload": payload, PAYLOAD_JSON: json.dumps(payload)})]))
         task = None
         async for response in client.send_message(request):
             if response.HasField("task"):

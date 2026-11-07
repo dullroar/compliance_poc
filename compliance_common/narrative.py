@@ -90,7 +90,8 @@ def allowed_numbers(*sources: str) -> set[str]:
     return found
 
 
-def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], case: Any, regulations: str) -> list[str]:
+def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], case: Any, regulations: str,
+                    cross_regime: bool = False) -> list[str]:
     """Violations in a model narrative (empty list = acceptable). The decision record, the case and the regulation text are the
     only sources of fact; the narrative may restate them, never extend them."""
     if not isinstance(narrative, dict):
@@ -114,7 +115,7 @@ def check_narrative(narrative: dict[str, Any] | None, decision: dict[str, Any], 
     for ident in dict.fromkeys(_ID.findall(text)):
         if any(c.isdigit() for c in ident) and ident.lower() not in source_lower:
             violations.append(f"the identifier '{ident}' does not appear in the decision record or the case")
-    note = contradicts_result(decision.get("compliance_result", ""), text)
+    note = contradicts_result(decision.get("compliance_result", ""), text, cross_regime)
     if note:
         violations.append(note)
     return violations

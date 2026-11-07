@@ -105,7 +105,7 @@ def _verified_narrative(raw_text: str, decision: dict[str, Any], case: Any, reg_
     while True:
         output, parse_error = extract_json(text)
         narrative = output.get("narrative") if isinstance(output, dict) else None
-        violations = ["the reply was not valid JSON: " + str(parse_error)[:100]] if parse_error else check_narrative(narrative, decision, case, reg_text)
+        violations = ["the reply was not valid JSON: " + str(parse_error)[:100]] if parse_error else check_narrative(narrative, decision, case, reg_text, cross_regime=domain == "auditor")
         attempts.append({"violations": violations, "stripped_fields": [k for k in DECISION_OWNED if isinstance(output, dict) and k in output]})
         if not violations:
             return {"narrative": narrative, "source": "model" if tries == 0 else "model_retry", "attempts": attempts, "output": output, "raw_text": text}
