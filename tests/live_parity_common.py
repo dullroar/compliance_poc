@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import json
+import resource
+import threading
 import time
 from typing import Any, Callable
 from unittest import mock
@@ -27,6 +30,7 @@ from compliance_common.assemble import DECISION_OWNED
 from compliance_common.narrative import deterministic_narrative
 from compliance_common.narrative_schema import NARRATIVE_SCHEMA
 from compliance_common.templates import examiner
+from compliance_common.tools import TOOL_FIRST_MARKER, rejects_forced_tool_choice
 from orchestrator import batch
 from orchestrator.a2a_client import send as a2a_send
 from orchestrator.batch import AUDITOR_KEYS, domain_keys, run_batch, run_narrative
@@ -80,7 +84,51 @@ def worst_case_table(provider: str, config: dict[str, dict] | None = None) -> di
     return {"per_role": table, "total": sum(sum(rows.values()) for rows in table.values()), "limit": RUN_REQUEST_LIMIT}
 
 
+# --- role context and locking for simultaneous requests ---------------------------------------------------------------------
+# With a remote width above 1 (plans/parallelize), several roles are in flight at once and each calls the guarded client from its
+# own worker thread. The role a request belongs to is therefore held per call chain (a context variable, copied into worker
+# threads by asyncio.to_thread), not on the client, and every counter and row write is made under the client's one lock.
+_ROLE_CONTEXTS: contextvars.ContextVar[dict] = contextvars.ContextVar("live_parity_role_contexts", default={})
+
+
+class _RoleContext:
+    """One role and phase, and the requests it has used so far (its own allowance)."""
+    __slots__ = ("role", "phase", "sent", "truncated")
+
+    def __init__(self, role: str | None, phase: str | None) -> None:
+        self.role, self.phase, self.sent, self.truncated = role, phase, 0, False      # truncated: a reply of this call chain stopped at max_tokens
+
+
+class RoleScoped:
+    """Mixin for a guarded client or a recording fake: `role`, `phase` and `role_sent` are those of the calling chain.
+
+    A thread that never called `begin_role` (and holds no copied context) sees the most recent role: the serial behavior of
+    a run at width 1. Counters shared by the whole run (`sent`, caps, rows) must be changed only while holding `self.lock`."""
+
+    def _init_scope(self) -> None:
+        self.lock = threading.RLock()
+        self._latest = _RoleContext(None, None)
+        self.sent = 0
+
+    def _enter_role(self, role: str, phase: str) -> None:
+        context = _RoleContext(role, phase)
+        with self.lock:
+            self._latest = context
+        _ROLE_CONTEXTS.set({**_ROLE_CONTEXTS.get(), id(self): context})
+
+    @property
+    def _context(self) -> _RoleContext:
+        return _ROLE_CONTEXTS.get().get(id(self)) or self._latest
+
+    role = property(lambda self: self._context.role)
+    phase = property(lambda self: self._context.phase)
+    role_sent = property(lambda self: self._context.sent)
+
+
 # --- the driver --------------------------------------------------------------------------------------------------------
+_CURRENT_ROLE: contextvars.ContextVar[str | None] = contextvars.ContextVar("live_parity_current_role", default=None)
+
+
 class _Run:
     """One phase: routes the production client's sends to in-process ASGI apps and records what was sent."""
 
@@ -90,6 +138,7 @@ class _Run:
         self.by_url = {url: key for key, url in self.urls.items()}
         self.sent: list[tuple[str, Any]] = []
         self.timings: dict[str, float] = {}
+        self.began: dict[str, float] = {}          # monotonic start of each role's call, for the phase wall times
         self.evaluator_calls: dict[str, list[tuple[str, Any]]] = {}
         self.role: str | None = None
         self.hook = getattr(getattr(backend, "client", None), "begin_role", None) or getattr(backend, "begin_role", None)
@@ -98,6 +147,8 @@ class _Run:
         key = self.by_url[url]
         self.sent.append((key, json.loads(json.dumps(payload))))        # the exact JSON the production client transmits
         self.role = key
+        _CURRENT_ROLE.set(key)                                          # per call chain: roles may be in flight together
+        self.began[key] = time.monotonic()
         if self.hook:
             self.hook(key, self.tool_mode)
         started = time.monotonic()
@@ -111,7 +162,7 @@ class _Run:
 
     def recording_call_tool(self, real: Callable) -> Callable:
         async def call(target: Any, name: str, arguments: dict[str, Any]) -> Any:
-            self.evaluator_calls.setdefault(self.role or "", []).append((name, json.loads(json.dumps(arguments))))
+            self.evaluator_calls.setdefault(_CURRENT_ROLE.get() or self.role or "", []).append((name, json.loads(json.dumps(arguments))))
             return await real(target, name, arguments)
         return call
 
@@ -205,8 +256,10 @@ def role_failures(record: dict[str, Any]) -> list[str]:
 
 
 def run_registry(backend: Any, tool_mode: str, *, payload: Any = None, target_for: Callable[[str], Any] | None = None,
-                 config: dict[str, dict] | None = None) -> dict[str, Any]:
-    """Run every registry role once in one phase and return {"records", "summary"} (metadata only)."""
+                 config: dict[str, dict] | None = None, remote_concurrency: int | None = None) -> dict[str, Any]:
+    """Run every registry role once in one phase and return {"records", "summary"} (metadata only).
+
+    Serial (`concurrency=1`) unless `remote_concurrency` is given, which is the opt-in width of the domain phase."""
     if tool_mode not in PHASES:
         raise ValueError(f"tool_mode must be one of {PHASES}")
     config = config or load_agents()
@@ -215,17 +268,40 @@ def run_registry(backend: Any, tool_mode: str, *, payload: Any = None, target_fo
     routed = {key: {**entry, "url": run.urls[key]} for key, entry in config.items()}
 
     async def go() -> dict[str, dict]:
-        results = await run_batch(payload, routed, verbose=False, concurrency=1)
+        if remote_concurrency is None:
+            results = await run_batch(payload, routed, verbose=False, concurrency=1)
+        else:
+            results = await run_batch(payload, routed, verbose=False, remote_concurrency=remote_concurrency,
+                                      provider=getattr(backend, "provider", None))
         results["narrative"] = await run_narrative(results, routed, verbose=False)
         return results
 
-    started = time.monotonic()
+    started, cpu_before = time.monotonic(), _cpu_seconds()
     with mock.patch.object(batch, "send", run.send), mock.patch("agents.runner.call_tool", run.recording_call_tool(_real_call_tool())):
         results = asyncio.run(go())
     elapsed = round(time.monotonic() - started, 3)
+    cpu_after = _cpu_seconds()
     sent = dict(run.sent)
     records = [_record_for(run, key, tool_mode, results[key], sent[key]) for key in registry_roles(config) if key in results]
-    return {"records": records, "summary": summarize(records, backend, tool_mode, [k for k, _ in run.sent], elapsed)}
+    summary = summarize(records, backend, tool_mode, [k for k, _ in run.sent], elapsed)
+    summary["timing"] = _phase_timing(run, started, elapsed, cpu_before, cpu_after)
+    return {"records": records, "summary": summary}
+
+
+def _cpu_seconds() -> dict[str, float]:
+    """CPU time of this process and of its finished child processes (the MCP evaluator subprocesses)."""
+    own, children = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
+    return {"self": own.ru_utime + own.ru_stime, "children": children.ru_utime + children.ru_stime}
+
+
+def _phase_timing(run: _Run, started: float, elapsed: float, before: dict[str, float], after: dict[str, float]) -> dict[str, Any]:
+    """Wall time of the domain phase (batch start to the last domain role finishing), the auditor, the narrative role and the whole batch."""
+    domains = [k for k in run.began if k not in AUDITOR_KEYS]
+    ends = {k: run.began[k] + run.timings.get(k, 0.0) for k in run.began}
+    domain_end = max((ends[k] for k in domains), default=started)
+    return {"domain_phase_seconds": round(domain_end - started, 3), "auditor_seconds": run.timings.get("auditor"),
+            "narrative_seconds": run.timings.get("narrative"), "total_seconds": elapsed,
+            "cpu_seconds": {k: round(after[k] - before[k], 3) for k in after}}
 
 
 def _real_call_tool() -> Callable:
@@ -273,7 +349,7 @@ def _decision_in(items: list[Any]) -> dict[str, Any] | None:
     return found
 
 
-class ScriptedProvider:
+class ScriptedProvider(RoleScoped):
     """Serves real Anthropic and OpenAI SDK clients (zero retries) from an httpx mock transport and records every request.
 
     behavior: tool = "call" (the model calls the tool when asked), "none" (it never calls it), "repeat" (it calls it on every turn)
@@ -285,15 +361,15 @@ class ScriptedProvider:
                  provider: str = "anthropic", model: str | None = None) -> None:
         self.provider, self.tool, self.narrative, self.empty_after_tool, self.caps = provider, tool, narrative, empty_after_tool, caps
         self.model = model or ("claude-haiku-5-5" if provider == "anthropic" else "gpt-6-luna")
-        self.role: str | None = None
-        self.phase: str | None = None
+        self._init_scope()
         self.requests: list[dict[str, Any]] = []
+        self.rejected: list[dict[str, Any]] = []          # forced tool choices answered with the API's 400 for a model that rejects them
         self.refused: list[dict[str, Any]] = []
         self.decisions: dict[str, dict] = {}
 
     # labelling hook used by run_registry
     def begin_role(self, role: str, phase: str) -> None:
-        self.role, self.phase = role, phase
+        self._enter_role(role, phase)
 
     def count(self, role: str, phase: str) -> int:
         return sum(1 for r in self.requests if r["role"] == role and r["phase"] == phase)
@@ -302,18 +378,26 @@ class ScriptedProvider:
         body = json.loads(request.content)
         record = {"role": self.role, "phase": self.phase, "path": request.url.path, "bytes": len(request.content),
                   "tool_choice": body.get("tool_choice"), "model": body.get("model")}
-        if self.caps and self.count(self.role, self.phase) + 1 > worst_case_requests(self.provider, self.phase, self.role):
-            self.refused.append(record)
-            raise RequestCapExceeded(f"{self.role}/{self.phase}")
-        self.requests.append(record)
+        with self.lock:                  # check and count together, so simultaneous requests cannot both take the last slot
+            if self.caps and self.count(self.role, self.phase) + 1 > worst_case_requests(self.provider, self.phase, self.role):
+                self.refused.append(record)
+                raise RequestCapExceeded(f"{self.role}/{self.phase}")
+            self.requests.append(record)
         anthropic = request.url.path.endswith("/messages")
         items = body["messages"] if anthropic else body["input"]
         decision = _decision_in(items)
         if decision:
-            self.decisions[self.role] = decision
+            with self.lock:
+                self.decisions[self.role] = decision
         forced = (body.get("tool_choice") or {}).get("type") in ("tool", "function") if isinstance(body.get("tool_choice"), dict) else False
+        if anthropic and forced and rejects_forced_tool_choice(body.get("model")):
+            with self.lock:
+                self.rejected.append(record)
+            return httpx.Response(400, json={"type": "error", "error": {"type": "invalid_request_error",
+                                                                          "message": "tool_choice: forced tool use is not supported by this model"}})
+        told = anthropic and TOOL_FIRST_MARKER in (body.get("system") or "") and not forced      # asked to call it by name, not forced
         has_result = decision is not None and any(self._is_result(i) for i in items)
-        call = body.get("tools") and (self.tool == "repeat" and body.get("tool_choice") != "none" or (self.tool == "call" and forced and not has_result))
+        call = body.get("tools") and (self.tool == "repeat" and body.get("tool_choice") != "none" or (self.tool == "call" and (forced or told) and not has_result))
         if call:
             return httpx.Response(200, json=self._tool_call(anthropic, body))
         return httpx.Response(200, json=self._text(anthropic, self._answer(decision or self.decisions.get(self.role), body)))

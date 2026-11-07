@@ -28,6 +28,24 @@ def anthropic_request_options(model: str) -> dict[str, Any]:
     return {"output_config": {"effort": ANTHROPIC_EFFORT}} if _EFFORT_MODELS.match(model or "") else {}
 
 
+# Claude Opus 5.5, Sonnet 5.5, Fable 5.1 and Mythos 5.1 answer a forced `tool_choice` (type `tool` or `any`) with HTTP 400, whatever the
+# thinking settings; `auto` and `none` still work (define-tools page, re-read 2026-11-07: plans/archive/tune-ais/facts.md). Haiku 5.5 and every
+# other model are not listed as rejecting it and keep the forced first call. A listed model gets `auto` plus an instruction naming the
+# tool; a model that still does not call it is covered by the harness (agents.runner records the call as `by: harness`).
+_REJECTS_FORCED_CHOICE = re.compile(r"^claude-(sonnet-5-5|opus-5-5|fable-5-1|mythos-5-1)(-\d{8})?$")
+TOOL_FIRST_MARKER = "before you write any answer"
+
+
+def rejects_forced_tool_choice(model: str | None) -> bool:
+    return bool(_REJECTS_FORCED_CHOICE.match(model or ""))
+
+
+def tool_first_instruction(tool_name: str) -> str:
+    """Appended to the system prompt (never inside it) for a model that cannot be forced to call the tool."""
+    return (f"\n\nCall the `{tool_name}` tool now, {TOOL_FIRST_MARKER}. "
+            "Its result is the authoritative decision record; your answer explains that result.")
+
+
 def native_definition(spec: ToolSpec, provider: str) -> dict[str, Any]:
     """Return the native function declaration for a supported provider."""
     if provider == "anthropic":
@@ -68,11 +86,15 @@ def run_anthropic_tool_loop(client: Any, spec: ToolSpec, execute: Execute, *, mo
     """Run an Anthropic client-tool loop. Tool calls are appended to `calls_made`.
 
     force_first=True makes the FIRST request require the tool (`tool_choice: tool`), so the model cannot answer
-    without calling it; later requests are free so it can write the final answer."""
+    without calling it; later requests are free so it can write the final answer. A model that rejects a forced choice
+    (see `rejects_forced_tool_choice`) is instead sent `auto` with an instruction naming the tool on every request."""
     working = list(messages)
     first = True
+    forced = force_first and not rejects_forced_tool_choice(model)
+    if force_first and not forced:
+        system = system + tool_first_instruction(spec["name"])
     while True:
-        choice = ({"type": "tool", "name": spec["name"], "disable_parallel_tool_use": True} if force_first and first
+        choice = ({"type": "tool", "name": spec["name"], "disable_parallel_tool_use": True} if forced and first
                   else {"type": "auto", "disable_parallel_tool_use": True})
         first = False
         response = client.messages.create(

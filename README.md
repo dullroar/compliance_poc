@@ -349,8 +349,16 @@ REPL commands:
 
 ### Local models: serialized calls and settings outside the repo
 
-`agents.yaml` has `concurrency: 1` (agent calls in flight at once; raise it for remote models, or pass
-`--concurrency N`). Machine-specific settings (provider, model, `OLLAMA_NUM_CTX`, `OLLAMA_TIMEOUT`, log dir) belong
+`agents.yaml` sets two widths. `concurrency: 1` is how many local (Ollama) agent calls run at once; `remote_concurrency: 8` is how
+many Anthropic or OpenAI agent calls run at once (the highest clean width of a live ramp, see `plans/parallelize/results.md`; override with
+`--remote-concurrency N`, or lower it if a provider rate-limits: that role then fails alone and the batch summary counts it). An agent's
+provider is its `provider` entry, else `--provider`, else `COMPLIANCE_PROVIDER`, else anthropic. `--concurrency N` is different: it caps
+every agent call at once (`--concurrency 1` forces a serial run) and, alone, sets both widths. The auditor and the narrative role still
+run after the domain agents. To repeat the live measurement (needs `ANTHROPIC_API_KEY`, spends about USD 0.20):
+`RUN_LIVE_ANTHROPIC_PARALLEL=1 python3 -m unittest discover -s tests -p test_anthropic_live_parallel.py -v`.
+The cheapest setting that still passes the quality bar is measured by `python3 -m benchmarks.floor_sweep --dry-run` (offline, no spend;
+`--live --provider anthropic` adds two one-request diagnostics, about USD 0.01). The dated result is `plans/archive/tune-ais/floor.md`.
+Machine-specific settings (provider, model, `OLLAMA_NUM_CTX`, `OLLAMA_TIMEOUT`, log dir) belong
 in files outside the repo, e.g. an env file plus a copy of `agents.yaml` passed with `--config`. The agents spawn the
 MCP evaluators themselves over stdio (`python -m compliance_mcp.<domain>.server`), so no MCP registration is needed.
 Model choice on an 8 GB GPU: Ollama can use only ~6 GB of it, so set `OLLAMA_NUM_CTX` deliberately. `granite4.1:3b` stays fully

@@ -4,7 +4,7 @@ gist: "Read when: planning or auditing the cheapest-adequate-model spike or the 
 
 # Tune AIs - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-07). Decided by Jim 2026-11-07: the thinking-off work is dropped; thinking and effort settings stay as they are today. Rules marked inferred still need confirmation.
+Status: complete (approved by Jim Lehmer, 2026-11-07; executed and archived 2026-11-07; result in floor.md). Decided by Jim 2026-11-07: the thinking-off work is dropped; thinking and effort settings stay as they are today. Rules marked inferred still need confirmation.
 
 See [goal.md](goal.md) for the goal command.
 
@@ -14,7 +14,7 @@ Code now decides and templates now shape the text, so a model only phrases. Find
 
 Facts the plan rests on (cached model table of 2026-10-06 and archived runs; step 01 re-verifies them):
 
-- Today the code sends `output_config.effort: low` to Claude 5-family models and leaves `thinking` unset ([`compliance_common/tools.py`](../../compliance_common/tools.py)). This plan leaves both as they are.
+- Today the code sends `output_config.effort: low` to Claude 5-family models and leaves `thinking` unset ([`compliance_common/tools.py`](../../../compliance_common/tools.py)). This plan leaves both as they are.
 - Sonnet 5.5, Opus 5.5 and Fable 5.1 reject forced `tool_choice` of type `tool` or `any` (400). The runtime forces the first Anthropic tool call, so those models cannot run model mode without a change. Haiku 5.5 is not listed as rejecting it; step 01 verifies.
 - Per million tokens, input/output: Haiku 5.5 USD 0.10/0.50, Sonnet 5.5 2/10, Opus 5.5 4/20, Haiku 4.5 1/5. Haiku 5.5 is already the cheapest current Claude model, and Haiku 4.5 costs 10 times as much. So the floor cannot be found by going to a cheaper Claude model. It is found by checking whether Haiku 5.5 is tall enough, whether any role needs more, and whether code alone is enough for some roles.
 
@@ -24,8 +24,8 @@ This work does NOT: change a rule, pack, `decision_id` or compliance result; cho
 
 ### R1. Candidate models can run the same path and be priced before use
 
-- Basis: documented ([AGENTS.md Anthropic spending](../../AGENTS.md): only listed models, first-party standard Messages API; extend and test the estimator and accounting first); the estimator lists `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-sonnet-4-6`.
-- Rule: first re-verify the model facts above against vendor documentation and record sources and date in `plans/tune-ais/facts.md`. Then model mode on Sonnet 5.5 works without forced `tool_choice` (use `auto` plus an instruction naming the tool; the harness already covers a model that does not call it and records `by: harness`). Haiku 5.5 keeps forced choice if the API accepts it. The live guard allow-list admits the candidate model ids and nothing else new. The estimator counts thinking tokens at the output rate.
+- Basis: documented ([AGENTS.md Anthropic spending](../../../AGENTS.md): only listed models, first-party standard Messages API; extend and test the estimator and accounting first); the estimator lists `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-sonnet-4-6`.
+- Rule: first re-verify the model facts above against vendor documentation and record sources and date in `plans/archive/tune-ais/facts.md`. Then model mode on Sonnet 5.5 works without forced `tool_choice` (use `auto` plus an instruction naming the tool; the harness already covers a model that does not call it and records `by: harness`). Haiku 5.5 keeps forced choice if the API accepts it. The live guard allow-list admits the candidate model ids and nothing else new. The estimator counts thinking tokens at the output rate.
 - Example: a Sonnet 5.5 role run completes in model mode with tool provenance `model` or `harness`, never a 400. Request bodies for Haiku 5.5 are byte-for-byte unchanged from today.
 - Acceptance check: offline tests for request shape per model, guard refusals of everything else, and estimator rates per candidate; the first live call of each new model is a one-request diagnostic inside the reservation.
 
@@ -45,18 +45,18 @@ This work does NOT: change a rule, pack, `decision_id` or compliance result; cho
 ### R4. The floor report is dated, costed and re-runnable
 
 - Basis: inferred.
-- Rule: `plans/tune-ais/floor.md` states, per role: the lowest passing rung, cost per successful narrative at that rung (API usage, not guessed), tokens, latency, and the date and pricing source. It states what was not tested. `memory/` gets one short topic pointing to the report and the command to re-run it. The command re-runs the whole sweep from the committed bar and scenarios and prints a table comparable with the committed report.
+- Rule: `plans/archive/tune-ais/floor.md` states, per role: the lowest passing rung, cost per successful narrative at that rung (API usage, not guessed), tokens, latency, and the date and pricing source. It states what was not tested. `memory/` gets one short topic pointing to the report and the command to re-run it. The command re-runs the whole sweep from the committed bar and scenarios and prints a table comparable with the committed report.
 - Acceptance check: the run command works offline with fakes (`--dry-run`) and the report cites the ledger rows for its live evidence.
 
 ### R5. Spend stays inside a stated bound
 
-- Basis: documented ([AGENTS.md Anthropic spending](../../AGENTS.md)); inferred: bound.
+- Basis: documented ([AGENTS.md Anthropic spending](../../../AGENTS.md)); inferred: bound.
 - Rule: total live spend for this plan at most USD 5 of the existing USD 20 Anthropic budget (remaining about USD 19.59 at the last record); each run reserved first at its worst case, at most USD 1.50 per run; zero SDK retries; request and byte caps from the live gate. For scale: one full Haiku registry run (both phases) cost USD 0.068 in the archive; Sonnet 5.5 is 20 times the per-token price, so it is run per role, not per registry.
 - Acceptance check: the ledger shows reservations before calls, settlements from usage, and the total under the bound.
 
 ### R6. Existing behavior and validation are undisturbed
 
-- Basis: documented ([agent contract](../../AGENTS.md)).
+- Basis: documented ([agent contract](../../../AGENTS.md)).
 - Acceptance check: `python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py`, all `RUN_LIVE_*` variables unset.
 
 ## Constraints and assumptions

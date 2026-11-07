@@ -1,9 +1,12 @@
 """Offline proofs for the guarded OpenAI registry-wide live run: caps, validation, durable shared-ledger accounting. No network."""
+import contextvars
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from decimal import Decimal
 from pathlib import Path
@@ -12,7 +15,7 @@ import httpx
 import openai
 
 from agent_prompts import AGENTS
-from live_parity_common import PHASES, ScriptedProvider, registry_roles, worst_case_requests, worst_case_table
+from live_parity_common import PHASES, ScriptedProvider, registry_roles, run_registry, worst_case_requests, worst_case_table
 from scripts.openai_cost_estimator import assess
 from test_agent_parity import SAMPLE
 from test_openai_live_parity import (BYTE_BOUND, RUN_LIMIT, SCHEMA_FORMAT, GuardedOpenAI, GuardRefusal, RunFile, aggregate, expected_outbound,
@@ -389,6 +392,159 @@ class LiveRunAccountingTests(Base):
         before = LEDGER.read_bytes()
         self.run_live()
         self.assertEqual(LEDGER.read_bytes(), before)
+
+
+# --- simultaneous calls (plans/parallelize, step 02) --------------------------------------------------------------------------
+class PromptChecked(ScriptedProvider):
+    """Records the role the guard attributed each request to beside the role whose instructions it actually carries."""
+
+    def __init__(self, *args, overlap=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pairs, self.overlap, self.inflight, self.peak, self._mutex = [], overlap, 0, 0, threading.Lock()
+
+    def handler(self, request):
+        body = json.loads(request.content)
+        system = body.get("instructions") or ""
+        actual = next((k for k, v in AGENTS.items() if system.startswith(v["system_prompt"])), None)
+        with self._mutex:
+            self.pairs.append((self.role, actual))
+            self.inflight += 1
+            self.peak = max(self.peak, self.inflight)
+        try:
+            deadline = time.monotonic() + 5.0
+            while self.overlap and self.peak < 2 and time.monotonic() < deadline:      # hold the first request until a second is in flight
+                time.sleep(0.001)
+            return super().handler(request)
+        finally:
+            with self._mutex:
+                self.inflight -= 1
+
+
+def released_together(jobs, *, context=None):
+    """Run each job on its own thread, all released at once ("copy": in a copy of the caller's context). [(True, value) | (False, exc)]."""
+    barrier, out = threading.Barrier(len(jobs)), [None] * len(jobs)
+
+    def work(i):
+        barrier.wait()
+        try:
+            out[i] = (True, jobs[i]())
+        except Exception as exc:
+            out[i] = (False, exc)
+
+    threads = [threading.Thread(target=(contextvars.copy_context().run if context == "copy" else lambda f, i: f(i)), args=(work, i)) for i in range(len(jobs))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return out
+
+
+class ConcurrentGuardTests(Base):
+    """The guard and the shared ledger must stay exact when requests arrive at the same time."""
+    ROUNDS = 8
+    ROLES8 = ["hmda", "ecoa", "hvcre", "hpml", "fzd", "ybs", "vmi", "trid"]
+
+    def fresh(self, name, script, slots=8, **kwargs):
+        previous = getattr(self, "_open_cycle", None)
+        if previous:
+            self.ledger.end_cycle(previous, {}, 0)          # release the slots of the cycle before, so rounds do not exhaust the budget
+        self._open_cycle = name
+        runs = RunFile(Path(self.temp.name) / f"{name}.jsonl")
+        self.ledger.start_cycle(name, slots, PARITY_REQUEST_BOUND, PARITY_INPUT_BOUND_TOKENS)
+        return GuardedOpenAI(sdk_for(script), self.ledger, name, runs, observer=script.begin_role, **kwargs), runs
+
+    def test_with_two_slots_left_exactly_two_of_eight_simultaneous_requests_proceed(self):
+        for variant in ("shared", "copied", "own_roles"):
+            for round_ in range(self.ROUNDS):
+                with self.subTest(variant=variant, round=round_):
+                    script = PromptChecked(provider="openai", caps=False)
+                    name = f"{variant}{round_}"
+                    guard, runs = self.fresh(name, script, limit=2)
+                    if variant == "own_roles":
+                        def job(role):
+                            def go():
+                                guard.begin_role(role, "model")
+                                return guard.responses.create(**self.request(role))
+                            return go
+                        results = released_together([job(r) for r in self.ROLES8])
+                    else:
+                        guard.begin_role("ybs", "model")
+                        results = released_together([lambda: guard.responses.create(**self.request("ybs")) for _ in self.ROLES8],
+                                                    context="copy" if variant == "copied" else None)
+                    refused = [r[1] for r in results if not r[0]]
+                    self.assertEqual((sum(1 for r in results if r[0]), len(refused)), (2, 6))
+                    self.assertTrue(all(isinstance(e, GuardRefusal) and "run request cap reached" in str(e) for e in refused), refused)
+                    self.assertEqual((len(script.requests), guard.sent), (2, 2))
+                    ledger_rows = [r for r in self.ledger_rows() if r.get("cycle_id") == name]
+                    self.assertEqual(sorted(r["sequence"] for r in ledger_rows if r["event"] == "request_reservation"), [1, 2])
+                    self.assertEqual(sorted(r["sequence"] for r in ledger_rows if r["event"] == "request_outcome"), [1, 2])
+                    self.assertEqual(sum(1 for r in runs.rows(name) if r["event"] == "refusal"), 6)
+
+    def test_threads_sharing_one_role_cannot_exceed_its_allowance(self):
+        for round_ in range(self.ROUNDS):
+            with self.subTest(round=round_):
+                script = PromptChecked(provider="openai", caps=False)
+                guard, runs = self.fresh(f"share{round_}", script)
+                guard.begin_role("ybs", "model")
+                allowance = worst_case_requests("openai", "model", "ybs")
+                results = released_together([lambda: guard.responses.create(**self.request("ybs")) for _ in range(allowance + 4)], context="copy")
+                self.assertEqual(sum(1 for r in results if r[0]), allowance)
+                self.assertTrue(all("role request cap reached" in str(r[1]) for r in results if not r[0]))
+                self.assertEqual((len(script.requests), guard.role_sent), (allowance, allowance))
+
+    def test_roles_in_flight_together_each_keep_their_own_context_allowance_and_ledger_rows(self):
+        script = PromptChecked(provider="openai", caps=False, overlap=True)
+        guard, runs = self.fresh("roles", script, slots=40)
+
+        def one_role(role):
+            def go():
+                guard.begin_role(role, "model")
+                allowance = worst_case_requests("openai", "model", role)
+                for _ in range(allowance):
+                    guard.responses.create(**self.request(role))
+                    self.assertEqual((guard.role, guard.phase), (role, "model"))
+                with self.assertRaisesRegex(GuardRefusal, "role request cap reached"):
+                    guard.responses.create(**self.request(role))
+                return allowance
+            return go
+
+        results = released_together([one_role(r) for r in self.ROLES8])
+        self.assertTrue(all(r[0] for r in results), [r[1] for r in results if not r[0]])
+        expected = sum(r[1] for r in results)
+        self.assertEqual((len(script.requests), guard.sent), (expected, expected))
+        self.assertTrue(all(attributed == actual for attributed, actual in script.pairs), "a request was attributed to another role")
+        ledger_rows = [r for r in self.ledger_rows() if r.get("cycle_id") == "roles"]
+        reservations = [r for r in ledger_rows if r["event"] == "request_reservation"]
+        self.assertEqual(sorted(r["sequence"] for r in reservations), list(range(1, expected + 1)))
+        self.assertEqual({r["role"] for r in reservations}, set(self.ROLES8))
+        outcomes = [r for r in ledger_rows if r["event"] == "request_outcome"]
+        self.assertEqual(sorted(r["sequence"] for r in outcomes), list(range(1, expected + 1)))
+        for role in self.ROLES8:
+            self.assertEqual(sum(1 for r in reservations if r["role"] == role), worst_case_requests("openai", "model", role))
+        cycles, incurred, reserved = Ledger.state(self.ledger_rows())              # the ledger replays without an invalid-sequence error
+        self.assertEqual(len(cycles["roles"]["starts"]), expected)
+        self.assertEqual(sum(1 for r in runs.rows("roles") if r["event"] == "refusal"), len(self.ROLES8))
+        self.assertGreater(script.peak, 1)
+        lines = runs.path.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), len([json.loads(line) for line in lines]))
+
+    def test_a_full_registry_run_at_width_four_is_attributed_counted_and_replayable(self):
+        script = PromptChecked(provider="openai", overlap=True)
+        drive = lambda backend, phase: run_registry(backend, phase, remote_concurrency=4)
+        result = live_run(sdk_for(script), ledger_path=self.ledger_path, runs_path=self.runs_path, today=PRICE_CHECKED, observer=script.begin_role, drive=drive)
+        for phase, out in result["outputs"].items():
+            self.assertTrue(out["summary"]["ok"], (phase, out["summary"]["failed"]))
+        self.assertGreater(script.peak, 1)
+        self.assertTrue(all(attributed == actual for attributed, actual in script.pairs))
+        self.assertEqual(script.refused, [])
+        cycle = [r for r in self.ledger_rows() if r.get("cycle_id") == result["cycle_id"]]
+        reservations = [r for r in cycle if r["event"] == "request_reservation"]
+        self.assertEqual(sorted(r["sequence"] for r in reservations), list(range(1, len(script.requests) + 1)))
+        self.assertEqual(len([r for r in cycle if r["event"] == "request_outcome"]), len(script.requests))
+        Ledger.state(self.ledger_rows())
+        for role in ROLES:
+            for phase in PHASES:
+                self.assertLessEqual(sum(1 for r in reservations if (r["role"], r["mode"]) == (role, phase)), worst_case_requests("openai", phase, role))
 
 
 class HygieneTests(Base):

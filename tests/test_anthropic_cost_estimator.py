@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from scripts.anthropic_cost_estimator import (BUDGET, PRICE_CHECKED, BudgetError, baseline,
-    estimate, locked, reserve, settle, state)
+    estimate, locked, rates_for, reserve, settle, state)
 
 
 class AnthropicCostEstimatorTests(unittest.TestCase):
@@ -36,6 +36,51 @@ class AnthropicCostEstimatorTests(unittest.TestCase):
         event = json.loads(self.path.read_text().splitlines()[-1])
         self.assertEqual(Decimal(event['input_rate_usd_per_million']), Decimal('0.50'))
         self.assertEqual(Decimal(event['output_rate_usd_per_million']), Decimal('2.50'))
+
+    # Candidate models of plans/archive/tune-ais: rates verified against the vendor pricing page on 2026-11-07 (plans/archive/tune-ais/facts.md).
+    CANDIDATES = {'claude-haiku-5-5': ('0.10', '0.50'), 'claude-sonnet-5-5': ('2', '10'), 'claude-opus-5-5': ('4', '20'),
+                  'claude-sonnet-4-6': ('3', '15')}
+
+    def test_each_candidate_has_its_documented_rates_and_a_bound_that_follows_from_them(self):
+        for model, (rate_in, rate_out) in self.CANDIDATES.items():
+            with self.subTest(model=model):
+                self.assertEqual(rates_for(model, 1000), (Decimal(rate_in), Decimal(rate_out)))
+                expected = 3 * (Decimal(40000) * Decimal(rate_in) * 2 + Decimal(2000) * Decimal(rate_out)) * Decimal('1.1') / 1_000_000
+                self.assertEqual(estimate(model, 3, 40000, 2000, PRICE_CHECKED), expected)
+        self.assertEqual(rates_for('claude-haiku-5-5', 100_001), (Decimal('0.50'), Decimal('2.50')))
+        self.assertEqual(rates_for('claude-sonnet-5-5', 900_000), (Decimal('2'), Decimal('10')))      # no long-context tier except Haiku 5.5
+
+    def test_models_outside_the_candidates_stay_unsupported_until_priced_and_tested(self):
+        for model in ('claude-haiku-4-5-20251001', 'claude-haiku-4-5', 'claude-fable-5-1', 'claude-opus-5', ''):
+            with self.subTest(model=model), self.assertRaises(BudgetError):
+                estimate(model, 1, 100, 100, PRICE_CHECKED)
+
+    def test_thinking_tokens_are_counted_at_the_output_rate_for_every_candidate(self):
+        for model, (_, rate_out) in self.CANDIDATES.items():
+            with self.subTest(model=model):
+                plain = estimate(model, 3, 50000, 1000, PRICE_CHECKED)
+                thinking = estimate(model, 3, 50000, 1000, PRICE_CHECKED, thinking_tokens=4000)
+                self.assertEqual(thinking - plain, 3 * Decimal(4000) * Decimal(rate_out) * Decimal('1.1') / 1_000_000)
+                self.assertEqual(thinking, estimate(model, 3, 50000, 5000, PRICE_CHECKED))      # the same as asking for that many more output tokens
+                self.assertEqual(estimate(model, 3, 50000, 1000, PRICE_CHECKED, thinking_tokens=0), plain)
+
+    def test_thinking_tokens_must_be_a_non_negative_integer_and_fit_the_output_limit(self):
+        for bad in (-1, 1.5, '10', None, True, 128000):
+            with self.subTest(thinking=bad), self.assertRaises(BudgetError):
+                estimate('claude-sonnet-5-5', 1, 100, 1000, PRICE_CHECKED, thinking_tokens=bad)
+        estimate('claude-sonnet-5-5', 1, 100, 1000, PRICE_CHECKED, thinking_tokens=126000)
+
+    def test_a_reservation_holds_the_thinking_bound_and_records_it_only_when_given(self):
+        baseline(self.path, '0', 'owner-confirmed')
+        reserve(self.path, 'claude-sonnet-5-5', 2, 10000, 1000, PRICE_CHECKED)
+        plain = json.loads(self.path.read_text().splitlines()[-1])
+        self.assertNotIn('thinking_tokens_per_attempt', plain)                      # rows without thinking are exactly as before
+        _, bound = reserve(self.path, 'claude-sonnet-5-5', 2, 10000, 1000, PRICE_CHECKED, thinking_tokens=500)
+        with_thinking = json.loads(self.path.read_text().splitlines()[-1])
+        self.assertEqual(with_thinking['thinking_tokens_per_attempt'], 500)
+        self.assertEqual(Decimal(with_thinking['bound_usd']), bound)
+        self.assertEqual(bound, estimate('claude-sonnet-5-5', 2, 10000, 1500, PRICE_CHECKED))
+        self.assertGreater(bound, Decimal(plain['bound_usd']))
 
     def test_unverified_baseline_refuses_reservation_without_changing_ledger(self):
         before = self.path.read_text()

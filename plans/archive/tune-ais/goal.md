@@ -7,7 +7,7 @@ gist: "Read when: executing or resuming the approved tune-ais plan."
 Once the spec status is `approved` and plans `response-templates` and `parallelize` are `complete`, from the repository root enter:
 
 ```text
-/goal Execute the approved plans/tune-ais plan using plans/tune-ais/goal.md. Continue until the plan is verified complete or a plan-defined escalation requires my decision. Report which outcome occurred and supporting evidence; do not report an escalation as completion.
+/goal Execute the approved plans/archive/tune-ais plan using plans/archive/tune-ais/goal.md. Continue until the plan is verified complete or a plan-defined escalation requires my decision. Report which outcome occurred and supporting evidence; do not report an escalation as completion.
 ```
 
 1. Follow `AGENTS.md`; inspect the working tree and preserve existing work. Use the repository `.venv`. Branch before editing; do not commit or push without separate authorization.
