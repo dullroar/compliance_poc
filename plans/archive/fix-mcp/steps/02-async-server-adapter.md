@@ -1,6 +1,6 @@
 ---
 id: 02-async-server-adapter
-status: pending
+status: done
 depends_on: []
 touches:
   - compliance_common/mcp_server.py
@@ -8,7 +8,14 @@ touches:
 lane: server-runtime
 gate: timeout 15s .venv/bin/python -m unittest tests.test_mcp_server_runtime -v
 requirements: [R2, R4]
-evidence: ""
+evidence: >-
+  2026-11-06: `timeout 15s .venv/bin/python -m unittest tests.test_mcp_server_runtime -v`
+  passed (2 tests, 0.077s) using Python 3.12.3, mcp 2.0.0 and anyio 4.13.0.
+  A synchronous test evaluator received the canonical case exactly once; the real YBS
+  decision ID and classification matched direct evaluation. Both calls and client exits
+  completed while anyio.to_thread.run_sync was patched to fail, so the test detects
+  reintroduction of the worker bridge. The evaluators remain local and no network or
+  subprocess calls were found in their rules or server modules.
 ---
 
 # Remove the synchronous worker bridge from evaluator tool execution

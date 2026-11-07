@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 from mcp import Client
-from mcp.client.stdio import StdioServerParameters
+from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from .obs import get_logger
 
@@ -17,6 +17,10 @@ log = get_logger("mcp-client", "1")
 def stdio_target(domain: str) -> StdioServerParameters:
     """Launch compliance_mcp.<domain>.server as a stdio subprocess."""
     return StdioServerParameters(command=sys.executable, args=["-m", f"compliance_mcp.{domain}.server"], env=dict(os.environ))
+
+
+def _transport(target: Any) -> Any:
+    return stdio_client(target) if isinstance(target, StdioServerParameters) else target
 
 
 def _decode(result: Any) -> dict[str, Any]:
@@ -31,14 +35,14 @@ def _decode(result: Any) -> dict[str, Any]:
 
 async def list_tool_specs(target: Any) -> list[dict[str, Any]]:
     """Return MCP-shaped tool specs {name, description, inputSchema}."""
-    async with Client(target) as client:
+    async with Client(_transport(target)) as client:
         listing = await client.list_tools()
     return [{"name": t.name, "description": t.description or "", "inputSchema": t.input_schema} for t in listing.tools]
 
 
 async def call_tool(target: Any, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     log.trace("mcp call", extra={"tool": name}, payload=arguments)
-    async with Client(target) as client:
+    async with Client(_transport(target)) as client:
         result = _decode(await client.call_tool(name, arguments))
     log.trace("mcp result", extra={"tool": name, "decision_id": result.get("decision_id", "")}, payload=result)
     return result

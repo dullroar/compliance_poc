@@ -155,10 +155,11 @@ class YBSContractTests(unittest.TestCase):
         openai = native_definition(spec, "openai")
         self.assertEqual((openai["type"], openai["name"], openai["parameters"], openai["strict"]),
                          ("function", "ybs_evaluate", spec["inputSchema"], False))
-        for target in (ybs_server, stdio_target("ybs")):
-            with self.subTest(target=type(target).__name__):
+        for transport, target in (("in_process", ybs_server), ("stdio", stdio_target("ybs"))):
+            with self.subTest(transport=transport):
                 result = asyncio.run(call_tool(target, "ybs_evaluate", {"case": input_case}))
                 self.assertEqual(result["decision_id"], expected["decision_id"])
+                self.assertEqual(result["final_classification"], expected["final_classification"])
 
     def test_replay_is_identical_across_repeated_direct_and_mcp_execution(self):
         input_case = case([person()])

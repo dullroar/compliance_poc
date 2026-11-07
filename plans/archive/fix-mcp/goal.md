@@ -4,6 +4,8 @@ gist: "Read when: running the approved fix-mcp plan with a Claude Code goal or r
 
 # MCP repair goal and execution protocol
 
+This completed plan has been archived. The command below records its original execution location.
+
 From the repository root on the `fix-mcp` branch, start Claude Code and enter:
 
 ```text

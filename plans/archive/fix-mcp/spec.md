@@ -4,7 +4,7 @@ gist: "Read when: repairing the MCP client/server lifecycle regression and its t
 
 # MCP lifecycle repair - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-06)
+Status: complete (approved by Jim Lehmer, 2026-11-06; verified 2026-11-06)
 
 For the plan-specific Claude Code goal and execution protocol, see [goal.md](goal.md).
 
@@ -16,7 +16,7 @@ Repair the local MCP execution path so deterministic evaluator calls complete an
 
 ### R1. The MCP SDK environment is reproducible and explicitly supported
 
-- Basis: documented ([agent validation rules](../../AGENTS.md)) and observed in the local diagnosis (`mcp==2.0.0`, `anyio==4.13.0`); exact compatible versions remain to be confirmed by the step gate.
+- Basis: documented ([agent validation rules](../../../AGENTS.md)) and observed in the local diagnosis (`mcp==2.0.0`, `anyio==4.13.0`); exact compatible versions remain to be confirmed by the step gate.
 - Example: a fresh environment resolves the documented MCP and AnyIO constraints, imports them, and passes dependency consistency checks.
 - Acceptance check: the dependency compatibility gate in step `01` passes in a recreated environment; its evidence records the selected versions.
 
@@ -34,7 +34,7 @@ Repair the local MCP execution path so deterministic evaluator calls complete an
 
 ### R4. Contract tests distinguish in-process behavior from stdio wire behavior
 
-- Basis: documented ([MCP client helper](../../compliance_common/mcp_client.py)) and inferred (separate transport paths need separate lifecycle assertions).
+- Basis: documented ([MCP client helper](../../../compliance_common/mcp_client.py)) and inferred (separate transport paths need separate lifecycle assertions).
 - Example: an in-process test proves evaluator parity without wire assumptions, while a subprocess test proves stdio framing, invocation, and shutdown.
 - Acceptance check: the repaired shared contract test plus the full offline suite pass in step `04`.
 

@@ -1,6 +1,6 @@
 ---
 id: 04-contract-and-suite
-status: pending
+status: done
 depends_on: [01-pin-mcp-runtime, 02-async-server-adapter, 03-stdio-transport]
 touches:
   - tests/test_ybs_evaluator.py
@@ -9,7 +9,15 @@ touches:
 lane: integration-validation
 gate: .venv/bin/python -m unittest discover -s tests -v && .venv/bin/python scripts/check_context.py && .venv/bin/python scripts/check_plan.py
 requirements: [R1, R2, R3, R4]
-evidence: ""
+evidence: >-
+  2026-11-06: Python 3.12.3, mcp 2.0.0, anyio 4.13.0. Outside the sandbox,
+  `timeout 20s .venv/bin/python -m unittest tests.test_mcp_contract tests.test_ybs_evaluator.YBSContractTests.test_all_provider_and_mcp_tools_share_one_contract_and_decision -v`
+  passed (3 tests, 1.292s); direct, in-process and stdio results matched in decision
+  ID and classification. The exact combined gate
+  `.venv/bin/python -m unittest discover -s tests -v && .venv/bin/python scripts/check_context.py && .venv/bin/python scripts/check_plan.py`
+  passed outside the sandbox: 275 tests in 29.053s, with 2 existing opt-in live tests
+  skipped, and both validation scripts passed. The suite includes the inherited OpenAI
+  provider tests; the separate OpenAI plan remains blocked and was not completed.
 ---
 
 # Restore transport-separated contract coverage and run the offline suite

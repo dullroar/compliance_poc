@@ -18,7 +18,7 @@ def build_server(domain: str, version: str, description: str, evaluate: Callable
     log = get_logger(f"mcp.{domain}", version)
     server = MCPServer(f"{domain}-evaluator")
 
-    def tool(case: dict[str, Any]) -> dict[str, Any]:
+    async def tool(case: dict[str, Any]) -> dict[str, Any]:
         log.debug("tool call", extra={"tool": f"{domain}_evaluate"}, payload=case)
         try:
             record = evaluate(case)

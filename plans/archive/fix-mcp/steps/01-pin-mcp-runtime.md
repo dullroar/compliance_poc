@@ -1,6 +1,6 @@
 ---
 id: 01-pin-mcp-runtime
-status: pending
+status: done
 depends_on: []
 touches:
   - requirements.txt
@@ -9,7 +9,18 @@ touches:
 lane: dependency-runtime
 gate: .venv/bin/python -m pip check && .venv/bin/python -m unittest tests.test_mcp_dependency_compat -v
 requirements: [R1, R4]
-evidence: ""
+evidence: >-
+  2026-11-06: Python 3.12.3, mcp 2.0.0 and anyio 4.13.0 selected; installed MCP
+  metadata requires anyio >=4.9 on Python 3.12, and the bounded async SDK probe and
+  transport API checks pass. The MCP transitive resolution is pinned in requirements-mcp.lock.
+  `.venv/bin/python -m pip check && .venv/bin/python -m unittest tests.test_mcp_dependency_compat -v`
+  passed (2 tests). A new environment was created with `python3 -m venv /tmp/fix-mcp-verified-venv`;
+  `/tmp/fix-mcp-verified-venv/bin/python -m pip install --no-index --find-links /tmp/fix-mcp-wheelhouse -c requirements-mcp.lock 'mcp==2.0.0' 'anyio==4.13.0'`
+  passed using wheels recovered from the local pip HTTP cache, then
+  `/tmp/fix-mcp-verified-venv/bin/python -m pip check && /tmp/fix-mcp-verified-venv/bin/python -m unittest tests.test_mcp_dependency_compat -v`
+  passed (2 tests). An additional full-application requirements dry run could not resolve
+  json-rpc from that wheelhouse; the clean MCP dependency gate above does not install the
+  unrelated A2A stack.
 ---
 
 # Select and lock the supported MCP and AnyIO runtime pair
