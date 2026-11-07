@@ -1,6 +1,6 @@
 ---
 id: 02-live-verification
-status: pending
+status: done
 depends_on: [01-live-harness]
 touches:
   - agents/backends.py
@@ -13,7 +13,7 @@ touches:
 lane: serial
 gate: RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v
 requirements: [R1, R2, R3]
-evidence: ""
+evidence: "2026-11-06: Initial prerequisite check found no credential; owner subsequently supplied one. Automatic approval review initially rejected the live command before process creation pending explicit authorization for the synthetic fixture and destination; the owner then explicitly approved sending that fixture, generated decision record, prompt and regulation text to api.openai.com with gpt-6-luna and the USD 20 cumulative budget. With .venv/bin on PATH, RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v passed non-skipped (1 test, 21.225 seconds; Python 3.12.3, OpenAI SDK 3.46.0). Cycle 52cb8ce82cc64a2fa9fa1679a1d0a460: seeded 1 request and model 2 requests; both had direct decision parity, canonical MCP arguments, model-directed tool provenance where required, valid grounded model narratives, no fallback and one guard attempt. API totals: 9632 input, 3451 cached input, 5969 cache writes, 1507 output, 677 reasoning, 11139 total tokens. Write-lifetime breakdown was not reported, so exact estimated cost and per-narrative costs are unavailable; a conservative USD 0.006540875 budget charge covers all requests, with no remaining reservation. Persistent metadata and per-mode usage are in runs.jsonl; no raw bodies or secrets recorded."
 ---
 
 # Run the synthetic OpenAI smoke test and repair in-scope integration defects

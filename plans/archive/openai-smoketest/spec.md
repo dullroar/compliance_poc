@@ -4,7 +4,7 @@ gist: "Read when: planning live synthetic smoke tests for the OpenAI runtime inf
 
 # OpenAI inference smoke test - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-06; model, budget, usage tracking and repeat cycles approved 2026-11-06)
+Status: complete (approved by Jim Lehmer, 2026-11-06; model, budget, usage tracking and repeat cycles approved 2026-11-06; verified 2026-11-06)
 
 See [goal.md](goal.md) for the goal command and execution protocol.
 
@@ -16,13 +16,13 @@ Verify that the selected OpenAI model works with the repository's real Responses
 
 ### R1. The live run is explicit, bounded, and reproducible
 
-- Basis: documented ([provider design](../../docs/design/provider-and-model-selection.md), [archived provider plan](../archive/openai/spec.md)); inferred: at most six Responses requests per cycle provide a bounded smoke test.
+- Basis: documented ([provider design](../../../docs/design/provider-and-model-selection.md), [archived provider plan](../openai/spec.md)); inferred: at most six Responses requests per cycle provide a bounded smoke test.
 - Example: the approved model is `gpt-6-luna`; an operator supplies credentials through the environment and an explicit opt-in; without those prerequisites the live test does not run.
 - Acceptance check: the opt-in live test records the model, SDK/interpreter versions, mode, elapsed time, request counts and outcomes; a request counter prevents more than six Responses requests per cycle, including retries and guard retries. The cumulative conservative spending bound across all cycles cannot exceed $20. Use a finite request timeout and disable SDK retries. Do not record secrets or raw case content.
 
 ### R2. Both modes retain deterministic authority through A2A
 
-- Basis: documented ([deterministic authority](../../docs/design/code-decides-agents-narrate.md), [A2A design](../../docs/design/registry-driven-a2a-orchestration.md)); inferred: both existing OpenAI tool modes merit live verification.
+- Basis: documented ([deterministic authority](../../../docs/design/code-decides-agents-narrate.md), [A2A design](../../../docs/design/registry-driven-a2a-orchestration.md)); inferred: both existing OpenAI tool modes merit live verification.
 - Example: for the same synthetic YBS case, seeded and model-driven A2A tasks for `gpt-6-luna` return the direct evaluator's decision ID and classification; the recorded tool call uses the canonical case, with the appropriate mode.
 - Acceptance check: `RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v` actually contacts OpenAI, verifies both modes and direct-versus-returned decision parity, and proves the model-driven path really called the evaluator rather than only harness fallback. Verify schema/guard results and report retries or fallback explicitly; fallback or malformed output does not count as a successful live narrative.
 
@@ -34,7 +34,7 @@ Verify that the selected OpenAI model works with the repository's real Responses
 
 ### R4. The smoke test is opt-in and does not compromise offline validation
 
-- Basis: documented ([agent contract](../../AGENTS.md), [archived provider plan](../archive/openai/spec.md)).
+- Basis: documented ([agent contract](../../../AGENTS.md), [archived provider plan](../openai/spec.md)).
 - Example: normal discovery without the opt-in skips all live requests and still runs the existing fake-client and deterministic tests.
 - Acceptance check: the default suite, existing OpenAI fake-client tests, context validation, and plan validation pass; live evidence is separately recorded and never represented by a skip.
 
@@ -59,7 +59,7 @@ Verify that the selected OpenAI model works with the repository's real Responses
 
 - Protected checks: both real A2A modes, canonical argument and direct decision parity, valid grounded non-fallback narration, per-run usage and cost accounting, no live requests without opt-in, existing OpenAI fake-client tests, full offline suite, context and plan validation.
 - Combined validation: `python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py`; additionally run the exact opt-in live gate in step 02 with the approved model and credentials present.
-- Persist an append-only, machine-readable ledger at `plans/openai-smoketest/runs.jsonl`, using a unique cycle ID, mode and request sequence. Record reservation before each request and outcome/usage after it, even on failure or interruption. Record model, timestamp, service tier, pricing URL, rate values and effective/check date, request outcome, input, cached-input and cache-write token details when reported, output, reasoning and total tokens, and estimated USD cost; unknown fields must be null with an explanation. Reasoning tokens are included in output, and cached tokens in input: never add them twice. Apply actual documented rates to the appropriate categories when known; where price details are missing, label the estimate unavailable or conservative rather than inventing a charge.
+- Persist an append-only, machine-readable ledger at `plans/archive/openai-smoketest/runs.jsonl` (originally `plans/openai-smoketest/runs.jsonl` before archiving), using a unique cycle ID, mode and request sequence. Record reservation before each request and outcome/usage after it, even on failure or interruption. Record model, timestamp, service tier, pricing URL, rate values and effective/check date, request outcome, input, cached-input and cache-write token details when reported, output, reasoning and total tokens, and estimated USD cost; unknown fields must be null with an explanation. Reasoning tokens are included in output, and cached tokens in input: never add them twice. Apply actual documented rates to the appropriate categories when known; where price details are missing, label the estimate unavailable or conservative rather than inventing a charge.
 - Record per-mode and per-cycle totals and cumulative incurred plus reserved costs, interpreter/SDK versions, exact command, elapsed time, outcomes, guard/retry status, and successful narrative count. Provide cost per successful narrative and per completed cycle only when complete data and a nonzero denominator permit. Estimated cost is not an invoice; reconcile uncertain charges against account billing where available, retaining reservations otherwise. Keep credentials, prompts, raw output and case content out of the ledger and evidence.
 
 ## Escalate when

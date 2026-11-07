@@ -1,6 +1,6 @@
 ---
 id: 03-combined-validation
-status: pending
+status: done
 depends_on: [02-live-verification]
 touches:
   - plans/openai-smoketest/spec.md
@@ -8,7 +8,7 @@ touches:
 lane: serial
 gate: python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py
 requirements: [R4]
-evidence: ""
+evidence: "2026-11-06: With Python 3.12.3 from .venv/bin on PATH and RUN_LIVE_OPENAI_TESTS unset, ran the exact combined gate: python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py. The suite passed 289 tests in 26.420 seconds with 3 opt-in live tests skipped, including the OpenAI test; all context, index, link, secret-scan and plan checks passed. The separately run, non-skipped live gate passed both modes; step 02 and runs.jsonl record the cycle, request usage, conservative spending and guarded narrative outcomes. Tests ran outside the execution sandbox because its Python thread cleanup stalls."
 ---
 
 # Verify the integrated result and record completion

@@ -60,6 +60,7 @@ desktop.ini
 htmlcov/
 logs/
 *.jsonl
+!plans/archive/openai-smoketest/runs.jsonl
 builds/
 *:Zone.Identifier
 benchmarks/results.jsonl

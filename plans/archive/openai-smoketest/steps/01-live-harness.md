@@ -1,6 +1,6 @@
 ---
 id: 01-live-harness
-status: pending
+status: done
 depends_on: []
 touches:
   - tests/test_openai_live_smoke.py
@@ -9,7 +9,7 @@ touches:
 lane: serial
 gate: python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v && python3 -m unittest discover -s tests -p test_openai_backend.py -v && python3 -m unittest discover -s tests -p test_openai_smoke_accounting.py -v
 requirements: [R1, R2, R3, R4]
-evidence: ""
+evidence: "2026-11-06: With .venv/bin on PATH and RUN_LIVE_OPENAI_TESTS unset, ran the exact step gate: live module 1 skipped, existing OpenAI backend 11 passed, accounting 10 passed. Accounting includes real in-process MCP plus A2A with fake SDK, opt-in, six-request cap, persistent cycle and request reservations, restart recovery, timeout and missing usage, rate tiers and cache arithmetic. Python 3.12.3; OpenAI SDK 3.46.0. Tests ran outside the execution sandbox after a minimal asyncio thread-cleanup probe hung inside it and passed outside. No live OpenAI requests in this step."
 ---
 
 # Build a bounded, opt-in live test harness

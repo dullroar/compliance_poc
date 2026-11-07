@@ -217,6 +217,22 @@ owner authority and the applicable data-handling review. The provider sends
 `store: false` to the Responses API where supported, but that application
 setting is not a substitute for an approved data-handling decision.
 
+The approved synthetic YBS smoke-test plan has a separate, opt-in gate:
+
+```bash
+RUN_LIVE_OPENAI_TESTS=1 python3 -m unittest discover -s tests -p test_openai_live_smoke.py -v
+```
+
+It uses `gpt-6-luna`, the repository's synthetic YBS fixture, an in-process A2A
+transport and real MCP evaluator. It sends the fixture, YBS prompt, pinned
+regulation text and generated decision record to the OpenAI API. It limits each
+cycle to six Responses requests and reserves against a cumulative $20 budget in
+`plans/archive/openai-smoketest/runs.jsonl` before making requests. Unknown usage retains
+its reservation. The ledger is tracked as plan evidence and must be preserved across
+runs; deleting or replacing it defeats the cumulative budget check. Recheck
+pricing and update its checked date and rates before running on a later day.
+Normal test discovery skips the live gate unless explicitly enabled.
+
 For a mixed-provider run, copy `agents.yaml` to an untracked local file, retain
 every existing entry, and change only the narrator roles. Do **not** set
 `COMPLIANCE_PROVIDER=openai` for this mode: it would select OpenAI for entries

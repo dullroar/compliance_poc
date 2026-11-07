@@ -4,6 +4,9 @@ gist: "Read when: executing or resuming the approved OpenAI synthetic live smoke
 
 # OpenAI smoke-test goal and execution protocol
 
+This plan is complete and archived. The command below records how it was executed;
+the ledger was moved with the plan to `plans/archive/openai-smoketest/runs.jsonl`.
+
 With `gpt-6-luna` and the cumulative $20 budget approved, from the repository root enter:
 
 ```text
