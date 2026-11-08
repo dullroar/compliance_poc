@@ -64,7 +64,7 @@ Each run reserved the gate's conservative worst case (65 requests of up to 100,0
 | 4 | `e82a49be4ce34e3cb960839916bb9c22` | 30 | USD 2.015728 | USD 0.05205640 | 306225 / 33403 | 0 / 0 | 20 of 20 |
 | 8 | `c6ade9cdcdba46deb59f1d202fadc608` | 31 | USD 2.015728 | USD 0.05310008 | 314363 / 33673 | 0 / 0 | 20 of 20 |
 
-- Total settled USD 0.20719369 of the USD 0.50 plan bound. Anthropic ledger after the ramp: spent USD 0.62557011, held USD 0.0400224 (the earlier interrupted diagnostic, still retained), remaining USD 19.33. Rows are in `usage/anthropic-api-ledger.jsonl` (reservation then settlement, four pairs) and per request in `plans/parallelize/runs-anthropic.jsonl` (`request_start` and `request_outcome` for every request, `run_summary` and `width_measurement` per run).
+- Total settled USD 0.20719369 of the USD 0.50 plan bound. Anthropic ledger after the ramp: spent USD 0.62557011, held USD 0.0400224 (the earlier interrupted diagnostic, still retained), remaining USD 19.33. Rows are in `usage/anthropic-api-ledger.jsonl` (reservation then settlement, four pairs) and per request in `plans/archive/parallelize/runs-anthropic.jsonl` (`request_start` and `request_outcome` for every request, `run_summary` and `width_measurement` per run).
 - Request counts differ by one or two (29, 30, 30, 31) because a rejected examiner paragraph costs one retry request; that is model variation, not width.
 - Cache tokens were 0 at every width, so no prompt-cache hit was lost to parallel execution (the domain agents use different system prompts, so none were expected).
 - Rate-limit events: none. The account tier was not needed because no limit was named.

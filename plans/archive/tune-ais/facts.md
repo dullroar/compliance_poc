@@ -53,5 +53,5 @@ Model ids as the spec lists them: `claude-haiku-5-5`, `claude-sonnet-5-5`, `clau
 ## What was not checked
 
 - Sonnet 5.5, Opus 5.5 and Haiku 4.5 individual model pages, and the API error page for the forced-tool 400 (the define-tools table was enough).
-- Rate limits and account tier (no limit has been named by any error so far; see `plans/parallelize/results.md`).
+- Rate limits and account tier (no limit has been named by any error so far; see `plans/archive/parallelize/results.md`).
 - Thinking-token billing (above).

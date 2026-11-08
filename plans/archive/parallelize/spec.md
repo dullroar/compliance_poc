@@ -4,7 +4,7 @@ gist: "Read when: planning or auditing parallel execution of the domain agents a
 
 # Parallelize - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-07). Decided by Jim 2026-11-07: start small and ramp the remote width 2, then 4, then 8, and back down if limits other than cost cause errors. Other rules marked inferred still need confirmation.
+Status: complete (approved by Jim Lehmer, 2026-11-07; executed 2026-11-07, follow-up checks 2026-11-08; archived 2026-11-08; results in results.md). Decided by Jim 2026-11-07: start small and ramp the remote width 2, then 4, then 8, and back down if limits other than cost cause errors. Other rules marked inferred still need confirmation.
 
 See [goal.md](goal.md) for the goal command.
 
@@ -12,7 +12,7 @@ See [goal.md](goal.md) for the goal command.
 
 Run the eight domain agents at the same time when their model provider is a remote one (Anthropic or OpenAI), and keep everything else as it is: the auditor runs after all domain agents, the narrative role runs after the auditor, and local Ollama agents stay serialized.
 
-What exists today ([`orchestrator/batch.py`](../../orchestrator/batch.py)): `run_batch` already fans the domain agents out with `asyncio.gather` behind one `asyncio.Semaphore`. The width comes from `concurrency` in `agents.yaml` (committed value 1) or `--concurrency`. So the change is not a new mechanism. It is (a) a per-provider width instead of one global number, and (b) the work needed to make that width safe against real remote APIs and the live-run accounting. No new threading model: asyncio stays, and the A2A server's existing `asyncio.to_thread` call stays as it is.
+What exists today ([`orchestrator/batch.py`](../../../orchestrator/batch.py)): `run_batch` already fans the domain agents out with `asyncio.gather` behind one `asyncio.Semaphore`. The width comes from `concurrency` in `agents.yaml` (committed value 1) or `--concurrency`. So the change is not a new mechanism. It is (a) a per-provider width instead of one global number, and (b) the work needed to make that width safe against real remote APIs and the live-run accounting. No new threading model: asyncio stays, and the A2A server's existing `asyncio.to_thread` call stays as it is.
 
 Expected gain, from the archived live run (Anthropic Haiku, model phase): domain agents took about 47 s in series (2.9 to 9.7 s each), so about 10 s in parallel. The auditor (6.5 s) and narrative role (70.8 s) cannot overlap with them, so the whole batch falls from about 124 s to about 87 s, roughly 30%. The narrative role dominates what is left; the `response-templates` plan is what shrinks it. Fact for the domain phase, inference for the total.
 
@@ -22,14 +22,14 @@ This work does NOT: parallelize the auditor or narrative role; change Ollama or 
 
 ### R1. Concurrency width is set per provider class, with safe defaults
 
-- Basis: documented (current single `concurrency` setting in [`orchestrator/config.py`](../../orchestrator/config.py)); inferred: defaults.
+- Basis: documented (current single `concurrency` setting in [`orchestrator/config.py`](../../../orchestrator/config.py)); inferred: defaults.
 - Rule (inferred): agents whose resolved provider is `ollama` share one gate of width 1. Agents whose resolved provider is `anthropic` or `openai` share a gate whose width is `remote_concurrency` (committed default 2; settable in `agents.yaml` and by `--remote-concurrency`; the ramp to 4 and 8 is decided from step 03's measurements, not assumed). The existing `concurrency` key and `--concurrency` keep their meaning as the cap for local agents and as an overall cap when set explicitly, so existing configs behave as before. The resolved provider of an agent is its `provider` entry, else the CLI `--provider`, else `COMPLIANCE_PROVIDER`, else `anthropic`.
 - Example: mixed config with seven Anthropic domain agents and one Ollama agent runs the seven together and the Ollama agent one at a time. An all-Ollama config runs one at a time, as today.
 - Acceptance check: extend `tests/test_batch_concurrency.py` with fakes: all-remote peak equals the width (checked at 2, 4 and 8); all-local peak is 1; mixed peaks are per class; an explicit `--concurrency 1` forces serial.
 
 ### R2. Order and result shape are unchanged
 
-- Basis: documented ([`tests/test_batch_concurrency.py`](../../tests/test_batch_concurrency.py): the auditor always runs last; result keys keep registry order).
+- Basis: documented ([`tests/test_batch_concurrency.py`](../../../tests/test_batch_concurrency.py): the auditor always runs last; result keys keep registry order).
 - Example: with all domain calls finishing out of order, `results` still lists domain roles in registry order, then `auditor`; the narrative role starts only after the auditor ends; a domain role that raises becomes a `parse_error` result and does not stop the others.
 - Acceptance check: tests with randomized fake latencies and one failing role across many seeds.
 
@@ -41,7 +41,7 @@ This work does NOT: parallelize the auditor or narrative role; change Ollama or 
 
 ### R4. Live-run accounting stays correct under concurrency
 
-- Basis: documented ([live-parity spec R1](../archive/live-parity/spec.md): request cap, byte bound, reservation, ledger; concurrency was fixed at 1 so accounting was deterministic; [`tests/live_parity_common.py`](../../tests/live_parity_common.py) calls `run_batch(..., concurrency=1)`).
+- Basis: documented ([live-parity spec R1](../live-parity/spec.md): request cap, byte bound, reservation, ledger; concurrency was fixed at 1 so accounting was deterministic; [`tests/live_parity_common.py`](../../../tests/live_parity_common.py) calls `run_batch(..., concurrency=1)`).
 - Rule: the guarded clients must be safe for simultaneous calls (a lock around the cap check, counters and the metadata-only run-file and ledger writes), and an unexpected extra request must still be refused. The existing live gates keep `concurrency=1` unless a plan step sets otherwise; they must not change behavior. Parallel live measurement is opt-in (R5).
 - Example: eight threads each ask for a request when two of the cap remain: exactly two proceed, six are refused, the ledger row count and totals are exact.
 - Acceptance check: new offline tests in `tests/test_anthropic_live_accounting.py` and `tests/test_openai_live_parity_accounting.py` (concurrent stress with a fake transport; process-restart replay unchanged). The existing tests in both files stay unmodified and pass.
@@ -50,11 +50,11 @@ This work does NOT: parallelize the auditor or narrative role; change Ollama or 
 
 - Basis: inferred.
 - Rule: one opt-in live timing on Anthropic (`claude-haiku-5-5`, synthetic data) records wall time for the domain phase and the whole batch at width 1, then 2, then 4, then 8, on the same case, one run each, with per-role latency. It stops climbing at the first width that shows a rate-limit or other non-cost error and records that width as too high. OpenAI is measured only if Jim approves it separately.
-- Acceptance check: `plans/parallelize/results.md` with the table by width, the reservation and settlement of each run, rate-limit events, the percentage change, and the width chosen as the committed default. A smaller gain than 25% on the domain phase at the chosen width is recorded as a finding, not hidden.
+- Acceptance check: `plans/archive/parallelize/results.md` with the table by width, the reservation and settlement of each run, rate-limit events, the percentage change, and the width chosen as the committed default. A smaller gain than 25% on the domain phase at the chosen width is recorded as a finding, not hidden.
 
 ### R6. Existing behavior and validation are undisturbed
 
-- Basis: documented ([agent contract](../../AGENTS.md)).
+- Basis: documented ([agent contract](../../../AGENTS.md)).
 - Acceptance check: `python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py`, all `RUN_LIVE_*` variables unset.
 
 ## Constraints and assumptions

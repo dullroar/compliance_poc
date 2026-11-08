@@ -56,14 +56,14 @@ Per run: 29 requests, 295123 input and 32694 output tokens, USD 0.05044523.
 
 ## Word counts and sources of the templates
 
-Word counts per regime on the fixture sweep (code-written paragraphs; limit in brackets) are in step 03's evidence in `plans/response-templates/steps/03-examiner-finding.md`: ybs 49-64 (70), hpml 61-68 (90), trid 70-77 (100), hmda 53-106 (130), ecoa 54-84 (100), vmi 63-90 (100), fzd 63-82 (90), hvcre 54-80 (90), auditor 50-76 (110). No role fell back to code paragraphs in the live run (see Outcome for how that is known).
+Word counts per regime on the fixture sweep (code-written paragraphs; limit in brackets) are in step 03's evidence in `plans/archive/response-templates/steps/03-examiner-finding.md`: ybs 49-64 (70), hpml 61-68 (90), trid 70-77 (100), hmda 53-106 (130), ecoa 54-84 (100), vmi 63-90 (100), fzd 63-82 (90), hvcre 54-80 (90), auditor 50-76 (110). No role fell back to code paragraphs in the live run (see Outcome for how that is known).
 
 ## Caveats
 
 - One synthetic case and one run. Most roles have few or no findings on `sample_loan.json` (hmda 7, ecoa 1, vmi 2, auditor 2, others 0), so the live run exercised paragraph rephrasing on four roles only.
 - Anthropic has no schema-constrained output here; the paragraphs relied on the prompt contract and the checks, and they passed.
 - Input tokens rose for some roles (the contract grew and the tool result carries drafts). Totals differ from the earlier run mainly because of the narrative role.
-- OpenAI was not run live in this plan's run. A later OpenAI run on 2026-11-08 (run `2fd262243e3e41049ddcc7ffa85c7841`, see `plans/parallelize/results.md`) had every role pass `not_truncated` with all 20 narratives from the model and the narrative role taking 4.9 s and 5.2 s, so "no truncation on both providers" now holds on one OpenAI run. The same day, one run per provider on a loan with findings in every regime (see `plans/parallelize/results.md`) asked each model for examiner paragraphs in all eight regimes and the auditor: 58 paragraphs on each provider, none written by code, a few accepted only after the one retry.
+- OpenAI was not run live in this plan's run. A later OpenAI run on 2026-11-08 (run `2fd262243e3e41049ddcc7ffa85c7841`, see `plans/archive/parallelize/results.md`) had every role pass `not_truncated` with all 20 narratives from the model and the narrative role taking 4.9 s and 5.2 s, so "no truncation on both providers" now holds on one OpenAI run. The same day, one run per provider on a loan with findings in every regime (see `plans/archive/parallelize/results.md`) asked each model for examiner paragraphs in all eight regimes and the auditor: 58 paragraphs on each provider, none written by code, a few accepted only after the one retry.
 
 ## Known limits left as they are (decided 2026-11-08)
 

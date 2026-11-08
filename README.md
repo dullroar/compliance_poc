@@ -350,7 +350,7 @@ REPL commands:
 ### Local models: serialized calls and settings outside the repo
 
 `agents.yaml` sets two widths. `concurrency: 1` is how many local (Ollama) agent calls run at once; `remote_concurrency: 8` is how
-many Anthropic or OpenAI agent calls run at once (the highest clean width of a live ramp, see `plans/parallelize/results.md`; override with
+many Anthropic or OpenAI agent calls run at once (the highest clean width of a live ramp, see `plans/archive/parallelize/results.md`; override with
 `--remote-concurrency N`, or lower it if a provider rate-limits: that role then fails alone and the batch summary counts it). An agent's
 provider is its `provider` entry, else `--provider`, else `COMPLIANCE_PROVIDER`, else anthropic. `--concurrency N` is different: it caps
 every agent call at once (`--concurrency 1` forces a serial run) and, alone, sets both widths. The auditor and the narrative role still

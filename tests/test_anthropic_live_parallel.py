@@ -1,9 +1,9 @@
-"""Opt-in live width ramp on claude-haiku-5-5 (plans/parallelize, step 03). Skipped unless RUN_LIVE_ANTHROPIC_PARALLEL=1.
+"""Opt-in live width ramp on claude-haiku-5-5 (plans/archive/parallelize, step 03). Skipped unless RUN_LIVE_ANTHROPIC_PARALLEL=1.
 
 The live-parity run (tests/test_anthropic_live_parity.py: guarded client, reservation, settlement) is repeated at remote width 1,
 then 2, 4 and 8, one run each, on the synthetic sample_loan.json case through the production batch path. The ramp stops at the
 first width that shows a rate limit or any other non-cost error, and before the plan's spend bound could be passed. Run metadata
-(timings, counts, labels, money; never bodies) is appended to plans/parallelize/runs-anthropic.jsonl beside the live-parity rows.
+(timings, counts, labels, money; never bodies) is appended to plans/archive/parallelize/runs-anthropic.jsonl beside the live-parity rows.
 The offline tests below always run: they drive the same `measure` function against the scripted provider and a temporary ledger.
 """
 from __future__ import annotations
@@ -24,7 +24,7 @@ from scripts import anthropic_cost_estimator as estimator
 from test_anthropic_live_parity import MODEL, TIMEOUT, RunFile, live_run, offline_payload_inspection, today_denver
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNS = ROOT / "plans/parallelize/runs-anthropic.jsonl"
+RUNS = ROOT / "plans/archive/parallelize/runs-anthropic.jsonl"
 WIDTHS = (1, 2, 4, 8)
 PLAN_SPEND_BOUND = Decimal("0.50")            # spec, delegated authority: at most USD 0.50 of actual spend for this plan
 FIRST_RUN_ESTIMATE = Decimal("0.07")          # one full Haiku registry run (both phases) cost about this in the archive

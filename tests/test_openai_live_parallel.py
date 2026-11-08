@@ -1,10 +1,10 @@
-"""Opt-in live check of the committed remote width on gpt-6-luna (plans/parallelize, follow-up). Skipped unless RUN_LIVE_OPENAI_PARALLEL=1.
+"""Opt-in live check of the committed remote width on gpt-6-luna (plans/archive/parallelize, follow-up). Skipped unless RUN_LIVE_OPENAI_PARALLEL=1.
 
 One run of the OpenAI live-parity gate (tests/test_openai_live_parity.py: guarded client, zero SDK retries, finite timeout, whole-cycle
 reservation in the shared ledger) at the committed `remote_concurrency`, on the synthetic sample_loan.json case through the production
 batch path. It answers two questions Anthropic alone could not: does the committed width draw rate limits from OpenAI, and does the
 bounded narrative role finish without truncation on OpenAI. Run metadata (timings, counts, labels; never bodies) is appended to
-plans/parallelize/runs-openai.jsonl. The offline tests below always run: they drive the same function against the scripted provider
+plans/archive/parallelize/runs-openai.jsonl. The offline tests below always run: they drive the same function against the scripted provider
 and a temporary ledger.
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ from test_openai_live_parity import BYTE_BOUND, TIMEOUT, Ledger, RunFile, live_r
 from test_openai_live_smoke import LEDGER, PRICE_CHECKED
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNS = ROOT / "plans/parallelize/runs-openai.jsonl"
+RUNS = ROOT / "plans/archive/parallelize/runs-openai.jsonl"
 RATE_LIMIT_OUTCOMES = frozenset({"RateLimitError"})
 KEY = "sk-OFFLINE-SENTINEL-0000"
 

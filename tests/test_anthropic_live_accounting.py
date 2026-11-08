@@ -373,7 +373,7 @@ class LiveRunAccountingTests(Base):
         self.assertEqual(script.requests, [])
 
 
-# --- simultaneous calls (plans/parallelize, step 02) --------------------------------------------------------------------------
+# --- simultaneous calls (plans/archive/parallelize, step 02) --------------------------------------------------------------------------
 class PromptChecked(ScriptedProvider):
     """Records the role the guard attributed each request to beside the role whose system prompt it actually carries."""
 

@@ -85,7 +85,7 @@ def worst_case_table(provider: str, config: dict[str, dict] | None = None) -> di
 
 
 # --- role context and locking for simultaneous requests ---------------------------------------------------------------------
-# With a remote width above 1 (plans/parallelize), several roles are in flight at once and each calls the guarded client from its
+# With a remote width above 1 (plans/archive/parallelize), several roles are in flight at once and each calls the guarded client from its
 # own worker thread. The role a request belongs to is therefore held per call chain (a context variable, copied into worker
 # threads by asyncio.to_thread), not on the client, and every counter and row write is made under the client's one lock.
 _ROLE_CONTEXTS: contextvars.ContextVar[dict] = contextvars.ContextVar("live_parity_role_contexts", default={})

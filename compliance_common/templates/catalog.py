@@ -5,7 +5,7 @@ The catalog lives in `catalog/<domain>.yaml`, outside every rule `pack/`, so edi
 specific match wins. An id or field with no entry resolves to a generic entry whose `generic` flag is true, so callers and tests
 can see and report the gap instead of inventing text.
 
-Kinds (see plans/response-templates/inventory.md): G information gap, V value or timing violation, R reviewer judgment,
+Kinds (see plans/archive/response-templates/inventory.md): G information gap, V value or timing violation, R reviewer judgment,
 P process or record fact (about what the institution did, never a request to the customer).
 """
 from __future__ import annotations

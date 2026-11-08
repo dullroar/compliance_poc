@@ -1,4 +1,4 @@
-"""Opt-in live runs of the every-regime-fails loan on one provider (plans/parallelize, follow-up). Both skipped by default.
+"""Opt-in live runs of the every-regime-fails loan on one provider (plans/archive/parallelize, follow-up). Both skipped by default.
 
 RUN_LIVE_EVERY_REGIME=openai or =anthropic runs that provider's existing guarded live-parity gate (zero SDK retries, finite timeout,
 whole-run reservation, settlement from usage) once, at the committed `remote_concurrency`, on tests/fixtures/loan_every_regime_fails.json
@@ -84,7 +84,7 @@ def _live_openai() -> dict:
     assert today_denver() == PRICE_CHECKED, "Verify rates at the cited URL and update the accounting first"
     key = os.getenv("OPENAI_API_KEY") or dotenv_values(ROOT / ".env").get("OPENAI_API_KEY")
     assert key, "OPENAI_API_KEY is required"
-    runs_path = ROOT / "plans/parallelize/runs-openai.jsonl"
+    runs_path = ROOT / "plans/archive/parallelize/runs-openai.jsonl"
     sdk = openai.OpenAI(api_key=key, base_url="https://api.openai.com/v1", timeout=TIMEOUT, max_retries=0)
     try:
         with use_loan(load()), tempfile.TemporaryDirectory() as temp:          # the outbound check is pinned to the fixture for this run only
@@ -109,7 +109,7 @@ def _live_anthropic() -> dict:
     assert key, "ANTHROPIC_API_KEY is required"
     sizes = offline_payload_inspection()
     assert all(0 < size <= 100_000 for size in sizes.values()), f"outbound payload over the bound: {sizes}"
-    runs_path = ROOT / "plans/parallelize/runs-anthropic.jsonl"
+    runs_path = ROOT / "plans/archive/parallelize/runs-anthropic.jsonl"
     sdk = anthropic.Anthropic(api_key=key, base_url="https://api.anthropic.com", timeout=TIMEOUT, max_retries=0)
     try:
         result = live_run(sdk, ledger=estimator.LEDGER, runs_path=runs_path, today=today_denver(), drive=drive_fixture)

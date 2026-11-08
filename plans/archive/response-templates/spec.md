@@ -4,7 +4,7 @@ gist: "Read when: planning or auditing the loan-officer and examiner response te
 
 # Response templates - specification and execution agreement
 
-Status: approved (by Jim Lehmer, 2026-11-07). Confirmed by Jim 2026-11-07: the five-part examiner order and the proposed word limits as the starting values (step 03 still calibrates and asks again), and that examiner paragraphs are written inside each domain agent's existing call (R5). Step 03 calibration, confirmed by Jim 2026-11-07: the word limits stay as proposed except VMI, raised from 80 to 100; and when one HMDA result has more than 20 findings, the HMDA LAR item findings are grouped by LAR section (one paragraph per section that has failing items; the section partition is the executor's inferred draft in the catalog and still needs Jim's or compliance's review). Other rules marked inferred still need confirmation.
+Status: complete (approved by Jim Lehmer, 2026-11-07; executed 2026-11-07, follow-up checks 2026-11-08; archived 2026-11-08; results in results.md). Confirmed by Jim 2026-11-07: the five-part examiner order and the proposed word limits as the starting values (step 03 still calibrates and asks again), and that examiner paragraphs are written inside each domain agent's existing call (R5). Step 03 calibration, confirmed by Jim 2026-11-07: the word limits stay as proposed except VMI, raised from 80 to 100; and when one HMDA result has more than 20 findings, the HMDA LAR item findings are grouped by LAR section (one paragraph per section that has failing items; the section partition is the executor's inferred draft in the catalog and still needs Jim's or compliance's review). Other rules marked inferred still need confirmation.
 
 See [goal.md](goal.md) for the goal command and [inventory.md](inventory.md) for what can fail in each regime and why.
 
@@ -15,7 +15,7 @@ Give every failing check two fixed, bounded explanations, both derived from the 
 1. A **loan-officer sheet**: what information the customer's file still needs, and one or two short sentences on why. Simplified Technical English.
 2. An **examiner finding**: one paragraph per finding, in the regime's own vocabulary, in a standard order, under a word limit set per regime.
 
-This also replaces the free-form multi-audience narrative report, so the cause of the tolerated `narrative` truncation (see [archived exception](../archive/live-parity/exception-record.md), review by 2026-12-07) is removed.
+This also replaces the free-form multi-audience narrative report, so the cause of the tolerated `narrative` truncation (see [archived exception](../live-parity/exception-record.md), review by 2026-12-07) is removed.
 
 This work does NOT: change any rule, threshold, rule pack, `decision_id`, classification or compliance result; change a prompt's regulatory content; add a regime; reduce or switch models (plan `tune-ais`); change orchestration order or concurrency (plan `parallelize`); make a legal conclusion that discrimination or a violation occurred; or use real customer data. Live model runs happen only in step 06 and only within the approval stated under Delegated authority.
 
@@ -29,7 +29,7 @@ This work does NOT: change any rule, threshold, rule pack, `decision_id`, classi
 
 ### R2. Templates live outside the rule pack and never change a decision
 
-- Basis: documented ([`base_record` hashes pack files into `decision_id`](../../compliance_common/decision.py); [code decides, agents narrate](../../docs/design/code-decides-agents-narrate.md)).
+- Basis: documented ([`base_record` hashes pack files into `decision_id`](../../../compliance_common/decision.py); [code decides, agents narrate](../../../docs/design/code-decides-agents-narrate.md)).
 - Example: editing a template sentence leaves every `decision_id` and `rule_pack.file_sha256` unchanged.
 - Acceptance check: a test that renders every fixture, edits the catalog in memory, and asserts equal `decision_id`; plus the existing evaluator suites unchanged.
 
@@ -51,21 +51,21 @@ This work does NOT: change any rule, threshold, rule pack, `decision_id`, classi
 
 ### R5. Code can always write both templates; a model may only phrase the examiner paragraph
 
-- Basis: documented ([deterministic fallback in `compliance_common/narrative.py`](../../compliance_common/narrative.py), `check_narrative`); inferred: where the model writes.
+- Basis: documented ([deterministic fallback in `compliance_common/narrative.py`](../../../compliance_common/narrative.py), `check_narrative`); inferred: where the model writes.
 - Rule (inferred, recommended): each domain agent's existing narrative call also returns one paragraph per finding, keyed by rule id, in the schema constrained form. The call already runs in parallel with the other domains and already holds the record. `check_narrative` grounding (numbers, dates, ids), the contradiction check, the required elements and the word limit apply to each paragraph. One retry, then code renders that paragraph from the catalog. The loan-officer sheet is always rendered by code. `agents.yaml` gets `templates: model | code` (default `model`) so `tune-ais` can measure the no-model arm.
 - Example: with `templates: code`, no extra model output is requested, and every paragraph still passes R4.
 - Acceptance check: offline tests with fake clients cover accepted, over-limit, ungrounded and malformed replies per regime; the fallback paragraph passes R4; `templates: code` makes zero extra model requests.
 
 ### R6. The narrative role stops producing a free-form multi-audience report
 
-- Basis: documented ([archived exception 1](../archive/live-parity/exception-record.md): the planned change replaces the report with bounded per-audience templates, and the tolerance is then removed).
+- Basis: documented ([archived exception 1](../live-parity/exception-record.md): the planned change replaces the report with bounded per-audience templates, and the tolerance is then removed).
 - Rule (inferred): the report is assembled by code from domain results and the auditor result: a loan-officer section (R3), an examiner section (R4) and the auditor's cross-regime findings. The model writes at most one short summary of at most 150 words. The narrative role fits within the output cap with no truncation on both providers.
 - Example: the narrative role's output tokens drop from about 16384 (cap reached) to a small fraction of that.
 - Acceptance check: offline tests of report assembly; in step 06, remove `TOLERATED_TRUNCATION` and its pinned test, update the exception record to closed, and (with the approval below) rerun the Anthropic live gate with the narrative role passing `not_truncated` without tolerance.
 
 ### R7. Existing behavior and validation are undisturbed
 
-- Basis: documented ([agent contract](../../AGENTS.md)).
+- Basis: documented ([agent contract](../../../AGENTS.md)).
 - Acceptance check: `python3 -m unittest discover -s tests -v && python3 scripts/check_context.py && python3 scripts/check_plan.py`, all `RUN_LIVE_*` variables unset.
 
 ## Constraints and assumptions
@@ -86,7 +86,7 @@ This work does NOT: change any rule, threshold, rule pack, `decision_id`, classi
 ## Delegated authority
 
 - The executor MAY: add `compliance_common/templates/` code and the catalog files outside every `pack/`; extend `NARRATIVE_SCHEMA`, `check_narrative`, `assemble` and the runner for per-finding paragraphs; change `prompts/narrative.md` and `builders/narrative_contract.md` for the new report shape (bumping the prompt version in its header) and rebuild prompts with `python -m builders.build prompts`; add `agents.yaml` option `templates`; add offline tests; update README operator notes; remove `TOLERATED_TRUNCATION` and close the exception in step 06.
-- The executor MAY run ONE live Anthropic registry run (the existing gate, `claude-haiku-5-5`, synthetic data only) in step 06 to prove R6, after the spending preflight and a durable reservation under [AGENTS.md](../../AGENTS.md), within the existing USD 20 Anthropic budget and a bound of USD 0.50 for this plan. No OpenAI live run.
+- The executor MAY run ONE live Anthropic registry run (the existing gate, `claude-haiku-5-5`, synthetic data only) in step 06 to prove R6, after the spending preflight and a durable reservation under [AGENTS.md](../../../AGENTS.md), within the existing USD 20 Anthropic budget and a bound of USD 0.50 for this plan. No OpenAI live run.
 - The executor MUST NOT: change rules, packs, thresholds, evaluator versions or `decision_id` content; weaken or delete a protected check except as R6 states; use real data; change provider defaults; push, publish or commit.
 
 ## Acceptance and evidence
@@ -101,4 +101,4 @@ Word limits cannot be met without dropping a required element; a regime's pinned
 
 ## Exceptions and retirements
 
-This plan retires one tolerated violation: [archived exception 1](../archive/live-parity/exception-record.md), narrative truncation. That is outcome 4 ending because its cause is removed, not a retired test. The `not_truncated` check itself stays. Record the closure in step 06.
+This plan retires one tolerated violation: [archived exception 1](../live-parity/exception-record.md), narrative truncation. That is outcome 4 ending because its cause is removed, not a retired test. The `not_truncated` check itself stays. Record the closure in step 06.

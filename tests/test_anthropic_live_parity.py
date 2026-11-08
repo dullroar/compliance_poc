@@ -287,7 +287,7 @@ def cost_table(rows: list[dict]) -> dict:
 def flag_truncation(out: dict, phase: str, truncated: set) -> None:
     """A reply cut off at max_tokens is not a finished narrative, even when some text came back: fail that role and phase.
     No role is excused (the narrative role's tolerance, plans/archive/live-parity/exception-record.md exception 1, was closed when the
-    report became bounded templates; see plans/response-templates)."""
+    report became bounded templates; see plans/archive/response-templates)."""
     for record in out["records"]:
         if (record["role"], phase) in truncated:
             record["checks"]["not_truncated"] = False

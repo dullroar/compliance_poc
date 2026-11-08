@@ -401,7 +401,7 @@ class WidthSettingTests(unittest.TestCase):
                 settings("remote_concurrency: 0")
 
     def test_the_committed_registry_is_serial_for_local_and_eight_wide_for_remote(self):
-        # 8 = the highest clean width of the live ramp 2, 4, 8 (plans/parallelize/results.md); lower it there if a provider rate-limits
+        # 8 = the highest clean width of the live ramp 2, 4, 8 (plans/archive/parallelize/results.md); lower it there if a provider rate-limits
         self.assertEqual(load_settings(), {"concurrency": 1, "remote_concurrency": 8})
 
     def test_the_cli_turns_flags_and_settings_into_widths(self):
