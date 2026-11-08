@@ -394,7 +394,7 @@ class LiveRunAccountingTests(Base):
         self.assertEqual(LEDGER.read_bytes(), before)
 
 
-# --- simultaneous calls (plans/parallelize, step 02) --------------------------------------------------------------------------
+# --- simultaneous calls (plans/archive/parallelize, step 02) --------------------------------------------------------------------------
 class PromptChecked(ScriptedProvider):
     """Records the role the guard attributed each request to beside the role whose instructions it actually carries."""
 

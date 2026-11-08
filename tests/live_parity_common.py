@@ -85,7 +85,7 @@ def worst_case_table(provider: str, config: dict[str, dict] | None = None) -> di
 
 
 # --- role context and locking for simultaneous requests ---------------------------------------------------------------------
-# With a remote width above 1 (plans/parallelize), several roles are in flight at once and each calls the guarded client from its
+# With a remote width above 1 (plans/archive/parallelize), several roles are in flight at once and each calls the guarded client from its
 # own worker thread. The role a request belongs to is therefore held per call chain (a context variable, copied into worker
 # threads by asyncio.to_thread), not on the client, and every counter and row write is made under the client's one lock.
 _ROLE_CONTEXTS: contextvars.ContextVar[dict] = contextvars.ContextVar("live_parity_role_contexts", default={})
@@ -174,10 +174,35 @@ def _check(record: dict[str, Any], name: str, passed: bool) -> None:
 def violation_kind(violation: str) -> str:
     """A label for a narrative-guard violation. The text itself can quote model output, so only the kind is ever recorded."""
     for prefix, kind in (("the number", "number"), ("the date", "date"), ("the identifier", "identifier"),
-                         ("the reply was not valid JSON", "invalid_json"), ("the narrative is empty", "empty")):
+                         ("the reply was not valid JSON", "invalid_json"), ("the narrative is empty", "empty"),
+                         ("the narrative describes violations", "contradiction"), ("the narrative claims compliance", "contradiction"),
+                         ("the reply did not contain", "missing_narrative")):
         if violation.startswith(prefix):
             return kind
     return "other"
+
+
+PARAGRAPH_KINDS = (("the paragraph must have the parts", "parts_order"), ("the paragraph must name", "rule_id"), ("the paragraph must cite", "citation"),
+                   ("the Condition must quote", "record_words"), ("the paragraph must state the outcome", "outcome"),
+                   ("the paragraph must state the result", "result"), ("the Action must say", "action"), ("no paragraph was written", "missing"),
+                   ("more than one paragraph", "duplicate"))
+
+
+def paragraph_violation_kind(violation: str) -> str:
+    """A label for an examiner-paragraph violation (the checks of templates.examiner.check_paragraph and narrative.check_paragraphs, plus the
+    grounding labels of `violation_kind`). Only the label is ever recorded."""
+    for prefix, kind in PARAGRAPH_KINDS:
+        if violation.startswith(prefix):
+            return kind
+    if violation.startswith("the paragraph has "):
+        return "floor" if "; the floor is" in violation else "limit" if "; the limit is" in violation else "other"
+    return violation_kind(violation)
+
+
+def paragraph_failures(guard: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    """Per attempt (first, retry): the rule ids whose examiner paragraph failed and the sorted labels of the checks it failed."""
+    return [[{"rule_id": rule_id, "kinds": sorted({paragraph_violation_kind(v) for v in violations})}
+             for rule_id, violations in sorted((guard.get(key) or {}).items())] for key in ("paragraph_violations", "retry_paragraph_violations")]
 
 
 def _record_for(run: _Run, key: str, phase: str, result: dict[str, Any], payload: Any) -> dict[str, Any]:
@@ -190,7 +215,7 @@ def _record_for(run: _Run, key: str, phase: str, result: dict[str, Any], payload
     if not tool:
         text = result.get("raw_text") or ""
         record.update(narrative_source="model" if text.strip() and not record["failure"] else None, guard_attempts=0,
-                      tool_calls=[], stripped_fields=[], violation_kinds=[], decision=None)
+                      tool_calls=[], stripped_fields=[], violation_kinds=[], paragraph_failures=[[], []], paragraph_sources={}, decision=None)
         _check(record, "schema_valid", bool(text.strip()))            # a markdown report: present and non-empty (no schema, no guard)
         _check(record, "no_decision", result.get("decision") is None and not result.get("tool_calls") and result.get("parsed") is None)
         _check(record, "ordering", _ordering_ok(run, key))
@@ -208,7 +233,7 @@ def _record_for(run: _Run, key: str, phase: str, result: dict[str, Any], payload
     source = (parsed or {}).get("narrative_source") if isinstance(parsed, dict) else None
     record.update(narrative_source=source, guard_attempts=guard.get("attempts"), stripped_fields=list(guard.get("stripped_fields") or []),
                   violation_kinds=[[violation_kind(v) for v in guard.get(k) or []] for k in ("violations", "retry_violations")],
-                  tool_calls=[{"name": c.get("name"), "by": c.get("by")} for c in calls],
+                  paragraph_failures=paragraph_failures(guard), paragraph_sources=dict(guard.get("paragraphs") or {}), tool_calls=[{"name": c.get("name"), "by": c.get("by")} for c in calls],
                   decision=None if not decision else {k: decision.get(k) for k in ("decision_id", "final_classification", "compliance_result")})
     if record["failure"] or not isinstance(decision, dict) or not isinstance(parsed, dict) or direct is None:
         record["failure"] = record["failure"] or "no decision or parsed result"

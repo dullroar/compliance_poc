@@ -287,7 +287,7 @@ def cost_table(rows: list[dict]) -> dict:
 def flag_truncation(out: dict, phase: str, truncated: set) -> None:
     """A reply cut off at max_tokens is not a finished narrative, even when some text came back: fail that role and phase.
     No role is excused (the narrative role's tolerance, plans/archive/live-parity/exception-record.md exception 1, was closed when the
-    report became bounded templates; see plans/response-templates)."""
+    report became bounded templates; see plans/archive/response-templates)."""
     for record in out["records"]:
         if (record["role"], phase) in truncated:
             record["checks"]["not_truncated"] = False
@@ -335,7 +335,8 @@ def live_run(sdk, *, ledger: Path | str = estimator.LEDGER, runs_path: Path | st
                      "elapsed_seconds": round(time.monotonic() - started, 3), "requests": guard.sent, "reservation_usd": str(bound),
                      "settlement_usd": settlement, "reservation_retained": settlement is None,
                      "roles": [{"role": r["role"], "phase": r["phase"], "narrative_source": r["narrative_source"],
-                                "guard_attempts": r["guard_attempts"], "violation_kinds": r["violation_kinds"], "tool_calls": r["tool_calls"],
+                                "guard_attempts": r["guard_attempts"], "violation_kinds": r["violation_kinds"], "paragraph_failures": r["paragraph_failures"], "paragraph_sources": r["paragraph_sources"],
+                                "tool_calls": r["tool_calls"],
                                 "failed_checks": role_failures(r),
                                 "elapsed_seconds": r["elapsed_seconds"]} for r in records],
                      "fallbacks": [f"{r['role']}/{r['phase']}" for r in records if r["narrative_source"] == "deterministic_fallback"],

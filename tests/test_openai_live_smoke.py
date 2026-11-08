@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / 'plans/archive/openai-smoketest/runs.jsonl'
 MODEL = 'gpt-6-luna'
 PRICING_URL = 'https://developers.openai.com/api/docs/models/gpt-6-luna'
-PRICE_CHECKED = '2026-11-07'
+PRICE_CHECKED = '2026-11-08'
 BUDGET = Decimal('20')
 MAX_REQUESTS = 6
 # Model context window is a hard ceiling. Include long-context prices, 12-hour

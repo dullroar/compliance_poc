@@ -151,6 +151,20 @@ class RejectedTests(unittest.TestCase):
                 self.assertIn("written by code", " ".join(result["parsed"]["narrative_warnings"]))
                 self.assertEqual(result["parsed"]["narrative_source"], "model_retry", "the narrative itself was fine")
 
+    def test_the_guard_records_which_paragraph_failed_which_check_on_each_attempt(self):
+        for key in ROLES:
+            with self.subTest(role=key):
+                long = lambda rule_id, text: text + " " + " ".join(["detail"] * examiner.LIMITS[key])        # noqa: E731
+                clean, _, _ = run(key, lambda m: [faithful(m)])
+                self.assertEqual((clean["narrative_guard"]["paragraph_violations"], clean["narrative_guard"]["retry_paragraph_violations"]), ({}, {}))
+                fixed, _, _ = run(key, lambda m: [faithful(m, long), faithful(m)])
+                first = fixed["narrative_guard"]["paragraph_violations"]
+                self.assertEqual(set(first), {p["rule_id"] for p in examiner_of(fixed)})
+                self.assertTrue(all("the limit is" in " ".join(v) for v in first.values()))
+                self.assertEqual(fixed["narrative_guard"]["retry_paragraph_violations"], {}, "the retry repaired every paragraph")
+                twice, _, _ = run(key, lambda m: [faithful(m, long)])
+                self.assertEqual(set(twice["narrative_guard"]["retry_paragraph_violations"]), set(first))
+
     def test_an_ungrounded_paragraph_is_rejected_and_replaced_by_code(self):
         invented = lambda rule_id, text: text + " The customer owes 987654321 dollars under file ZZ-987654321."        # noqa: E731
         for key in ROLES:
