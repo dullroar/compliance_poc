@@ -63,4 +63,11 @@ Word counts per regime on the fixture sweep (code-written paragraphs; limit in b
 - One synthetic case and one run. Most roles have few or no findings on `sample_loan.json` (hmda 7, ecoa 1, vmi 2, auditor 2, others 0), so the live run exercised paragraph rephrasing on four roles only.
 - Anthropic has no schema-constrained output here; the paragraphs relied on the prompt contract and the checks, and they passed.
 - Input tokens rose for some roles (the contract grew and the tool result carries drafts). Totals differ from the earlier run mainly because of the narrative role.
-- OpenAI was not run live, so "no truncation on both providers" is shown for Anthropic only; for OpenAI it rests on the 150-word limit.
+- OpenAI was not run live in this plan's run. A later OpenAI run on 2026-11-08 (run `2fd262243e3e41049ddcc7ffa85c7841`, see `plans/parallelize/results.md`) had every role pass `not_truncated` with all 20 narratives from the model and the narrative role taking 4.9 s and 5.2 s, so "no truncation on both providers" now holds on one OpenAI run. The same day, one run per provider on a loan with findings in every regime (see `plans/parallelize/results.md`) asked each model for examiner paragraphs in all eight regimes and the auditor: 58 paragraphs on each provider, none written by code, a few accepted only after the one retry.
+
+## Known limits left as they are (decided 2026-11-08)
+
+- `HMDA-LAR-FIELDS` has an explanation entry in `compliance_mcp/auditor/rules.py`, but no HMDA check emits that rule id (the evaluator emits `HMDA-LAR-01` to `HMDA-LAR-38`). It is harmless; `tests/test_response_catalog.py` asserts it stays unemitted. Removing it would edit the auditor rules, outside this plan.
+- When a regime's case section is missing from the loan file, the loan-officer sheet gives one generic "record unavailable, refer to compliance" referral, because the catalog has no entry for those input names. The result is safe (never a customer request) but not regime-specific.
+- The draft wording and the HMDA section grouping await compliance review: see `compliance-review-packet.md`.
+

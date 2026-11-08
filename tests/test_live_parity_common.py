@@ -6,7 +6,7 @@ from agent_prompts import AGENTS
 from agents.backends import Backend
 from compliance_common.narrative import deterministic_narrative
 from live_parity_common import (GOOD_SOURCES, PHASES, RUN_REQUEST_LIMIT, ScriptedProvider, registry_roles, role_failures, run_registry,
-                                violation_kind, worst_case_requests, worst_case_table)
+                                violation_kind, paragraph_failures, worst_case_requests, worst_case_table)
 from orchestrator.config import load_agents
 from test_agent_parity import SAMPLE, FakeModel
 
@@ -138,11 +138,12 @@ class DriverTests(unittest.TestCase):
             self.assertNotIn(forbidden, text)
         for record in out["records"]:
             self.assertLessEqual(set(record), {"role", "phase", "checks", "elapsed_seconds", "tool_backed", "failure", "narrative_source",
-                                               "guard_attempts", "tool_calls", "stripped_fields", "decision", "violation_kinds"})
+                                               "guard_attempts", "tool_calls", "stripped_fields", "decision", "violation_kinds",
+                                               "paragraph_failures", "paragraph_sources"})
             self.assertTrue(all(kind in KINDS for attempt in record["violation_kinds"] for kind in attempt))   # labels only, never quoted text
 
 
-KINDS = {"number", "date", "identifier", "invalid_json", "empty", "other"}
+KINDS = {"number", "date", "identifier", "invalid_json", "empty", "other", "contradiction", "missing_narrative"}
 
 
 class ViolationKindTests(unittest.TestCase):
@@ -155,6 +156,12 @@ class ViolationKindTests(unittest.TestCase):
                            ("the narrative says the loan is compliant but the record says otherwise", "other")):
             self.assertEqual(violation_kind(text), kind)
 
+    def test_a_contradiction_and_a_missing_narrative_object_have_their_own_labels(self):
+        for text, kind in (("the narrative describes violations or deficiencies, but the decision record's result is Compliant", "contradiction"),
+                           ("the narrative claims compliance, but the decision record's result is Non-Compliant", "contradiction"),
+                           ("the reply did not contain the required narrative object", "missing_narrative")):
+            self.assertEqual(violation_kind(text), kind)
+
     def test_an_ungrounded_narrative_records_number_kinds_for_both_attempts(self):
         script = ScriptedProvider(narrative="ungrounded")
         records = run_registry(script.backend(), "seeded")["records"]
@@ -162,6 +169,36 @@ class ViolationKindTests(unittest.TestCase):
         self.assertEqual(hmda["narrative_source"], "deterministic_fallback")
         self.assertEqual([set(a) for a in hmda["violation_kinds"]], [{"number", "identifier"}] * 2)
         self.assertNotIn("987654321", json.dumps(records))
+
+
+class ParagraphFailureTests(unittest.TestCase):
+    GUARD = {"paragraph_violations": {"YBS-X": ["the paragraph has 91 words; the limit is 70", "the number '987654321' does not appear in the decision record"],
+                                      "YBS-Y": ["the paragraph must cite 12 CFR 614.4"]},
+             "retry_paragraph_violations": {"YBS-Y": ["no paragraph was written for this finding"]}}
+
+    def test_each_attempt_lists_the_failing_rule_ids_with_labels_only(self):
+        self.assertEqual(paragraph_failures(self.GUARD),
+                         [[{"rule_id": "YBS-X", "kinds": ["limit", "number"]}, {"rule_id": "YBS-Y", "kinds": ["citation"]}],
+                          [{"rule_id": "YBS-Y", "kinds": ["missing"]}]])
+        self.assertNotIn("987654321", json.dumps(paragraph_failures(self.GUARD)))
+
+    def test_a_clean_or_absent_guard_gives_two_empty_attempts(self):
+        self.assertEqual(paragraph_failures({}), [[], []])
+        self.assertEqual(paragraph_failures({"paragraph_violations": {}, "retry_paragraph_violations": {}}), [[], []])
+
+    def test_every_check_of_the_examiner_paragraph_has_its_own_label(self):
+        from compliance_common.templates import examiner
+        from live_parity_common import paragraph_violation_kind
+        known = {"parts_order": "the paragraph must have the parts Requirement:", "rule_id": "the paragraph must name YBS-X",
+                 "citation": "the paragraph must cite 12 CFR", "record_words": "the Condition must quote the record's own words for this rule",
+                 "outcome": "the paragraph must state the outcome 'x'", "result": "the paragraph must state the result Compliant",
+                 "action": "the Action must say what closes the finding", "floor": "the paragraph has 3 words; the floor is 25",
+                 "limit": "the paragraph has 99 words; the limit is 70", "missing": "no paragraph was written for this finding",
+                 "duplicate": "more than one paragraph was written for this finding"}
+        for kind, text in known.items():
+            self.assertEqual(paragraph_violation_kind(text), kind)
+        self.assertEqual(paragraph_violation_kind("something new"), "other")
+        self.assertTrue(examiner.FLOOR and examiner.LIMITS)
 
 
 class ScriptedProviderTests(unittest.TestCase):

@@ -66,6 +66,7 @@ logs/
 !plans/archive/tune-ais/runs-anthropic.jsonl
 !plans/archive/tune-ais/runs-anthropic-rung1.jsonl
 !plans/parallelize/runs-anthropic.jsonl
+!plans/parallelize/runs-openai.jsonl
 !usage/anthropic-api-ledger.jsonl
 builds/
 *:Zone.Identifier

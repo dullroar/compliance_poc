@@ -71,7 +71,55 @@ Each run reserved the gate's conservative worst case (65 requests of up to 100,0
 
 ## What was not measured
 
-- **CPU burst of eight simultaneous evaluator subprocesses.** The live gate runs the evaluators in-process (`target_for` in `tests/live_parity_common.py`), not as MCP stdio subprocesses, so child CPU read 0.0 s and the process itself used 0.4 to 0.5 s of CPU per phase at every width. The subprocess start-up burst the spec mentions belongs to the `orchestrator.cli batch --spawn-local` path and was not measured; the first such run at width 8 on this laptop should be watched.
-- OpenAI was not measured (needs Jim's separate approval). One run per width, so differences of a few seconds are within noise.
+- **CPU burst of eight simultaneous evaluator subprocesses.** The live gate runs the evaluators in-process, so it did not show it. Measured separately on 2026-11-08 without any API call: see the section below. The full `--spawn-local` run at width 8 with a real provider was not run.
+- OpenAI was not measured in the ramp. One run per width, so differences of a few seconds are within noise. A later single OpenAI check at the committed width is below.
 - The 429 path was never reached live. It is covered offline: a role that fails on a rate limit fails alone, the batch summary counts it, and the ramp stops at the width that shows it (`tests/test_batch_concurrency.py`, `tests/test_anthropic_live_parallel.py`).
 - Other accounts and tiers may have lower per-minute limits. If an error names a limit, lower `remote_concurrency` in `agents.yaml` or pass `--remote-concurrency N`.
+
+## OpenAI check at the committed width (2026-11-08)
+
+Jim approved one OpenAI live run on 2026-11-08. It used the existing OpenAI live-parity gate (`gpt-6-luna`, synthetic `sample_loan.json`, zero SDK retries, 120 s timeout, standard tier, whole-cycle reservation in the shared ledger) at the committed `remote_concurrency` of 8, through the new opt-in gate `tests/test_openai_live_parallel.py` (`RUN_LIVE_OPENAI_PARALLEL=1`). Pricing page rechecked 2026-11-08: USD 0.10 input, 0.01 cached input, 0.50 output per million tokens, cache write 0.125, 10% regional premium, long-context 2x input and 1.5x output above 272K prompt tokens, Responses API supported; the page states no update date. Rates matched the accounting, so only the pinned check date changed. Run `2fd262243e3e41049ddcc7ffa85c7841`.
+
+- Clean: 0 rate limits (429), 0 other request errors, 0 guard refusals, 0 failed roles, 0 truncated roles, and all 20 role/phase narratives came from the model with no fallback. Usage was reported for every request, so nothing was retained as unknown.
+- 30 requests (from the run summary and the ledger; the `width_measurement` row in `runs-openai.jsonl` says 0 because it was written before a counting defect was fixed, and append-only rows are not edited). Reserved USD 3.4584704 (worst case for 56 requests); the reservation was released and the ledger charged USD 0.1283 (cumulative incurred 0.2929 to 0.4211, a conservative budget charge, not a price-based estimate; the gate could not produce one because some usage breakdown fields were not reported).
+- Wall time: model phase 42.0 s total (domain 21.8 s, auditor 15.4 s, narrative 4.9 s); seeded phase 32.0 s (domain 13.7 s, auditor 13.1 s, narrative 5.2 s). There is no OpenAI width 1 baseline, so no speedup is claimed for OpenAI.
+- Limits of this check: one run at one width; it shows width 8 did not trip this account's limits on this day, not that it is the best width, and it says nothing about other accounts or tiers (the page lists Build tier at 5,000 RPM and 2,000,000 TPM by default).
+
+## Every-regime check on both providers (2026-11-08)
+
+Why: the sample loan produces findings in only four roles (hmda, ecoa, vmi and the auditor), so no live run had asked a model for examiner paragraphs in ybs, hpml, trid, fzd or hvcre. `tests/fixtures/loan_every_regime_fails.json` is the same synthetic loan with one realistic fault per regime (a high APR and missing escrow, late disclosures and fee overruns, a flood-zone loan, a missing producer flag, an ADC loan with the exclusion facts missing), so all eight domain roles and the auditor have findings. One run per provider at the committed width of 8, through the same guarded gates (opt-in `RUN_LIVE_EVERY_REGIME=openai` or `=anthropic`, `tests/test_live_every_regime.py`).
+
+| | OpenAI `gpt-6-luna` (run `db98a0c0b7194154acafd4866f2de158`) | Anthropic `claude-haiku-5-5` (run `a714efb6e4c647b8a2933434fbd63f7e`) |
+|---|---|---|
+| Roles asked for paragraphs | all 8 domain roles plus the auditor | all 8 domain roles plus the auditor |
+| Examiner paragraphs, both phases | 58: 53 model first try, 5 model after one retry, 0 by code | 58: 57 model first try, 1 model after one retry, 0 by code |
+| Roles that failed a check | none | `trid` in the model phase (see below) |
+| Rate limits / other errors / refusals | 0 / 0 / 0 | 0 / 0 / 0 |
+| Requests | 32 | 31 |
+| Money | ledger charge USD 0.1478 (reservation USD 3.4584704 released) | settled USD 0.06214153 from usage |
+
+- First-try paragraph failures, by the check that failed (labels recorded by the gate, no text): OpenAI: three HVCRE paragraphs and the ECOA-SPOUSE-SIGNATURE one-off missed the regulation citation or the record's own words; the VMI-FIREWALL paragraph missed both. Anthropic: ECOA-SPOUSE-SIGNATURE missed the outcome word and the record's own words. Every one passed on the single retry. The same VMI paragraph also needed a retry in the earlier OpenAI run, so this is a repeat, not a one-off.
+- Anthropic `trid`, model phase: the narrative sentence (not the paragraphs, which were all accepted) was rejected twice and replaced by the code-written narrative. The gate had only the label `other` for it. It can only have been a missing narrative object or a contradiction of the code-decided result; the gate now labels those two separately, so a repeat will say which. The seeded phase of the same role passed. One occurrence, so it is a finding, not a trend.
+- A first OpenAI attempt on the fixture (run `1c2f4b63507a4ce6b6941d6201250543`, 15 requests, ledger charge USD 0.0747) was cut short by the gate's own outbound check, which was pinned to the sample loan and refused 10 requests before they left (roles ybs, hpml, trid, fzd, hvcre, both phases). That was a harness limit, not model behavior. The check stays strict by default and now takes an explicit `use_loan` switch for this fixture; the run above is the repeat.
+- Limits: one run per provider; paragraph quality is judged only by the code checks (the five parts, the word limit, no invented figure), not by compliance review.
+
+## CPU burst of eight evaluator processes (measured 2026-11-08, no API spend)
+
+The live gates run the evaluators inside one process, so the start-up burst of the real `--spawn-local` path was not seen. Measured separately: the eight domain evaluators (each started as its own `python -m compliance_mcp.<domain>.server` over stdio, the same call the agents make, on the sample loan), serial and then all eight at once, three repeats each after one warm-up, on this laptop (20 logical CPUs, 31 GB memory, idle).
+
+| | Wall time (3 repeats) | Child CPU (3 repeats) | Slowest single call |
+|---|---|---|---|
+| Serial | 4.38, 4.37, 4.38 s | 4.30, 4.31, 4.32 s | 0.58 to 0.62 s |
+| All eight at once | 0.78, 0.76, 0.74 s | 6.00, 5.79, 5.67 s | 0.74 to 0.78 s |
+
+- All eight at once finishes in about 0.76 s instead of 4.4 s. The total CPU rises by about a third (5.8 s against 4.3 s) because the processes compete; on 20 cores the burst is over in under a second.
+- On a machine with far fewer cores the same 5.8 CPU-seconds would stretch: roughly 5.8 / cores seconds at best (about 1.5 s on 4 cores). That machine was not tested.
+- Not covered: the model calls, the A2A server start-up (once per run, not per call), and the auditor and narrative roles, which run after the domain phase. The full `--spawn-local` run with a real provider at width 8 was not made.
+
+## Known limits accepted as they are (decided 2026-11-08)
+
+- The committed `remote_concurrency` stays 8: the highest width that ran clean on Anthropic (1, 2, 4, 8) and on OpenAI (8, twice). One run per width, so small differences between widths are noise; the gain above width 4 is small because the slowest domain role sets the floor. Another account or tier may have lower limits; `--remote-concurrency N` or `remote_concurrency` in `agents.yaml` lowers it.
+- One concurrency stress test failed once and was not reproduced in 180 further runs; the likely cause (a timing assertion of mine) is inferred, not proven. Two Anthropic cap-race tests protect the lock but did not show it was needed, because the GIL hid the race.
+- USD 0.0400224 stays held in the Anthropic ledger from an earlier interrupted diagnostic, because the ledger rules retain a reservation when usage is unknown.
+- The committed `concurrency: 1` now means local-model agents only; an explicit `--concurrency N` on the command line still caps everything.
+

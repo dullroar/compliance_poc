@@ -237,6 +237,8 @@ def run_agent(agent_key: str, loan_data: Any, backend: Backend, history: list[di
     guard = narrative_guard(verdict["output"], decision)
     guard.update({"source": verdict["source"], "attempts": len(verdict["attempts"]), "violations": first["violations"],
                   "retry_violations": verdict["attempts"][1]["violations"] if len(verdict["attempts"]) > 1 else [],
+                  "paragraph_violations": first.get("paragraph_violations", {}),
+                  "retry_paragraph_violations": verdict["attempts"][1].get("paragraph_violations", {}) if len(verdict["attempts"]) > 1 else {},
                   "grounded": verdict["source"] == "model", "stripped_fields": first["stripped_fields"]})
     extras = adapt.extras(decision) if canonical is not None else None
     templates = _response_templates(decision, domain, opts["templates"], expected, verdict if canonical is not None else None)

@@ -10,6 +10,7 @@ plans/archive/live-parity/runs-openai.jsonl.
 """
 from __future__ import annotations
 
+import contextlib
 import fcntl
 import importlib.metadata
 import json
@@ -103,6 +104,20 @@ def _finite_timeout(timeout) -> bool:
 
 # --- outbound validation (the smoke test's pattern, applied to every role) --------------------------------------------------
 _expected_cache: dict[str, tuple[str, str | None]] = {}
+_LOAN = [SAMPLE]                    # the synthetic loan the outbound check is pinned to; sample_loan.json unless `use_loan` says otherwise
+
+
+@contextlib.contextmanager
+def use_loan(loan: dict):
+    """Pin the outbound validation to another synthetic loan (for example the every-regime fixture) while the block runs."""
+    previous = _LOAN[0]
+    _LOAN[0] = loan
+    _expected_cache.clear()
+    try:
+        yield
+    finally:
+        _LOAN[0] = previous
+        _expected_cache.clear()
 
 
 def expected_outbound(role: str) -> tuple[str, str | None]:
@@ -125,10 +140,10 @@ def expected_outbound(role: str) -> tuple[str, str | None]:
         if role == "auditor":
             user = runner._narration_input(agent, domain, {}, {"case": {}}, adapt)
         else:
-            canonical, reason = adapt.tool_arguments(SAMPLE)
+            canonical, reason = adapt.tool_arguments(_LOAN[0])
             if canonical is None:
                 raise BudgetError("the synthetic fixture has no canonical input for " + role + ": " + str(reason))
-            user = runner._narration_input(agent, domain, SAMPLE, canonical, adapt)
+            user = runner._narration_input(agent, domain, _LOAN[0], canonical, adapt)
         value = (system, user)
     _expected_cache[role] = value
     return value
@@ -190,7 +205,7 @@ def validate_outbound(request: dict, role: str, phase: str) -> None:
             refuse("unreadable seeded exchange")
         if items[1].get("name") != tool or not isinstance(arguments, dict) or set(arguments) != {"case"} or not isinstance(result, dict):
             refuse("unexpected seeded exchange")
-        if role != "auditor" and arguments != domain_adapter(tool.removesuffix("_evaluate")).tool_arguments(SAMPLE)[0]:
+        if role != "auditor" and arguments != domain_adapter(tool.removesuffix("_evaluate")).tool_arguments(_LOAN[0])[0]:
             refuse("seeded arguments differ from the canonical case")
 
 
@@ -350,7 +365,8 @@ def live_run(sdk, *, ledger_path: Path | str = LEDGER, runs_path: Path | str = R
             end = next((r for r in rows if r.get("cycle_id") == cycle_id and r.get("event") == "cycle_end"), {})
         runs.append({"event": "run_summary", "run_id": cycle_id, "error": error, "elapsed_seconds": round(elapsed, 3), "requests": guard.sent,
                      "phases": outcomes, "roles": [{"role": r["role"], "phase": r["phase"], "narrative_source": r["narrative_source"],
-                                                    "guard_attempts": r["guard_attempts"], "tool_calls": r["tool_calls"],
+                                                    "guard_attempts": r["guard_attempts"], "violation_kinds": r["violation_kinds"],
+                                                    "paragraph_failures": r["paragraph_failures"], "paragraph_sources": r["paragraph_sources"], "tool_calls": r["tool_calls"],
                                                     "failed_checks": role_failures(r), "elapsed_seconds": r["elapsed_seconds"]} for r in records],
                      "fallbacks": [f"{r['role']}/{r['phase']}" for r in records if r["narrative_source"] == "deterministic_fallback"],
                      "successful_narratives": good, "cost_table": table, "cumulative_incurred_usd": end.get("cumulative_incurred_usd"),
@@ -359,7 +375,7 @@ def live_run(sdk, *, ledger_path: Path | str = LEDGER, runs_path: Path | str = R
     return {"cycle_id": cycle_id, "outputs": outputs, "outcomes": outcomes, "table": table, "cycle_end": end}
 
 
-def rehearse(workdir: Path) -> dict:
+def rehearse(workdir: Path, drive=run_registry) -> dict:
     """The complete run against the offline recording fake, with a temporary ledger and run file: every role's real outbound
     request goes through the guard and the validator before any request is made to OpenAI. Raises unless nothing was refused."""
     import httpx
@@ -371,7 +387,7 @@ def rehearse(workdir: Path) -> dict:
     Ledger(ledger).end_cycle("rehearsal-prior", {}, 0)
     script = ScriptedProvider(provider="openai", caps=False)
     sdk = openai.OpenAI(api_key="offline-placeholder", max_retries=0, timeout=5.0, http_client=httpx.Client(transport=httpx.MockTransport(script.handler)))
-    result = live_run(sdk, ledger_path=ledger, runs_path=workdir / "runs.jsonl", today=PRICE_CHECKED, observer=script.begin_role)
+    result = live_run(sdk, ledger_path=ledger, runs_path=workdir / "runs.jsonl", today=PRICE_CHECKED, observer=script.begin_role, drive=drive)
     if any(r["event"] == "refusal" for r in RunFile(workdir / "runs.jsonl").rows()):
         raise BudgetError("the rehearsal was refused by the guard")
     result["sizes"] = {role: max(r["bytes"] for r in script.requests if r["role"] == role) for role in registry_roles()}
