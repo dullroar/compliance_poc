@@ -55,17 +55,21 @@ def amount(value):
     return result
 
 
-def estimate(model, attempts, input_tokens, output_tokens, checked_date):
+def estimate(model, attempts, input_tokens, output_tokens, checked_date, thinking_tokens=0):
+    """Conservative bound for `attempts` requests. Thinking tokens are billed as output: `thinking_tokens` per attempt is added to
+    `output_tokens` at the output rate. (When thinking shares `max_tokens` with the answer, as on the Claude 5 family, an
+    `output_tokens` bound equal to `max_tokens` already covers it; the extra argument is for a caller that bounds thinking separately.)"""
     if model not in RATES:
         raise BudgetError('Unsupported model; verify pricing and extend the estimator before use')
     if checked_date != PRICE_CHECKED:
         raise BudgetError('Pricing verification is stale; verify and update rates before use')
-    if any(type(x) is not int for x in (attempts, input_tokens, output_tokens)):
+    if any(type(x) is not int for x in (attempts, input_tokens, output_tokens, thinking_tokens)):
         raise BudgetError('Attempts and token bounds must be integers')
-    if attempts < 1 or not 0 <= input_tokens <= CONTEXT_LIMIT or not 1 <= output_tokens <= OUTPUT_LIMIT:
+    if (attempts < 1 or not 0 <= input_tokens <= CONTEXT_LIMIT or not 1 <= output_tokens <= OUTPUT_LIMIT
+            or thinking_tokens < 0 or output_tokens + thinking_tokens > OUTPUT_LIMIT):
         raise BudgetError('Invalid attempt count or token bounds')
     input_rate, output_rate = rates_for(model, input_tokens)
-    return (Decimal(attempts) * (Decimal(input_tokens)*input_rate*2 + Decimal(output_tokens)*output_rate)
+    return (Decimal(attempts) * (Decimal(input_tokens)*input_rate*2 + Decimal(output_tokens + thinking_tokens)*output_rate)
             * Decimal('1.1') / Decimal(1_000_000))
 
 
@@ -130,8 +134,8 @@ def baseline(path, prior, source):
         append(f, {'event': 'baseline_verified', 'prior_usd': str(prior), 'source': source})
 
 
-def reserve(path, model, attempts, input_tokens, output_tokens, checked_date):
-    bound = estimate(model, attempts, input_tokens, output_tokens, checked_date)
+def reserve(path, model, attempts, input_tokens, output_tokens, checked_date, thinking_tokens=0):
+    bound = estimate(model, attempts, input_tokens, output_tokens, checked_date, thinking_tokens)
     input_rate, output_rate = rates_for(model, input_tokens)
     with locked(path) as (f, rows):
         spent, held, _ = state(rows)
@@ -145,7 +149,8 @@ def reserve(path, model, attempts, input_tokens, output_tokens, checked_date):
                    'output_tokens_per_attempt': output_tokens, 'pricing_url': PRICE_URL,
                    'pricing_checked': PRICE_CHECKED, 'tier': 'standard', 'geography_bound': 'us-premium',
                    'input_rate_usd_per_million': str(input_rate), 'output_rate_usd_per_million': str(output_rate),
-                   'cache_write_multiplier': '2', 'geography_multiplier': '1.1'})
+                   'cache_write_multiplier': '2', 'geography_multiplier': '1.1',
+                   **({'thinking_tokens_per_attempt': thinking_tokens} if thinking_tokens else {})})
     return rid, bound
 
 
@@ -170,6 +175,7 @@ def main():
         p.add_argument('--attempts', type=int, required=True, help='all requests including retries')
         p.add_argument('--input-tokens', type=int, required=True, help='max total input tokens per attempt')
         p.add_argument('--output-tokens', type=int, required=True, help='max output tokens per attempt')
+        p.add_argument('--thinking-tokens', type=int, default=0, help='extra thinking tokens per attempt, billed as output (default 0)')
     p = commands.add_parser('baseline')
     p.add_argument('--prior-usd', required=True)
     p.add_argument('--source', required=True, choices=('billing-dashboard', 'usage-export', 'owner-confirmed'))
@@ -190,12 +196,12 @@ def main():
         else:
             bound = None
             if args.command in ('estimate', 'reserve'):
-                bound = estimate(args.model, args.attempts, args.input_tokens, args.output_tokens, today)
+                bound = estimate(args.model, args.attempts, args.input_tokens, args.output_tokens, today, args.thinking_tokens)
                 print(f'conservative_request_bound_usd: {bound}')
                 print('Scope: first-party standard Messages API, text input, no hosted tools; bounds include retries.')
                 print(f'pricing_checked: {PRICE_CHECKED}; source: {PRICE_URL}')
             if args.command == 'reserve':
-                rid, _ = reserve(LEDGER, args.model, args.attempts, args.input_tokens, args.output_tokens, today)
+                rid, _ = reserve(LEDGER, args.model, args.attempts, args.input_tokens, args.output_tokens, today, args.thinking_tokens)
                 print(f'reservation_id: {rid}')
             with locked(LEDGER) as (_, rows):
                 spent, held, _ = state(rows)

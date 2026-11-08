@@ -11,14 +11,16 @@ LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 def load_settings(path: Path | str | None = None) -> dict:
-    """Top-level settings from agents.yaml. `concurrency` is how many agent calls run at once
-    (default 1: a single local model can serve one request at a time)."""
+    """Top-level settings from agents.yaml. `concurrency` is how many local-model agent calls run at once
+    (default 1: a single local model can serve one request at a time); `remote_concurrency` is how many
+    Anthropic or OpenAI agent calls run at once (default 2)."""
     with open(path or DEFAULT_CONFIG, encoding="utf-8") as source:
         raw = yaml.safe_load(source) or {}
-    concurrency = int(raw.get("concurrency", 1))
-    if concurrency < 1:
-        raise ValueError("agents.yaml: concurrency must be >= 1")
-    return {"concurrency": concurrency}
+    settings = {"concurrency": int(raw.get("concurrency", 1)), "remote_concurrency": int(raw.get("remote_concurrency", 2))}
+    for name, value in settings.items():
+        if value < 1:
+            raise ValueError(f"agents.yaml: {name} must be >= 1")
+    return settings
 
 
 def load_agents(path: Path | str | None = None) -> dict[str, dict]:

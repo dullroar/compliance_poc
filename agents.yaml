@@ -13,8 +13,13 @@
 #              paragraph per finding. model: the narrative call also rephrases a code-written draft of each paragraph; a paragraph
 #              that fails the checks gets one retry, then code writes it. code: no paragraph is requested from the model (no extra
 #              output, no extra request); code writes them all.
-# concurrency: agent calls in flight at once. 1 is right for a single local model; raise it for remote models.
+# concurrency: agent calls in flight at once for local (ollama) agents, which share one gate. 1 is right for a single local model.
+#   `--concurrency N` on the command line is different: it caps every agent call at once and, alone, sets both widths.
+# remote_concurrency: agent calls in flight at once for anthropic and openai agents, which share a second gate. A provider that
+#   rate-limits (429) fails that role alone and the batch summary counts it; lower this value (or pass --remote-concurrency N) if that happens.
+#   An agent's provider is its `provider` entry, else --provider, else COMPLIANCE_PROVIDER, else anthropic.
 concurrency: 1
+remote_concurrency: 8      # the highest width that ran clean on Anthropic Haiku (2, 4, 8 tried); see plans/parallelize/results.md
 agents:
   hmda:      {url: "http://127.0.0.1:9101/"}
   ecoa:      {url: "http://127.0.0.1:9102/"}

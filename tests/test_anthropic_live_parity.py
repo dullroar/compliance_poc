@@ -17,6 +17,7 @@ import logging
 import math
 import os
 import sys
+import threading
 import time
 import uuid
 import unittest
@@ -27,12 +28,14 @@ from zoneinfo import ZoneInfo
 
 from agent_prompts import AGENTS
 from agents.backends import Backend
-from live_parity_common import PHASES, RUN_REQUEST_LIMIT, registry_roles, role_failures, run_registry, worst_case_requests, worst_case_table
+from compliance_common.tools import rejects_forced_tool_choice
+from live_parity_common import PHASES, RUN_REQUEST_LIMIT, RoleScoped, registry_roles, role_failures, run_registry, worst_case_requests, worst_case_table
 from scripts import anthropic_cost_estimator as estimator
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "plans/archive/live-parity/runs-anthropic.jsonl"
 MODEL = "claude-haiku-5-5"
+ALLOWED_MODELS = (MODEL, "claude-sonnet-5-5")          # plans/archive/tune-ais: the two rungs of the ladder; nothing else is admitted
 MAX_TOKENS = 16384       # the Anthropic default (agents.backends.ANTHROPIC_MAX_TOKENS); asserted equal by the accounting tests
 BYTE_BOUND = 100_000                    # UTF-8 bytes bound tokens from above; Haiku costs 5x above 100k input tokens
 TIMEOUT = 120.0
@@ -62,10 +65,11 @@ class RunFile:
 
     def __init__(self, path: Path | str = RUNS) -> None:
         self.path = Path(path)
+        self._lock = threading.Lock()          # one writer at a time inside the process; flock covers other processes
 
     def append(self, row: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a+", encoding="utf-8") as f:
+        with self._lock, self.path.open("a+", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.seek(0, os.SEEK_END)
             f.write(json.dumps({**row, "timestamp": now()}, sort_keys=True, separators=(",", ":")) + "\n")
@@ -106,13 +110,14 @@ def read_usage(response) -> dict | None:
     return values
 
 
-def usage_cost(usage: dict | None) -> Decimal | None:
+def usage_cost(usage: dict | None, model: str = MODEL) -> Decimal | None:
     """Cost from reported usage under the estimator's conservative assumptions (cache writes at 2x input, US premium 1.1x).
-    The four token kinds are disjoint in the Anthropic usage object, so nothing is counted twice."""
+    The four token kinds are disjoint in the Anthropic usage object, so nothing is counted twice. Thinking tokens are part of
+    `output_tokens`, so they are priced at the output rate."""
     if usage is None:
         return None
     total_input = usage["input_tokens"] + usage["cache_creation_input_tokens"] + usage["cache_read_input_tokens"]
-    rate_in, rate_out = estimator.rates_for(MODEL, total_input)
+    rate_in, rate_out = estimator.rates_for(model, total_input)
     tokens = (Decimal(usage["input_tokens"]) + usage["cache_creation_input_tokens"] * Decimal(2) + usage["cache_read_input_tokens"] * Decimal("0.1"))
     return (tokens * rate_in + Decimal(usage["output_tokens"]) * rate_out) * Decimal("1.1") / Decimal(1_000_000)
 
@@ -130,8 +135,11 @@ class _GuardedMessages:
         return self.guard.send(request)
 
 
-class GuardedAnthropic:
-    """The only object the Backend can reach: `.messages.create` and `.begin_role`. Everything is checked before a request leaves."""
+class GuardedAnthropic(RoleScoped):
+    """The only object the Backend can reach: `.messages.create` and `.begin_role`. Everything is checked before a request leaves.
+
+    Safe for simultaneous calls: the cap check, the counters and the request_start row happen together under `self.lock`; the
+    request itself and its slow wait do not hold it; the outcome is recorded under it again. Each calling chain has its own role."""
 
     def __init__(self, sdk, *, run_id: str, reservation_id: str | None, runs: RunFile, limit: int = RUN_LIMIT,
                  byte_bound: int = BYTE_BOUND, model: str = MODEL, max_tokens: int = MAX_TOKENS, observer=None) -> None:
@@ -139,11 +147,12 @@ class GuardedAnthropic:
             raise GuardRefusal("SDK retries must be disabled (max_retries=0)")
         if not _finite_timeout(getattr(sdk, "timeout", None)):
             raise GuardRefusal("the SDK timeout must be finite")
+        if model not in ALLOWED_MODELS:
+            raise GuardRefusal(f"{model!r} is not an allowed model")
         self._sdk, self.run_id, self.reservation_id, self.runs = sdk, run_id, reservation_id, runs
         self.limit, self.byte_bound, self.model, self.max_tokens, self.observer = limit, byte_bound, model, max_tokens, observer
         self.messages = _GuardedMessages(self)
-        self.role = self.phase = None
-        self.sent = self.role_sent = 0
+        self._init_scope()
         self.unknown_cost = False           # a request was sent whose cost is not known: keep the whole reservation
         self.costs: list[Decimal] = []
         self.truncated: set[tuple[str, str]] = set()   # (role, phase) pairs with a response that stopped at max_tokens
@@ -151,18 +160,20 @@ class GuardedAnthropic:
     def begin_role(self, role: str, phase: str) -> None:
         if role not in AGENTS or phase not in PHASES:
             raise GuardRefusal("unknown role or phase")
-        self.role, self.phase, self.role_sent = role, phase, 0
+        self._enter_role(role, phase)
         if self.observer:
             self.observer(role, phase)
 
     def refuse(self, reason: str) -> None:
-        self.runs.append({"event": "refusal", "run_id": self.run_id, "role": self.role, "phase": self.phase, "reason": reason})
+        context = self._context
+        self.runs.append({"event": "refusal", "run_id": self.run_id, "role": context.role, "phase": context.phase, "reason": reason})
         raise GuardRefusal(reason)
 
     def check(self, request: dict) -> int:
         if not self.reservation_id:
             self.refuse("no durable reservation")
-        if self.role is None:
+        context = self._context
+        if context.role is None:
             self.refuse("no role context")
         if not set(request) <= ALLOWED_KEYS or not {"model", "max_tokens", "system", "messages"} <= set(request):
             self.refuse("unexpected request fields")
@@ -172,12 +183,14 @@ class GuardedAnthropic:
             self.refuse("unexpected max_tokens")
         if request.get("output_config") != OUTPUT_CONFIG:
             self.refuse("unexpected output_config")
-        tool = AGENTS[self.role].get("tool")
+        tool = AGENTS[context.role].get("tool")
         tools, choice = request.get("tools"), request.get("tool_choice")
         if tool:
             if tools is not None and (len(tools) != 1 or not isinstance(tools[0], dict) or set(tools[0]) != {"name", "description", "input_schema"}
                                       or tools[0]["name"] != tool):
                 self.refuse("unexpected tool")
+            if isinstance(choice, dict) and choice.get("type") == "tool" and rejects_forced_tool_choice(self.model):
+                self.refuse("forced tool_choice is rejected by this model")
             if choice is not None and (not isinstance(choice, dict) or choice.get("type") not in ("tool", "auto")
                                        or choice.get("disable_parallel_tool_use") is not True
                                        or (choice["type"] == "tool" and choice.get("name") != tool)):
@@ -187,7 +200,7 @@ class GuardedAnthropic:
         elif tools or choice:
             self.refuse("this role has no tool")
         system, messages = request["system"], request["messages"]
-        if not isinstance(system, str) or not system.startswith(AGENTS[self.role]["system_prompt"]):
+        if not isinstance(system, str) or not system.startswith(AGENTS[context.role]["system_prompt"]):
             self.refuse("system prompt is not the repository prompt")
         if not isinstance(messages, list) or not messages or not isinstance(messages[0], dict) or messages[0].get("role") != "user":
             self.refuse("unexpected message structure")
@@ -196,40 +209,45 @@ class GuardedAnthropic:
             self.refuse(f"request exceeds the {self.byte_bound}-byte input bound")
         if self.sent >= self.limit:
             self.refuse("run request cap reached")
-        if self.role_sent >= worst_case_requests("anthropic", self.phase, self.role):
+        if context.sent >= worst_case_requests("anthropic", context.phase, context.role):
             self.refuse("role request cap reached")
         return size
 
     def send(self, request: dict):
-        size = self.check(request)
-        self.sent += 1
-        self.role_sent += 1
-        seq, row = self.sent, {"run_id": self.run_id, "sequence": self.sent, "role": self.role, "phase": self.phase, "model": self.model,
-                               "bytes": size, "max_tokens": request["max_tokens"], "tools": bool(request.get("tools")),
-                               "tool_choice": (request.get("tool_choice") or {}).get("type")}
-        self.runs.append({"event": "request_start", **row})                  # durable before the request leaves
+        context = self._context
+        with self.lock:                  # check, count and the durable start row are one step, so a cap cannot be passed by a race
+            size = self.check(request)
+            self.sent += 1
+            context.sent += 1
+            seq, row = self.sent, {"run_id": self.run_id, "sequence": self.sent, "role": context.role, "phase": context.phase, "model": self.model,
+                                   "bytes": size, "max_tokens": request["max_tokens"], "tools": bool(request.get("tools")),
+                                   "tool_choice": (request.get("tool_choice") or {}).get("type")}
+            self.runs.append({"event": "request_start", **row})                  # durable before the request leaves
         started = time.monotonic()
         try:
             response = self._sdk.messages.create(**request, service_tier="standard_only")
         except BaseException as exc:
-            self.unknown_cost = True                                           # it may have been processed and billed
-            self.runs.append({"event": "request_outcome", "run_id": self.run_id, "sequence": seq, "role": self.role, "phase": self.phase,
-                              "outcome": type(exc).__name__, "usage": None, "cost_usd": None,
-                              "elapsed_seconds": round(time.monotonic() - started, 3)})
+            with self.lock:
+                self.unknown_cost = True                                           # it may have been processed and billed
+                self.runs.append({"event": "request_outcome", "run_id": self.run_id, "sequence": seq, "role": context.role, "phase": context.phase,
+                                  "outcome": type(exc).__name__, "usage": None, "cost_usd": None,
+                                  "elapsed_seconds": round(time.monotonic() - started, 3)})
             if not isinstance(exc, Exception):
                 raise
             raise GuardRefusal("Anthropic request failed: " + type(exc).__name__) from None
         usage = read_usage(response)
-        cost = usage_cost(usage)
-        if getattr(response, "stop_reason", None) == "max_tokens":
-            self.truncated.add((self.role, self.phase))
-        if cost is None:
-            self.unknown_cost = True
-        else:
-            self.costs.append(cost)
-        self.runs.append({"event": "request_outcome", "run_id": self.run_id, "sequence": seq, "role": self.role, "phase": self.phase,
-                          "outcome": "response", "stop_reason": getattr(response, "stop_reason", None), "usage": usage,
-                          "cost_usd": None if cost is None else str(cost), "elapsed_seconds": round(time.monotonic() - started, 3)})
+        cost = usage_cost(usage, self.model)
+        with self.lock:
+            if getattr(response, "stop_reason", None) == "max_tokens":
+                self.truncated.add((context.role, context.phase))
+                context.truncated = True
+            if cost is None:
+                self.unknown_cost = True
+            else:
+                self.costs.append(cost)
+            self.runs.append({"event": "request_outcome", "run_id": self.run_id, "sequence": seq, "role": context.role, "phase": context.phase,
+                              "outcome": "response", "stop_reason": getattr(response, "stop_reason", None), "usage": usage,
+                              "cost_usd": None if cost is None else str(cost), "elapsed_seconds": round(time.monotonic() - started, 3)})
         return response
 
 

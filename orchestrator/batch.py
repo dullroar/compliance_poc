@@ -3,21 +3,46 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import sys
 import time
 from typing import Any
 
 from agent_prompts import AGENTS
+from agents.backends import default_provider
 from compliance_common.obs import get_logger
 
 from .a2a_client import send
 
 AUDITOR_KEYS = ("auditor", "narrative")
+DEFAULT_REMOTE_CONCURRENCY = 2
+RATE_LIMIT = re.compile(r"rate.?limit|\b429\b|too many requests", re.IGNORECASE)
+RETRY_AFTER = re.compile(r"retry-after\W+(\d+(?:\.\d+)?)", re.IGNORECASE)
 log = get_logger("orchestrator", "1")
 
 
 def domain_keys(config: dict[str, dict]) -> list[str]:
     return [k for k in config if k in AGENTS and k not in AUDITOR_KEYS]
+
+
+def resolve_provider(entry: dict, provider: str | None = None) -> str:
+    """An agent's provider: its own entry, else the CLI choice, else COMPLIANCE_PROVIDER, else anthropic."""
+    return (entry.get("provider") or provider or default_provider()).lower()
+
+
+def gate_class(provider: str) -> str:
+    """Local Ollama calls share one gate; Anthropic and OpenAI calls share another."""
+    return "local" if provider == "ollama" else "remote"
+
+
+def retry_after(text: str) -> str | None:
+    found = RETRY_AFTER.search(text or "")
+    return found.group(1) if found else None
+
+
+def rate_limited_roles(results: dict[str, dict]) -> list[str]:
+    """Roles whose failure names a rate limit (a 429 that survived the SDK's own retries)."""
+    return [k for k, v in results.items() if v.get("parsed") is None and RATE_LIMIT.search(v.get("parse_error") or "")]
 
 
 def _failed(key: str, error: Exception) -> dict[str, Any]:
@@ -26,15 +51,19 @@ def _failed(key: str, error: Exception) -> dict[str, Any]:
 
 
 async def _one(key: str, config: dict[str, dict], payload: Any, verbose: bool,
-               gate: asyncio.Semaphore | None = None) -> dict[str, Any]:
-    async with gate or contextlib.nullcontext():
+               *gates: asyncio.Semaphore | None) -> dict[str, Any]:
+    async with contextlib.AsyncExitStack() as stack:
+        for gate in gates:      # the class gate first, then the overall cap, so a waiting agent never holds an overall slot
+            if gate is not None:
+                await stack.enter_async_context(gate)
         if verbose:
             print(f"  [{key}] running...", file=sys.stderr, flush=True)
         started = time.monotonic()
         try:
             result = await send(config[key]["url"], payload)
         except Exception as exc:  # one failing agent must not sink the batch
-            log.error("agent %s failed: %s", key, exc)
+            hint = retry_after(str(exc))
+            log.error("agent %s failed: %s%s", key, exc, f" (retry-after {hint}s)" if hint and RATE_LIMIT.search(str(exc)) else "")
             result = _failed(key, exc)
         seconds = time.monotonic() - started
         result.setdefault("elapsed_seconds", round(seconds, 1))
@@ -56,16 +85,27 @@ def _as_text_or_parsed(results: dict[str, dict]) -> dict[str, Any]:
             for k, v in results.items()}
 
 
-async def run_batch(loan_data: Any, config: dict[str, dict], agents: list[str] | None = None,
-                    verbose: bool = True, concurrency: int = 1) -> dict[str, dict]:
-    """Run domain agents (at most `concurrency` at a time), then the auditor over their results."""
+async def run_batch(loan_data: Any, config: dict[str, dict], agents: list[str] | None = None, verbose: bool = True,
+                    concurrency: int | None = None, remote_concurrency: int | None = None, local_concurrency: int | None = None,
+                    provider: str | None = None) -> dict[str, dict]:
+    """Run domain agents concurrently, then the auditor over their results.
+
+    Agents whose provider is ollama share one gate (`local_concurrency`); the others share a gate of `remote_concurrency`
+    (default 2). An explicit `concurrency` is also an overall cap, and alone it sets both widths as it always did."""
     keys = agents or domain_keys(config)
     unknown = [k for k in keys if k not in config or k not in AGENTS]
     if unknown:
         raise ValueError(f"Unknown or unconfigured agent keys: {unknown}. Configured: {list(config)}")
-    gate = asyncio.Semaphore(concurrency)
-    outcomes = await asyncio.gather(*(_one(k, config, loan_data, verbose, gate) for k in keys))
+    widths = {"local": local_concurrency or concurrency or 1,
+              "remote": remote_concurrency or concurrency or DEFAULT_REMOTE_CONCURRENCY}
+    gates = {kind: asyncio.Semaphore(width) for kind, width in widths.items()}
+    overall = asyncio.Semaphore(concurrency) if concurrency else None
+    outcomes = await asyncio.gather(*(_one(k, config, loan_data, verbose, gates[gate_class(resolve_provider(config[k], provider))], overall)
+                                      for k in keys))
     results = dict(zip(keys, outcomes))
+    limited = rate_limited_roles(results)
+    if limited:
+        print(f"  {len(limited)} {'role' if len(limited) == 1 else 'roles'} failed on rate limits: {', '.join(limited)}", file=sys.stderr, flush=True)
     auditor_input = {"loan_data": loan_data if isinstance(loan_data, dict) else {},
                      "agent_results": _as_text_or_parsed(results)}
     results["auditor"] = await _one("auditor", config, auditor_input, verbose)

@@ -17,6 +17,7 @@ import logging
 import math
 import os
 import sys
+import threading
 import time
 import unittest
 import uuid
@@ -31,7 +32,7 @@ from agents.backends import Backend
 from compliance_common.narrative_schema import NARRATIVE_SCHEMA
 from compliance_common.regulations import regulation_text
 from compliance_mcp.registry import adapter as domain_adapter
-from live_parity_common import PHASES, RUN_REQUEST_LIMIT, registry_roles, role_failures, run_registry, worst_case_requests, worst_case_table
+from live_parity_common import PHASES, RUN_REQUEST_LIMIT, RoleScoped, registry_roles, role_failures, run_registry, worst_case_requests, worst_case_table
 from scripts.openai_cost_estimator import assess
 from test_agent_parity import SAMPLE
 from test_openai_live_smoke import (LEDGER, MODEL, OUTPUT_LIMIT, PARITY_INPUT_BOUND_TOKENS, PARITY_REQUEST_BOUND, PRICE_CHECKED, BudgetError,
@@ -66,10 +67,11 @@ class RunFile:
 
     def __init__(self, path: Path | str = RUNS) -> None:
         self.path = Path(path)
+        self._lock = threading.Lock()          # one writer at a time inside the process; flock covers other processes
 
     def append(self, row: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a+", encoding="utf-8") as f:
+        with self._lock, self.path.open("a+", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
             f.seek(0, os.SEEK_END)
             f.write(json.dumps({**row, "timestamp": now()}, sort_keys=True, separators=(",", ":")) + "\n")
@@ -201,8 +203,11 @@ class _GuardedResponses:
         return self.guard.send(request)
 
 
-class GuardedOpenAI:
-    """The only client object the Backend can reach: `.responses.create` and `.begin_role`."""
+class GuardedOpenAI(RoleScoped):
+    """The only client object the Backend can reach: `.responses.create` and `.begin_role`.
+
+    Safe for simultaneous calls: the cap check, the counters, the ledger reservation and the request_start row happen together under
+    `self.lock`; the request itself does not hold it. Each calling chain has its own role."""
 
     def __init__(self, sdk, ledger: Ledger, cycle_id: str, runs: RunFile, *, limit: int = RUN_LIMIT, byte_bound: int = BYTE_BOUND,
                  validate=validate_outbound, observer=None) -> None:
@@ -213,51 +218,53 @@ class GuardedOpenAI:
         self._sdk, self.ledger, self.cycle_id, self.runs = sdk, ledger, cycle_id, runs
         self.limit, self.byte_bound, self.validate, self.observer = limit, byte_bound, validate, observer
         self.responses = _GuardedResponses(self)
-        self.role = self.phase = None
-        self.sent = self.role_sent = 0
+        self._init_scope()
 
     def begin_role(self, role: str, phase: str) -> None:
         if role not in AGENTS or phase not in PHASES:
             raise GuardRefusal("unknown role or phase")
-        self.role, self.phase, self.role_sent = role, phase, 0
+        self._enter_role(role, phase)
         if self.observer:
             self.observer(role, phase)
 
     def refuse(self, reason: str) -> None:
-        self.runs.append({"event": "refusal", "run_id": self.cycle_id, "role": self.role, "phase": self.phase, "reason": reason})
+        context = self._context
+        self.runs.append({"event": "refusal", "run_id": self.cycle_id, "role": context.role, "phase": context.phase, "reason": reason})
         raise GuardRefusal(reason)
 
     def send(self, request: dict):
-        if self.role is None:
-            self.refuse("no role context")
-        try:
-            self.validate(request, self.role, self.phase)
-        except GuardRefusal as exc:
-            self.refuse(str(exc))
-        size = request_bytes(request)
-        if size > self.byte_bound:
-            self.refuse(f"request exceeds the {self.byte_bound}-byte input bound")
-        if self.sent >= self.limit:
-            self.refuse("run request cap reached")
-        if self.role_sent >= worst_case_requests("openai", self.phase, self.role):
-            self.refuse("role request cap reached")
-        request = {**request, "service_tier": "default"}
-        seq = self.ledger.start_request(self.cycle_id, self.phase, self.role)         # durable reservation before the request leaves
-        self.sent += 1
-        self.role_sent += 1
-        self.runs.append({"event": "request_start", "run_id": self.cycle_id, "sequence": seq, "role": self.role, "phase": self.phase,
-                          "bytes": size, "tool_choice": request.get("tool_choice") if isinstance(request.get("tool_choice"), str)
-                          else (request.get("tool_choice") or {}).get("type"), "tools": bool(request.get("tools"))})
+        context = self._context
+        with self.lock:                  # check, count, the ledger reservation and the start row are one step
+            if context.role is None:
+                self.refuse("no role context")
+            try:
+                self.validate(request, context.role, context.phase)
+            except GuardRefusal as exc:
+                self.refuse(str(exc))
+            size = request_bytes(request)
+            if size > self.byte_bound:
+                self.refuse(f"request exceeds the {self.byte_bound}-byte input bound")
+            if self.sent >= self.limit:
+                self.refuse("run request cap reached")
+            if context.sent >= worst_case_requests("openai", context.phase, context.role):
+                self.refuse("role request cap reached")
+            request = {**request, "service_tier": "default"}
+            seq = self.ledger.start_request(self.cycle_id, context.phase, context.role)         # durable reservation before the request leaves
+            self.sent += 1
+            context.sent += 1
+            self.runs.append({"event": "request_start", "run_id": self.cycle_id, "sequence": seq, "role": context.role, "phase": context.phase,
+                              "bytes": size, "tool_choice": request.get("tool_choice") if isinstance(request.get("tool_choice"), str)
+                              else (request.get("tool_choice") or {}).get("type"), "tools": bool(request.get("tools"))})
         started = time.monotonic()
         try:
             response = self._sdk.responses.create(**request)
         except BaseException as exc:
-            self.ledger.outcome(self.cycle_id, self.phase, seq, type(exc).__name__, None, time.monotonic() - started, role=self.role)
+            self.ledger.outcome(self.cycle_id, context.phase, seq, type(exc).__name__, None, time.monotonic() - started, role=context.role)
             if not isinstance(exc, Exception):
                 raise
             raise LiveRequestError("OpenAI request failed: " + type(exc).__name__) from None
-        self.ledger.outcome(self.cycle_id, self.phase, seq, "response", read_usage(response), time.monotonic() - started,
-                            get(response, "service_tier"), role=self.role)
+        self.ledger.outcome(self.cycle_id, context.phase, seq, "response", read_usage(response), time.monotonic() - started,
+                            get(response, "service_tier"), role=context.role)
         return response
 
 

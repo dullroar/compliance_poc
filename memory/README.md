@@ -14,6 +14,8 @@ personal data, personal paths or raw logs.
   Read when: Anthropic domain-agent calls produce JSON parse errors, or an agent's output schema gains fields.
 * [local-model-sizing-and-selection.md](./local-model-sizing-and-selection.md).
   Read when: choosing or comparing local models, judging pipeline latency, or interpreting model benchmark results.
+* [model-floor.md](./model-floor.md).
+  Read when: deciding which Claude model or setting a role needs, or before changing agents.yaml models or templates, or when the model floor report may be out of date.
 * [narrate-only-and-grounding-guards.md](./narrate-only-and-grounding-guards.md).
   Read when: a narrative contradicts the decision record, evidence appears fabricated, or the grounding and fact-check guards are changed.
 * [ollama-service-and-context-limits.md](./ollama-service-and-context-limits.md).

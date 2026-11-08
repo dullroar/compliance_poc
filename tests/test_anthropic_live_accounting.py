@@ -1,10 +1,16 @@
 """Offline proofs for the guarded Anthropic live run: caps, zero retries, durable accounting. No network, no credentials."""
+import contextvars
 import json
+import logging
 import os
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from unittest import mock
 from decimal import Decimal
 from pathlib import Path
 
@@ -16,7 +22,7 @@ from agents.backends import Backend
 from live_parity_common import PHASES, ScriptedProvider, registry_roles, role_failures, run_registry, worst_case_requests, worst_case_table
 from scripts import anthropic_cost_estimator as estimator
 from test_agent_parity import SAMPLE
-from test_anthropic_live_parity import (BYTE_BOUND, MAX_TOKENS, MODEL, RUN_LIMIT, GuardedAnthropic, GuardRefusal, RunFile, aggregate, cost_table,
+from test_anthropic_live_parity import (ALLOWED_MODELS, BYTE_BOUND, MAX_TOKENS, MODEL, RUN_LIMIT, GuardedAnthropic, GuardRefusal, RunFile, aggregate, cost_table,
                                         flag_truncation, live_run, offline_payload_inspection, read_usage, request_bytes, usage_cost)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -365,6 +371,279 @@ class LiveRunAccountingTests(Base):
         with self.assertRaises(estimator.BudgetError):
             live_run(sdk_for(script), ledger=Path(self.temp.name) / "absent.jsonl", runs_path=self.runs_path, today=TODAY)
         self.assertEqual(script.requests, [])
+
+
+# --- simultaneous calls (plans/parallelize, step 02) --------------------------------------------------------------------------
+class PromptChecked(ScriptedProvider):
+    """Records the role the guard attributed each request to beside the role whose system prompt it actually carries."""
+
+    def __init__(self, *args, overlap=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pairs, self.overlap, self.inflight, self.peak, self._mutex = [], overlap, 0, 0, threading.Lock()
+
+    def handler(self, request):
+        body = json.loads(request.content)
+        system = body.get("system") or body.get("instructions") or ""
+        actual = next((k for k, v in AGENTS.items() if system.startswith(v["system_prompt"])), None)
+        with self._mutex:
+            self.pairs.append((self.role, actual))
+            self.inflight += 1
+            self.peak = max(self.peak, self.inflight)
+        try:
+            deadline = time.monotonic() + 5.0
+            while self.overlap and self.peak < 2 and time.monotonic() < deadline:      # hold the first request until a second is in flight
+                time.sleep(0.001)
+            return super().handler(request)
+        finally:
+            with self._mutex:
+                self.inflight -= 1
+
+
+def released_together(jobs, *, context=None):
+    """Run each job on its own thread, all released at once. `context` = "copy": each thread runs in a copy of the caller's context.
+    Returns [(True, value) | (False, exception)] in job order."""
+    barrier, out = threading.Barrier(len(jobs)), [None] * len(jobs)
+
+    def work(i):
+        barrier.wait()
+        try:
+            out[i] = (True, jobs[i]())
+        except Exception as exc:
+            out[i] = (False, exc)
+
+    threads = [threading.Thread(target=(contextvars.copy_context().run if context == "copy" else lambda f, i: f(i)), args=(work, i)) for i in range(len(jobs))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return out
+
+
+PER_REQUEST = Decimal("1.1") * Decimal("0.60") / Decimal(1_000_000)      # the fake reports 1 input and 1 output token on Haiku 5.5
+
+
+class ConcurrentGuardTests(Base):
+    """The guard must keep its caps, counters, role context and rows exact when requests arrive at the same time."""
+    ROUNDS = 8
+
+    def fresh(self, name, script, **kwargs):
+        runs = RunFile(Path(self.temp.name) / f"{name}.jsonl")
+        guard = GuardedAnthropic(sdk_for(script), run_id=name, reservation_id="res", runs=runs, observer=script.begin_role, **kwargs)
+        return guard, runs
+
+    def test_with_two_slots_left_exactly_two_of_eight_simultaneous_requests_proceed(self):
+        for variant in ("shared", "copied", "own_roles"):
+            for round_ in range(self.ROUNDS):
+                with self.subTest(variant=variant, round=round_):
+                    script = PromptChecked(caps=False)
+                    guard, runs = self.fresh(f"{variant}{round_}", script, limit=2)
+                    roles = ["hmda", "ecoa", "hvcre", "hpml", "fzd", "ybs", "vmi", "trid"]
+                    if variant == "own_roles":
+                        def job(role):
+                            def go():
+                                guard.begin_role(role, "model")
+                                return guard.messages.create(**self.request(role))
+                            return go
+                        results = released_together([job(r) for r in roles])
+                    else:
+                        guard.begin_role("ybs", "model")
+                        results = released_together([lambda: guard.messages.create(**self.request("ybs")) for _ in roles],
+                                                    context="copy" if variant == "copied" else None)
+                    ok = [r for r in results if r[0]]
+                    refused = [r[1] for r in results if not r[0]]
+                    self.assertEqual((len(ok), len(refused)), (2, 6))
+                    self.assertTrue(all(isinstance(e, GuardRefusal) and "run request cap reached" in str(e) for e in refused), refused)
+                    self.assertEqual((len(script.requests), guard.sent, len(guard.costs)), (2, 2, 2))
+                    rows = runs.rows("%s%d" % (variant, round_))
+                    self.assertEqual(sorted(r["sequence"] for r in rows if r["event"] == "request_start"), [1, 2])
+                    self.assertEqual(sorted(r["sequence"] for r in rows if r["event"] == "request_outcome"), [1, 2])
+                    self.assertEqual(sum(1 for r in rows if r["event"] == "refusal"), 6)
+                    total = aggregate(rows)["total"]
+                    self.assertEqual((total["requests"], total["unknown"], total["cost"]), (2, 0, 2 * PER_REQUEST))
+
+    def test_threads_sharing_one_role_cannot_exceed_its_allowance(self):
+        for round_ in range(self.ROUNDS):
+            with self.subTest(round=round_):
+                script = PromptChecked(caps=False)
+                guard, runs = self.fresh(f"share{round_}", script)
+                guard.begin_role("ybs", "model")
+                allowance = worst_case_requests("anthropic", "model", "ybs")
+                results = released_together([lambda: guard.messages.create(**self.request("ybs")) for _ in range(allowance + 4)], context="copy")
+                self.assertEqual(sum(1 for r in results if r[0]), allowance)
+                self.assertTrue(all("role request cap reached" in str(r[1]) for r in results if not r[0]))
+                self.assertEqual((len(script.requests), guard.role_sent), (allowance, allowance))
+
+    def test_roles_in_flight_together_each_keep_their_own_context_allowance_and_rows(self):
+        script = PromptChecked(caps=False, overlap=True)
+        guard, runs = self.fresh("roles", script)
+        roles = ["hmda", "ecoa", "hvcre", "hpml", "fzd", "ybs", "vmi", "trid"]
+
+        def one_role(role):
+            def go():
+                guard.begin_role(role, "model")
+                allowance = worst_case_requests("anthropic", "model", role)
+                for _ in range(allowance):
+                    guard.messages.create(**self.request(role))
+                    self.assertEqual((guard.role, guard.phase), (role, "model"))      # this thread still sees its own role
+                with self.assertRaisesRegex(GuardRefusal, "role request cap reached"):
+                    guard.messages.create(**self.request(role))
+                return allowance
+            return go
+
+        results = released_together([one_role(r) for r in roles])
+        self.assertTrue(all(r[0] for r in results), [r[1] for r in results if not r[0]])
+        expected = sum(r[1] for r in results)
+        self.assertEqual((len(script.requests), guard.sent, len(guard.costs)), (expected, expected, expected))
+        self.assertTrue(all(attributed == actual for attributed, actual in script.pairs), "a request was attributed to another role")
+        rows = runs.rows("roles")
+        starts = [r for r in rows if r["event"] == "request_start"]
+        self.assertEqual(sorted(r["sequence"] for r in starts), list(range(1, expected + 1)))
+        self.assertEqual({r["role"] for r in starts}, set(roles))
+        for role in roles:
+            self.assertEqual(sum(1 for r in starts if r["role"] == role), worst_case_requests("anthropic", "model", role))
+        self.assertEqual(sum(1 for r in rows if r["event"] == "refusal"), len(roles))
+        self.assertGreater(script.peak, 1)                                                         # they really overlapped
+        total = aggregate(rows)["total"]
+        self.assertEqual((total["requests"], total["unknown"], total["cost"]), (expected, 0, expected * PER_REQUEST))
+        self.assertEqual(sum(guard.costs, Decimal(0)), total["cost"])
+
+    def test_the_run_file_stays_one_valid_row_per_line_and_replays_identically(self):
+        script = PromptChecked(caps=False)
+        guard, runs = self.fresh("lines", script)
+        roles = ["hmda", "ecoa", "hpml", "ybs"]
+        released_together([(lambda r=r: (guard.begin_role(r, "model"), guard.messages.create(**self.request(r)))) for r in roles * 2])
+        lines = runs.path.read_text(encoding="utf-8").splitlines()
+        rows = [json.loads(line) for line in lines]          # raises if two writers interleaved a line
+        self.assertEqual(len(lines), len(rows))
+        self.assertEqual(cost_table(rows), cost_table(RunFile(runs.path).rows()))
+
+    def test_a_full_registry_run_at_width_four_is_attributed_counted_and_settled_exactly(self):
+        self.verify_baseline()
+        script = PromptChecked(overlap=True)
+        drive = lambda backend, phase: run_registry(backend, phase, remote_concurrency=4)
+        before = {p: p.stat().st_size for p in Path("logs").glob("*.jsonl")}
+        result = live_run(sdk_for(script), ledger=self.ledger, runs_path=self.runs_path, today=TODAY, observer=script.begin_role, drive=drive)
+        for phase, out in result["outputs"].items():
+            self.assertTrue(out["summary"]["ok"], (phase, out["summary"]["failed"]))
+        self.assertGreater(script.peak, 1)
+        self.assertTrue(all(attributed == actual for attributed, actual in script.pairs))
+        self.assertEqual(script.refused, [])
+        rows = self.runs.rows(result["run_id"])
+        starts = [r for r in rows if r["event"] == "request_start"]
+        self.assertEqual(sorted(r["sequence"] for r in starts), list(range(1, len(script.requests) + 1)))
+        self.assertEqual(len(starts), len(script.requests))
+        for role in ROLES:
+            for phase in PHASES:
+                self.assertLessEqual(sum(1 for r in starts if (r["role"], r["phase"]) == (role, phase)), worst_case_requests("anthropic", phase, role))
+        expected = len(script.requests) * PER_REQUEST
+        self.assertEqual(Decimal(result["settlement"]), expected)
+        self.assertEqual(aggregate(rows)["total"]["cost"], expected)
+        spent, held, _ = self.ledger_state()
+        self.assertEqual((spent, held), (expected, 0))
+        for path, size in before.items():                                                              # log files written during the run
+            with path.open("rb") as f:
+                f.seek(size)
+                for line in f.read().decode("utf-8").splitlines():
+                    json.loads(line)
+
+    def test_log_lines_from_simultaneous_writers_do_not_interleave(self):
+        from compliance_common.obs import get_logger
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(os.environ, {"COMPLIANCE_LOG_DIR": directory}):
+            name = "stress" + os.urandom(4).hex()
+            log = get_logger(name, "1")
+            pad = "x" * 3000
+            try:
+                released_together([(lambda i=i: [log.info("writer %d line %d %s", i, n, pad) for n in range(50)]) for i in range(8)])
+            finally:
+                for handler in list(log.logger.handlers):
+                    handler.close()
+                    log.logger.removeHandler(handler)
+            lines = Path(directory, f"{name}.jsonl").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), 8 * 50)
+        self.assertEqual(len({json.loads(line)["msg"] for line in lines}), 8 * 50)
+
+
+# --- candidate models (plans/archive/tune-ais, step 01) --------------------------------------------------------------------------------
+SONNET = "claude-sonnet-5-5"
+OTHER_MODELS = ("claude-opus-5-5", "claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-haiku-5", "claude-sonnet-5-5-x", "")
+
+
+class CandidateModelGuardTests(Base):
+    """The live guard admits Haiku 5.5 and Sonnet 5.5 and nothing else new; Sonnet is never sent a forced tool choice."""
+
+    def test_the_allow_list_is_the_two_candidates_and_the_guard_refuses_every_other_model_at_construction(self):
+        self.assertEqual(ALLOWED_MODELS, ("claude-haiku-5-5", "claude-sonnet-5-5"))
+        for model in ALLOWED_MODELS:
+            with self.subTest(model=model):
+                self.assertEqual(self.guard(ScriptedProvider(model=model), model=model).model, model)
+        for model in OTHER_MODELS:
+            with self.subTest(model=model), self.assertRaisesRegex(GuardRefusal, "not an allowed model"):
+                self.guard(ScriptedProvider(), model=model)
+
+    def test_each_guard_sends_only_its_own_model_and_records_a_refusal_for_any_other(self):
+        for own, other in ((MODEL, SONNET), (SONNET, MODEL)):
+            with self.subTest(own=own):
+                script = ScriptedProvider(caps=False, model=own)
+                guard = self.guard(script, model=own)
+                guard.begin_role("narrative", "model")
+                with self.assertRaisesRegex(GuardRefusal, "unexpected model"):
+                    guard.messages.create(**self.request("narrative", model=other))
+                self.assertEqual(script.requests, [])
+                guard.messages.create(**self.request("narrative", model=own))
+                self.assertEqual([r["model"] for r in script.requests], [own])
+        self.assertIn("unexpected model", [r.get("reason") for r in self.runs.rows()])
+
+    def test_a_forced_tool_choice_is_refused_for_sonnet_before_it_leaves_and_allowed_for_haiku(self):
+        script = ScriptedProvider(caps=False, model=SONNET)
+        guard = self.guard(script, model=SONNET)
+        guard.begin_role("ybs", "model")
+        forced = self.request("ybs", model=SONNET)
+        self.assertEqual(forced["tool_choice"]["type"], "tool")
+        with self.assertRaisesRegex(GuardRefusal, "forced tool_choice"):
+            guard.messages.create(**forced)
+        self.assertEqual(script.requests, [])
+        auto = self.request("ybs", model=SONNET, tool_choice={"type": "auto", "disable_parallel_tool_use": True})
+        guard.messages.create(**auto)
+        self.assertEqual(len(script.requests), 1)
+        haiku = ScriptedProvider(caps=False)
+        guard = self.guard(haiku)
+        guard.begin_role("ybs", "model")
+        guard.messages.create(**self.request("ybs"))
+        self.assertEqual(len(haiku.requests), 1)
+
+    def test_cost_is_priced_at_the_rates_of_the_model_that_ran(self):
+        usage = {"input_tokens": 1000, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "output_tokens": 500}
+        self.assertEqual(usage_cost(usage), Decimal("1.1") * (1000 * Decimal("0.10") + 500 * Decimal("0.50")) / 1_000_000)
+        self.assertEqual(usage_cost(usage, MODEL), usage_cost(usage))
+        self.assertEqual(usage_cost(usage, SONNET), Decimal("1.1") * (1000 * Decimal(2) + 500 * Decimal(10)) / 1_000_000)
+        script = ScriptedProvider(caps=False, model=SONNET)
+        guard = self.guard(script, model=SONNET)
+        guard.begin_role("narrative", "model")
+        guard.messages.create(**self.request("narrative", model=SONNET))
+        self.assertEqual(guard.costs, [Decimal("1.1") * (Decimal(2) + Decimal(10)) / 1_000_000])      # the fake reports 1 input and 1 output token
+
+    def test_a_sonnet_role_run_completes_in_model_mode_with_the_tool_called_by_the_model_never_a_400(self):
+        script = ScriptedProvider(model=SONNET)
+        guard = self.guard(script, model=SONNET, limit=RUN_LIMIT)
+        out = run_registry(Backend("anthropic", SONNET, client=guard), "model")
+        self.assertEqual(script.rejected, [])
+        self.assertEqual(out["summary"]["failed"], {}, out["summary"]["failed"])
+        self.assertFalse(script.refused)
+        for record in out["records"]:
+            if record["tool_backed"]:
+                self.assertEqual({c["by"] for c in record["tool_calls"]}, {"model"}, record["role"])
+        for row in script.requests:
+            self.assertNotEqual((row["tool_choice"] or {}).get("type"), "tool")
+
+    def test_a_sonnet_that_ignores_the_instruction_is_covered_by_the_harness_inside_the_bound(self):
+        script = ScriptedProvider(model=SONNET, tool="none")
+        guard = self.guard(script, model=SONNET, limit=RUN_LIMIT)
+        out = run_registry(Backend("anthropic", SONNET, client=guard), "model")
+        self.assertEqual(script.rejected, [])
+        record = next(r for r in out["records"] if r["role"] == "hmda")
+        self.assertEqual({c["by"] for c in record["tool_calls"]}, {"harness"})
+        for role in ROLES:
+            self.assertLessEqual(script.count(role, "model"), worst_case_requests("anthropic", "model", role))
 
 
 class DurabilityAndHygieneTests(Base):

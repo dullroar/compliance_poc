@@ -1,7 +1,11 @@
 import argparse
 import asyncio
+import contextlib
+import io
 import json
 import os
+import random
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -9,7 +13,7 @@ from unittest import mock
 from agent_prompts import AGENTS
 from compliance_mcp.auditor.adapter import tool_arguments
 from orchestrator import batch, cli, launcher
-from orchestrator.config import load_agents
+from orchestrator.config import load_agents, load_settings
 
 CONFIG = {k: {"url": f"http://127.0.0.1:99{i:02d}/"} for i, k in enumerate(["hmda", "ecoa", "hpml", "ybs", "auditor"])}
 
@@ -214,6 +218,219 @@ class BatchCommandTests(unittest.TestCase):
         saved = self.load(args.json_out)
         self.assertEqual(sorted(saved), ["auditor", "hmda", "ybs"])
         self.assertEqual(saved["hmda"]["parse_error"], "RuntimeError: hmda unreachable")
+
+
+
+class RateLimitError(Exception):
+    """Stands in for the provider SDK's 429 error after its own retries are spent."""
+
+
+class TimedTransport(Transport):
+    """Transport with per-role latency, per-class peak tracking and start and end times."""
+
+    def __init__(self, delays=None, fail=(), errors=None, classes=None):
+        super().__init__(fail)
+        self.delays, self.errors, self.classes = delays or {}, errors or {}, classes or {}
+        self.started, self.ended = {}, {}
+        self.class_now, self.class_peak = {}, {}
+
+    async def __call__(self, url, payload, httpx_client=None):
+        key = url.rstrip("/").rsplit("/", 1)[1]
+        self.calls.append((key, payload))
+        kind = self.classes.get(key, "remote")
+        self.started[key] = len(self.started)
+        self.now += 1
+        self.class_now[kind] = self.class_now.get(kind, 0) + 1
+        self.peak = max(self.peak, self.now)
+        self.class_peak[kind] = max(self.class_peak.get(kind, 0), self.class_now[kind])
+        await asyncio.sleep(self.delays.get(key, 0.01))
+        self.now -= 1
+        self.class_now[kind] -= 1
+        self.ended[key] = len(self.ended)
+        if key in self.errors:
+            raise self.errors[key]
+        if key in self.fail:
+            raise RuntimeError(f"{key} unreachable")
+        return {"parsed": None, "raw_text": "# Report"} if key == "narrative" else {"parsed": self.parsed(key), "raw_text": "{}"}
+
+
+def with_provider(provider, keys):
+    return {k: ({**v, "provider": provider} if k in keys else v) for k, v in CONFIG_ALL.items()}
+
+
+def run_config(config, transport, **kw):
+    with mock.patch.object(batch, "send", transport):
+        return asyncio.run(batch.run_batch({"loan": 1}, config, verbose=kw.pop("verbose", False), **kw))
+
+
+class ProviderGateTests(unittest.TestCase):
+    """Remote agents share one gate of `remote_concurrency`; Ollama agents share a gate of 1; `--concurrency` is an overall cap."""
+
+    def test_an_all_remote_batch_runs_as_wide_as_the_remote_width(self):
+        for width in (2, 4, 8):
+            with self.subTest(width=width):
+                transport = TimedTransport()
+                run_config(CONFIG_ALL, transport, remote_concurrency=width)
+                self.assertEqual(transport.peak, width)
+                self.assertEqual(transport.order[-1], "auditor")
+
+    def test_the_default_remote_width_is_two_with_no_flag(self):
+        self.assertEqual(batch.DEFAULT_REMOTE_CONCURRENCY, 2)
+        transport = TimedTransport()
+        run_config(CONFIG_ALL, transport)
+        self.assertEqual(transport.peak, 2)
+
+    def test_an_all_local_batch_stays_serial_whatever_the_remote_width(self):
+        transport = TimedTransport()
+        run_config(CONFIG_ALL, transport, provider="ollama", remote_concurrency=8)
+        self.assertEqual(transport.peak, 1)
+        transport = TimedTransport()
+        run_config(with_provider("ollama", DOMAINS), transport, remote_concurrency=8)
+        self.assertEqual(transport.peak, 1)
+
+    def test_a_mixed_batch_has_a_peak_per_class(self):
+        local = ["hmda", "ecoa"]
+        config = with_provider("ollama", local)
+        transport = TimedTransport(classes={k: "local" for k in local})
+        run_config(config, transport, remote_concurrency=4)
+        self.assertEqual(transport.class_peak, {"remote": 4, "local": 1})
+        self.assertEqual(transport.peak, 5)      # the classes overlap each other, each within its own width
+
+    def test_the_local_width_comes_from_the_concurrency_setting(self):
+        local = ["hmda", "ecoa", "hpml"]
+        transport = TimedTransport(classes={k: "local" for k in local})
+        run_config(with_provider("ollama", local), transport, local_concurrency=2, remote_concurrency=3)
+        self.assertEqual(transport.class_peak, {"remote": 3, "local": 2})
+
+    def test_an_explicit_concurrency_is_an_overall_cap_and_one_forces_serial(self):
+        transport = TimedTransport()
+        run_config(CONFIG_ALL, transport, concurrency=1, remote_concurrency=8)
+        self.assertEqual(transport.peak, 1)
+        transport = TimedTransport()
+        run_config(CONFIG_ALL, transport, concurrency=3, remote_concurrency=8)
+        self.assertEqual(transport.peak, 3)
+        transport = TimedTransport()
+        run_config(CONFIG_ALL, transport, concurrency=4)      # alone it keeps its old meaning: that many at once
+        self.assertEqual(transport.peak, 4)
+
+    def test_the_provider_of_an_agent_is_its_entry_then_the_cli_then_the_environment_then_anthropic(self):
+        entry = {"url": "http://127.0.0.1:1/x", "provider": "openai"}
+        bare = {"url": "http://127.0.0.1:1/x"}
+        with mock.patch.dict(os.environ, {"COMPLIANCE_PROVIDER": "ollama"}):
+            self.assertEqual(batch.resolve_provider(entry, "anthropic"), "openai")
+            self.assertEqual(batch.resolve_provider(bare, "anthropic"), "anthropic")
+            self.assertEqual(batch.resolve_provider(bare, None), "ollama")
+        with mock.patch.dict(os.environ):
+            os.environ.pop("COMPLIANCE_PROVIDER", None)
+            self.assertEqual(batch.resolve_provider(bare, None), "anthropic")
+        self.assertEqual([batch.gate_class(p) for p in ("anthropic", "openai", "ollama")], ["remote", "remote", "local"])
+
+
+class OrderUnderLoadTests(unittest.TestCase):
+    def test_order_and_shape_hold_for_random_latencies_and_a_failing_role(self):
+        for seed in range(25):
+            with self.subTest(seed=seed):
+                rng = random.Random(seed)
+                delays = {k: rng.uniform(0.0, 0.03) for k in REGISTRY}
+                failing = rng.choice(DOMAINS)
+                transport = TimedTransport(delays=delays, fail=[failing])
+                results = run_config(CONFIG_ALL, transport, remote_concurrency=rng.choice((2, 4, 8)))
+                self.assertEqual(list(results), DOMAINS + ["auditor"])
+                self.assertEqual(results[failing]["parse_error"], f"RuntimeError: {failing} unreachable")
+                self.assertTrue(all(results[k]["parsed"] for k in set(DOMAINS) - {failing}))
+                self.assertTrue(results["auditor"]["parsed"])
+                self.assertGreater(transport.started["auditor"], max(transport.started[k] for k in DOMAINS))
+                self.assertGreater(transport.ended["auditor"], max(transport.ended[k] for k in DOMAINS))      # the auditor ends after every domain ends
+                with mock.patch.object(batch, "send", transport):
+                    asyncio.run(batch.run_narrative(results, CONFIG_ALL, verbose=False))
+                self.assertEqual(transport.order[-2:], ["auditor", "narrative"])
+                self.assertGreater(transport.ended["narrative"], transport.ended["auditor"])
+
+    def test_the_auditor_input_has_every_domain_result_in_registry_order_even_when_they_finish_out_of_order(self):
+        delays = {k: 0.05 - 0.005 * i for i, k in enumerate(DOMAINS)}      # the first domain is the slowest
+        transport = TimedTransport(delays=delays)
+        run_config(CONFIG_ALL, transport, remote_concurrency=8)
+        self.assertEqual(transport.order[:-1], DOMAINS)
+        self.assertEqual(list(transport.payload("auditor")["agent_results"]), DOMAINS)
+        self.assertEqual(transport.ended["hmda"], len(DOMAINS) - 1)      # it really did finish last
+
+
+class RateLimitTests(unittest.TestCase):
+    def test_a_rate_limited_role_fails_alone_and_the_summary_counts_it(self):
+        error = RateLimitError("Error code: 429 - rate_limit_error: retry-after: 7")
+        transport = TimedTransport(errors={"hpml": error})
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            results = run_config(CONFIG_ALL, transport, remote_concurrency=8, verbose=True)
+        self.assertIn("RateLimitError", results["hpml"]["parse_error"])
+        self.assertIsNone(results["hpml"]["parsed"])
+        for key in set(DOMAINS) - {"hpml"}:
+            self.assertEqual(results[key]["parsed"], Transport.parsed(key))
+        self.assertEqual(results["auditor"]["parsed"], Transport.parsed("auditor"))
+        self.assertEqual(batch.rate_limited_roles(results), ["hpml"])
+        self.assertIn("1 role failed on rate limits: hpml", stderr.getvalue())
+
+    def test_other_failures_are_not_counted_as_rate_limits(self):
+        results = run_config(CONFIG_ALL, TimedTransport(fail=["ecoa"], errors={"fzd": RateLimitError("rate limit exceeded")}))
+        self.assertEqual(batch.rate_limited_roles(results), ["fzd"])
+        self.assertEqual(batch.rate_limited_roles(run_config(CONFIG_ALL, TimedTransport(fail=["ecoa"]))), [])
+
+    def test_the_retry_after_value_is_read_from_the_error_text_when_present(self):
+        self.assertEqual(batch.retry_after("429 Too Many Requests; retry-after: 12"), "12")
+        self.assertEqual(batch.retry_after("Retry-After=3.5 seconds"), "3.5")
+        self.assertIsNone(batch.retry_after("429 with no hint"))
+
+    def test_a_quiet_batch_prints_no_rate_limit_line(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            run_config(CONFIG_ALL, TimedTransport(), verbose=True)
+        self.assertNotIn("rate limit", stderr.getvalue())
+
+
+class WidthSettingTests(unittest.TestCase):
+    def test_settings_default_and_validate_the_remote_width(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def settings(text):
+                path = os.path.join(directory, "agents.yaml")
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(text + "\nagents: {hmda: {url: 'http://127.0.0.1:1/'}}\n")
+                return load_settings(path)
+            self.assertEqual(settings(""), {"concurrency": 1, "remote_concurrency": 2})
+            self.assertEqual(settings("concurrency: 3\nremote_concurrency: 8"), {"concurrency": 3, "remote_concurrency": 8})
+            with self.assertRaisesRegex(ValueError, "remote_concurrency"):
+                settings("remote_concurrency: 0")
+
+    def test_the_committed_registry_is_serial_for_local_and_eight_wide_for_remote(self):
+        # 8 = the highest clean width of the live ramp 2, 4, 8 (plans/parallelize/results.md); lower it there if a provider rate-limits
+        self.assertEqual(load_settings(), {"concurrency": 1, "remote_concurrency": 8})
+
+    def test_the_cli_turns_flags_and_settings_into_widths(self):
+        def widths(**given):
+            return cli._widths(argparse.Namespace(**{"config": None, "concurrency": None, "remote_concurrency": None, "provider": None, **given}))
+        committed = load_settings()
+        self.assertEqual(widths(), {"concurrency": None, "local_concurrency": committed["concurrency"], "remote_concurrency": committed["remote_concurrency"]})
+        self.assertEqual(widths(remote_concurrency=4), {"concurrency": None, "local_concurrency": committed["concurrency"], "remote_concurrency": 4})
+        self.assertEqual(widths(concurrency=1), {"concurrency": 1, "local_concurrency": None, "remote_concurrency": None})
+        self.assertEqual(widths(concurrency=1, remote_concurrency=4), {"concurrency": 1, "local_concurrency": None, "remote_concurrency": 4})
+
+    def test_batch_passes_the_widths_and_the_provider_to_run_batch(self):
+        with mock.patch.object(batch, "send", Transport()), mock.patch.object(cli, "load_agents", return_value=CONFIG_ALL), \
+                mock.patch.object(cli, "run_batch", wraps=batch.run_batch) as spy:
+            directory = tempfile.mkdtemp()
+            loan = os.path.join(directory, "loan.json")
+            with open(loan, "w", encoding="utf-8") as f:
+                json.dump({"loan": 1}, f)
+            args = argparse.Namespace(loan_file=loan, config=None, concurrency=None, remote_concurrency=4, agents=["hmda", "ybs"], spawn_local=False,
+                                      provider="ollama", model=None, json_out=os.path.join(directory, "r.json"), narrative_out=None)
+            cli._batch(args)
+        self.assertEqual({k: spy.call_args.kwargs[k] for k in ("concurrency", "local_concurrency", "remote_concurrency", "provider")},
+                         {"concurrency": None, "local_concurrency": 1, "remote_concurrency": 4, "provider": "ollama"})
+
+    def test_the_parser_accepts_remote_concurrency(self):
+        with mock.patch.object(sys, "argv", ["cli", "batch", "loan.json", "--remote-concurrency", "4"]), \
+                mock.patch.object(cli, "_batch") as run:
+            cli.main()
+        self.assertEqual(run.call_args.args[0].remote_concurrency, 4)
 
 
 class RegistryOptionsTests(unittest.TestCase):

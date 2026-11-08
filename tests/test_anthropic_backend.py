@@ -1,10 +1,12 @@
 """Offline Anthropic default and thinking-block compatibility checks."""
+import json
 import os
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from agents.backends import Backend, model_name
+from compliance_common.tools import TOOL_FIRST_MARKER, rejects_forced_tool_choice, tool_first_instruction
 
 
 class FakeMessages:
@@ -80,6 +82,109 @@ class AnthropicBackendTests(unittest.TestCase):
                 backend = Backend('anthropic', 'claude-haiku-5-5', client=FakeClient([answer]))
                 with self.assertRaises(RuntimeError):
                     backend.complete('system', [])
+
+
+# Request bodies for claude-haiku-5-5 as sent before plans/archive/tune-ais step 01 (captured from the code at that commit, canonical JSON).
+HAIKU_FIRST = ('{"max_tokens":16384,"messages":[{"content":"hi","role":"user"}],"model":"claude-haiku-5-5","output_config":{"effort":"low"},'
+               '"system":"SYSTEM TEXT","tool_choice":{"disable_parallel_tool_use":true,"name":"ybs_evaluate","type":"tool"},'
+               '"tools":[{"description":"evaluate","input_schema":{"type":"object"},"name":"ybs_evaluate"}]}')
+HAIKU_SECOND = ('{"max_tokens":16384,"messages":[{"content":"hi","role":"user"},{"content":[{"id":"call-1","input":{"case":{}},"name":"ybs_evaluate",'
+                '"type":"tool_use"}],"role":"assistant"},{"content":[{"content":"{\\"decision_id\\": \\"d\\"}","tool_use_id":"call-1","type":"tool_result"}],'
+                '"role":"user"}],"model":"claude-haiku-5-5","output_config":{"effort":"low"},"system":"SYSTEM TEXT",'
+                '"tool_choice":{"disable_parallel_tool_use":true,"type":"auto"},"tools":[{"description":"evaluate","input_schema":{"type":"object"},'
+                '"name":"ybs_evaluate"}]}')
+HAIKU_SEEDED = ('{"max_tokens":16384,"messages":[{"content":"hi","role":"user"},{"content":[{"id":"toolu_seeded_1","input":{"case":{}},'
+                '"name":"ybs_evaluate","type":"tool_use"}],"role":"assistant"},{"content":[{"content":"{\\"decision_id\\": \\"d\\"}",'
+                '"tool_use_id":"toolu_seeded_1","type":"tool_result"}],"role":"user"}],"model":"claude-haiku-5-5","output_config":{"effort":"low"},'
+                '"system":"SYSTEM TEXT","tool_choice":{"disable_parallel_tool_use":true,"type":"auto"},'
+                '"tools":[{"description":"evaluate","input_schema":{"type":"object"},"name":"ybs_evaluate"}]}')
+SPEC = {'name': 'ybs_evaluate', 'description': 'evaluate', 'inputSchema': {'type': 'object'}}
+REJECTING = ('claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-1')
+
+
+class SnapshotMessages(FakeMessages):
+    """Records each request as canonical JSON at call time (the loop later appends to the message list it passed)."""
+
+    def create(self, **kwargs):
+        self.requests.append(json.dumps(kwargs, sort_keys=True, separators=(',', ':'), default=vars))
+        return next(self.responses)
+
+
+def run_model_mode(model, answers, *, system='SYSTEM TEXT'):
+    client = FakeClient([])
+    client.messages = SnapshotMessages(answers)
+    calls = []
+    result = Backend('anthropic', model, client=client).complete_with_tool(
+        system, [{'role': 'user', 'content': 'hi'}], SPEC, lambda *_: {'decision_id': 'd'}, calls)
+    return client.messages.requests, calls, result
+
+
+def tool_use():
+    return SimpleNamespace(type='tool_use', name='ybs_evaluate', input={'case': {}}, id='call-1')
+
+
+class ForcedToolChoiceByModelTests(unittest.TestCase):
+    """Models that reject a forced tool_choice get `auto` plus an instruction naming the tool; every other model is unchanged."""
+
+    def test_haiku_5_5_requests_are_byte_for_byte_what_they_were(self):
+        requests, calls, result = run_model_mode('claude-haiku-5-5', [response(tool_use(), stop_reason='tool_use'), response(text('narrative'))])
+        self.assertEqual(requests, [HAIKU_FIRST, HAIKU_SECOND])
+        self.assertEqual((result, len(calls)), ('narrative', 1))
+        client = FakeClient([])
+        client.messages = SnapshotMessages([response(text('narrative'))])
+        Backend('anthropic', 'claude-haiku-5-5', client=client).complete_seeded(
+            'SYSTEM TEXT', [{'role': 'user', 'content': 'hi'}], SPEC, lambda *_: {}, [], {'case': {}}, {'decision_id': 'd'})
+        self.assertEqual(client.messages.requests, [HAIKU_SEEDED])
+
+    def test_models_that_reject_a_forced_choice_are_exactly_the_documented_ones(self):
+        for model in REJECTING + ('claude-mythos-5-1',):
+            self.assertTrue(rejects_forced_tool_choice(model), model)
+        for model in ('claude-haiku-5-5', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-5', 'claude-sonnet-5-50', 'custom-model', '', None):
+            self.assertFalse(rejects_forced_tool_choice(model), model)
+
+    def test_a_rejecting_model_is_never_sent_a_forced_choice_and_is_told_to_call_the_tool(self):
+        for model in REJECTING:
+            with self.subTest(model=model):
+                requests, calls, result = run_model_mode(model, [response(tool_use(), stop_reason='tool_use'), response(text('narrative'))])
+                first, second = map(json.loads, requests)
+                self.assertEqual(first['tool_choice'], {'disable_parallel_tool_use': True, 'type': 'auto'})
+                self.assertEqual(second['tool_choice'], first['tool_choice'])
+                self.assertEqual(first['system'], 'SYSTEM TEXT' + tool_first_instruction('ybs_evaluate'))      # the repository prompt stays a prefix
+                self.assertEqual(second['system'], first['system'])
+                self.assertIn('ybs_evaluate', first['system'])
+                self.assertIn(TOOL_FIRST_MARKER, first['system'])
+                # everything else in the body is what Haiku sends, except the model id and the system suffix
+                expected = json.loads(HAIKU_FIRST)
+                expected.update(model=model, system=first['system'], tool_choice=first['tool_choice'])
+                self.assertEqual(first, expected)
+                self.assertEqual((result, len(calls)), ('narrative', 1))
+
+    def test_a_rejecting_model_that_does_not_call_the_tool_returns_its_answer_for_the_runner_to_cover(self):
+        requests, calls, result = run_model_mode('claude-sonnet-5-5', [response(text('prose answer'))])
+        self.assertEqual((len(requests), calls, result), (1, [], 'prose answer'))
+
+    def test_seeded_requests_need_no_instruction_and_differ_from_haikus_only_by_the_model_id(self):
+        for model in REJECTING:
+            with self.subTest(model=model):
+                client = FakeClient([])
+                client.messages = SnapshotMessages([response(text('narrative'))])
+                Backend('anthropic', model, client=client).complete_seeded(
+                    'SYSTEM TEXT', [{'role': 'user', 'content': 'hi'}], SPEC, lambda *_: {}, [], {'case': {}}, {'decision_id': 'd'})
+                self.assertEqual(client.messages.requests, [HAIKU_SEEDED.replace('claude-haiku-5-5', model)])
+
+    def test_other_models_keep_the_forced_first_call(self):
+        for model in ('claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'custom-model'):
+            with self.subTest(model=model):
+                requests, _, _ = run_model_mode(model, [response(tool_use(), stop_reason='tool_use'), response(text('narrative'))])
+                first = json.loads(requests[0])
+                self.assertEqual(first['tool_choice']['type'], 'tool')
+                self.assertEqual(first['system'], 'SYSTEM TEXT')
+
+    def test_the_instruction_names_only_the_given_tool_and_asks_for_the_call_first(self):
+        text_ = tool_first_instruction('hmda_evaluate')
+        self.assertIn('hmda_evaluate', text_)
+        self.assertNotIn('ybs_evaluate', text_)
+        self.assertTrue(text_.startswith('\n\n'))          # appended after the prompt, never inside it
 
 
 class AnthropicEffortDefaultTests(unittest.TestCase):

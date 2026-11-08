@@ -276,6 +276,15 @@ def _print_usage() -> None:
     )
 
 
+def _widths(args: argparse.Namespace) -> dict[str, int | None]:
+    """Concurrency for run_batch. An explicit --concurrency is an overall cap (and, alone, both widths); otherwise agents.yaml sets them."""
+    settings = load_settings(args.config)
+    explicit = args.concurrency
+    return {"concurrency": explicit,
+            "local_concurrency": None if explicit else settings["concurrency"],
+            "remote_concurrency": getattr(args, "remote_concurrency", None) or (None if explicit else settings["remote_concurrency"])}
+
+
 def _batch(args: argparse.Namespace) -> None:
     try:
         with open(args.loan_file, encoding="utf-8") as f:
@@ -284,10 +293,10 @@ def _batch(args: argparse.Namespace) -> None:
         print(f"Error reading {args.loan_file}: {e}")
         sys.exit(1)
     config = load_agents(args.config)
-    concurrency = args.concurrency or load_settings(args.config)["concurrency"]
+    widths = _widths(args)
 
     async def go() -> tuple[dict, dict | None]:
-        results = await run_batch(loan_data, config, agents=args.agents, concurrency=concurrency)
+        results = await run_batch(loan_data, config, agents=args.agents, provider=args.provider, **widths)
         narrative = await run_narrative(results, config) if args.narrative_out else None
         return results, narrative
 
@@ -348,7 +357,8 @@ def main() -> None:
     batch_parser = subparsers.add_parser("batch")
     batch_parser.add_argument("loan_file")
     batch_parser.add_argument("--agents", nargs="+", choices=DOMAIN_AGENT_KEYS)
-    batch_parser.add_argument("--concurrency", type=int, help="agent calls at once (default: agents.yaml, else 1)")
+    batch_parser.add_argument("--concurrency", type=int, help="overall cap on agent calls at once; alone it sets every width (default: none, widths come from agents.yaml)")
+    batch_parser.add_argument("--remote-concurrency", type=int, help="Anthropic/OpenAI agent calls at once (default: agents.yaml, else 2)")
     batch_parser.add_argument("--spawn-local", action="store_true",
                               help="start the local agents for this run (--provider/--model apply to them)")
     batch_parser.add_argument("--json-out", metavar="PATH", help="Write full results JSON to this file (in addition to stdout)")
