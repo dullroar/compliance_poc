@@ -41,3 +41,10 @@ Adopt `docs/README.md`, `memory/AGENTS.md`, `plans/AGENTS.md`, `scripts/AGENTS.m
 Touches the agent contracts, the relevant index and checker files, current plan templates, references to the old layout, `.github/workflows/context.yml`, and this step file. Review the exact layout diff and test that broken links, stale indexes, malformed active plans, and the existing secret scan still fail their checks. Gate: `python3 scripts/build_indexes.py --check && python3 scripts/check_context.py && git diff --check`.
 
 Use `master` as the workflow base branch. Copy the pinned inputs from `plans/ralphify/template-inputs/`. Remove the final `.txt` suffix on copy.
+
+## Verification
+
+- 2026-11-22 UTC. The step gate passed.
+- The context checks passed on a standalone source snapshot without Git metadata. A copy of the new plan template also passed.
+- In the snapshot, the checks rejected a broken local link, stale generated indexes, a step without a status, an unknown requirement ID and a synthetic private-key header. The legacy index and secret scan commands also passed the applicable checks.
+- The layout diff preserves the existing workflows and archived evidence. The legacy template moved to `plans/archive/legacy-template/`.

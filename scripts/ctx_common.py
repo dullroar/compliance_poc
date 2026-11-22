@@ -1,34 +1,46 @@
-"""Shared helpers for the context-governance scripts (standard library only)."""
+"""Shared helpers for the context scripts (standard library only).
+
+Run me when: you edit a context script that uses file discovery or front matter.
+"""
 from __future__ import annotations
 
 import re
 import subprocess
 from pathlib import Path
 
-BEGIN = "<!-- BEGIN GENERATED CONTEXT INDEX -->"
-END = "<!-- END GENERATED CONTEXT INDEX -->"
+BEGIN = "<!-- BEGIN GENERATED INDEX -->"
+END = "<!-- END GENERATED INDEX -->"
 SKIP_DIRS = {".git", ".venv", "node_modules", "build", "dist", "__pycache__", ".hypothesis"}
 
 
-def repo_root(start: Path | None = None) -> Path:
-    here = (start or Path.cwd()).resolve()
-    for candidate in [here, *here.parents]:
-        if (candidate / ".git").exists():
-            return candidate
-    return here
+def repo_root(root: Path | None = None) -> Path:
+    if root is not None:
+        return root.resolve()
+    here = Path.cwd()
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=here, capture_output=True, text=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return here
+    return Path(out.rstrip("\n"))
 
 
 def markdown_files(root: Path) -> list[Path]:
     """Tracked and untracked-but-not-ignored Markdown files, falling back to a walk."""
-    try:
-        out = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
-            cwd=root, capture_output=True, text=True, check=True,
-        ).stdout.split("\n")
-        files = [root / line for line in out if line and not SKIP_DIRS & set(Path(line).parts)]
-    except (OSError, subprocess.CalledProcessError):
-        files = [p for p in root.rglob("*.md") if not SKIP_DIRS & set(p.relative_to(root).parts)]
-    return sorted(p for p in files if p.is_file())
+    files = root.rglob("*.md")
+    if (root / ".git").exists():
+        try:
+            out = subprocess.run(
+                ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", "*.md"],
+                cwd=root, capture_output=True, text=True, check=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError):
+            pass
+        else:
+            files = (root / name for name in out.split("\0") if name)
+    return sorted(p for p in files if p.is_file() and not SKIP_DIRS & set(p.relative_to(root).parts))
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, object], str]:
