@@ -1,6 +1,6 @@
 ---
 id: 02-build-and-test
-status: blocked
+status: done
 depends_on: [01-adopt-context]
 touches:
   - Dockerfile
@@ -13,7 +13,9 @@ touches:
 lane: none
 requirements: [R2]
 gate: bash scripts/test_docker.sh && python3 scripts/check_context.py && git diff --check
-evidence: "Gate rerun on 2026-11-22 UTC exited 1. Docker ran 656 tests in 298.574 seconds with 647 passes, 8 expected skips, and 1 stale-pricing failure."
+evidence: gate passed 2026-11-22 (driver-verified)
+claimed_by: codex cli-default
+claimed_at: "2026-11-22T22:11:54Z"
 ---
 
 # 02-build-and-test
