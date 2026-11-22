@@ -1,6 +1,6 @@
 ---
 id: 02-build-and-test
-status: pending
+status: blocked
 depends_on: [01-adopt-context]
 touches:
   - Dockerfile
