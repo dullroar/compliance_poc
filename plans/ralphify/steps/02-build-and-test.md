@@ -1,6 +1,6 @@
 ---
 id: 02-build-and-test
-status: pending
+status: blocked
 depends_on: [01-adopt-context]
 touches:
   - Dockerfile
@@ -13,7 +13,7 @@ touches:
 lane: none
 requirements: [R2]
 gate: bash scripts/test_docker.sh && python3 scripts/check_context.py && git diff --check
-evidence: ""
+evidence: "Gate failed on 2026-11-22 UTC. Docker suite reported 647 passes, 8 expected skips, and 1 stale-pricing failure."
 ---
 
 # 02-build-and-test
@@ -46,3 +46,7 @@ Use the existing Python dependencies and `requirements-mcp.lock`. Preserve evalu
 - Resolve the date-dependent OpenAI CLI test in a separately authorized
   change, then rerun this step's gate. Preserve the live pricing check and
   the spending ledger.
+- A second run of the exact gate on 2026-11-22 UTC reproduced the same
+  result. The Docker build and container context checks passed. The suite
+  ran 656 tests in 297 seconds. The estimator test was the only failure.
+  The estimator and its test are outside this step's `touches` list.
