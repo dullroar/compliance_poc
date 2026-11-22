@@ -1,6 +1,6 @@
 ---
 id: 02-build-and-test
-status: pending
+status: done
 depends_on: [01-adopt-context]
 touches:
   - Dockerfile
@@ -13,7 +13,9 @@ touches:
 lane: none
 requirements: [R2]
 gate: bash scripts/test_docker.sh && python3 scripts/check_context.py && git diff --check
-evidence: ""
+evidence: gate passed 2026-11-22 (driver-verified)
+claimed_by: codex cli-default
+claimed_at: "2026-11-22T22:11:54Z"
 ---
 
 # 02-build-and-test
@@ -27,3 +29,31 @@ Touches `Dockerfile`, `.dockerignore`, `README.md`, `scripts/test_docker.sh`, ge
 ## Repository gate
 
 Use the existing Python dependencies and `requirements-mcp.lock`. Preserve evaluator contracts, MCP transport checks, provider accounting, and protected suites. Run `python3 -m unittest discover -s tests -v` in Docker with live provider and local-model flags off. Check that the offline MCP stdio tests run. Preserve live opt-in instructions and repository spending rules. No credentials, provider API calls, or Ollama service are needed for the migration gate. Limit repo-specific edits to test environment and packaging support needed to reproduce the offline checks.
+
+## Resume notes
+
+- 2026-11-22 UTC. Docker built the image from the linked worktree. The
+  container passed all four context checks. The image pins Anthropic
+  `0.109.1`, the version recorded in the prior suite evidence. The latest
+  Anthropic SDK rejected the suite's `httpx` test transport.
+- The full suite discovered 656 tests. It reported 647 passes, eight
+  expected live-test skips and one failure. The MCP stdio parity tests for
+  all eight domains and the auditor passed. The bounded MCP lifecycle test
+  also passed. The host context and whitespace checks passed separately.
+- The gate is blocked by
+  `ParityProfileTests.test_the_command_line_picks_parity_only_above_the_smoke_maximum`.
+  The test runs the OpenAI estimator with the current date. The estimator
+  rejects the recorded pricing date, 2026-11-08, as stale. The same estimator
+  command reports the same error on the host.
+- Resolve the date-dependent OpenAI CLI test in a separately authorized
+  change, then rerun this step's gate. Preserve the live pricing check and
+  the spending ledger.
+- A second run of the exact gate on 2026-11-22 UTC reproduced the same
+  result. The Docker build and container context checks passed. The suite
+  ran 656 tests in 297 seconds. The estimator test was the only failure.
+  The estimator and its test are outside this step's `touches` list.
+- A third run on 2026-11-22 UTC used local Docker daemon access after the
+  sandbox denied access to the Docker socket. The build and all four
+  container context checks passed. The suite ran 656 tests in 298.574
+  seconds. The same estimator test was the only failure. The host context
+  and whitespace checks passed separately.
