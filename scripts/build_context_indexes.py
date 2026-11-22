@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Generate the routing index inside each folder README that carries index markers.
 
+Run me when: you update generated indexes with the old command name.
+
 Every routed Markdown file declares `gist: "Read when: ..."` in its front matter.
 A README containing the BEGIN/END markers lists the Markdown files beneath its folder,
 except README.md files, and except anything under a child folder whose own README has
@@ -16,7 +18,10 @@ import re
 import sys
 from pathlib import Path
 
-from ctx_common import BEGIN, END, SKIP_DIRS, repo_root, split_frontmatter
+from ctx_common import SKIP_DIRS, split_frontmatter
+
+BEGIN = "<!-- BEGIN GENERATED CONTEXT INDEX -->"
+END = "<!-- END GENERATED CONTEXT INDEX -->"
 
 
 def has_markers(readme: Path) -> bool:
@@ -59,10 +64,7 @@ def build(readme: Path, errors: list[str]) -> str:
     return "\n".join(entries) if entries else "<!-- No routed files yet. -->"
 
 
-def main(argv: list[str]) -> int:
-    check = "--check" in argv
-    args = [a for a in argv if not a.startswith("--")]
-    root = repo_root(Path(args[0]) if args else None)
+def rebuild_readme_indexes(root: Path, check: bool) -> int:
     errors: list[str] = []
     stale: list[str] = []
     for readme in sorted(root.rglob("README.md")):
@@ -82,9 +84,11 @@ def main(argv: list[str]) -> int:
     for err in errors:
         print(f"ERROR {err}")
     if check and stale:
-        print("STALE generated index (run build_context_indexes.py): " + ", ".join(stale))
+        print("STALE generated index (run build_indexes.py): " + ", ".join(stale))
     return 1 if errors or (check and stale) else 0
 
 
 if __name__ == "__main__":
+    from build_indexes import main
+
     sys.exit(main(sys.argv[1:]))
