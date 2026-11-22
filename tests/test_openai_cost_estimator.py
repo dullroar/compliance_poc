@@ -1,7 +1,11 @@
 """Offline checks for budget-preflight assumptions and archived-ledger continuity."""
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 import unittest
 
 from scripts.openai_cost_estimator import assess
@@ -109,20 +113,46 @@ class ParityProfileTests(unittest.TestCase):
         Ledger(self.path).end_cycle('p', {}, 0)
         self.assertEqual(assess(MODEL, 56, self.path, PRICE_CHECKED, 'parity')['outstanding_reservations_usd'], 0)
 
-    def test_the_command_line_picks_parity_only_above_the_smoke_maximum(self):
-        import subprocess
-        import sys
+    def run_cli(self, requests, as_of=PRICE_CHECKED):
+        # Exercise the real CLI parser and budget logic with offline inputs.
+        program = dedent("""
+            from datetime import datetime
+            from pathlib import Path
+            import sys
+            from unittest.mock import patch
+
+            from scripts import openai_cost_estimator as estimator
+
+            ledger, as_of, *args = sys.argv[1:]
+            sys.argv = ["scripts/openai_cost_estimator.py", *args]
+            with patch.object(estimator, "LEDGER", Path(ledger)), patch.object(estimator, "datetime") as clock:
+                clock.now.return_value = datetime.fromisoformat(as_of)
+                raise SystemExit(estimator.main())
+        """)
         root = Path(__file__).resolve().parents[1]
-        done = subprocess.run([sys.executable, 'scripts/openai_cost_estimator.py', '--model', MODEL, '--requests', '56'],
-                              cwd=root, capture_output=True, text=True, timeout=120)
+        return subprocess.run(
+            [sys.executable, "-c", program, str(self.path), as_of,
+             "--model", MODEL, "--requests", str(requests)],
+            cwd=root, capture_output=True, text=True, timeout=120,
+        )
+
+    def test_the_command_line_picks_parity_only_above_the_smoke_maximum(self):
+        done = self.run_cli(56)
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn('profile: parity', done.stdout)
-        small = subprocess.run([sys.executable, 'scripts/openai_cost_estimator.py', '--model', MODEL, '--requests', '3'],
-                               cwd=root, capture_output=True, text=True, timeout=120)
+        small = self.run_cli(3)
+        self.assertEqual(small.returncode, 0, small.stderr)
         self.assertNotIn('profile:', small.stdout)
-        too_many = subprocess.run([sys.executable, 'scripts/openai_cost_estimator.py', '--model', MODEL, '--requests', '81'],
-                                  cwd=root, capture_output=True, text=True, timeout=120)
+        too_many = self.run_cli(81)
         self.assertEqual(too_many.returncode, 1)
+        self.assertIn('requests per cycle', too_many.stderr)
+
+    def test_the_command_line_rejects_stale_pricing(self):
+        stale = (date.fromisoformat(PRICE_CHECKED) + timedelta(days=1)).isoformat()
+        result = self.run_cli(56, as_of=stale)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Pricing verification is stale', result.stderr)
+        self.assertEqual(result.stdout, '')
 
 
 if __name__ == '__main__':

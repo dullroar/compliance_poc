@@ -1,10 +1,9 @@
-# Documentation index
+# Documents
 
-Open only the document whose **Read when** line matches the task.
+This folder holds documents for humans: design notes, references and guides.
+Edit this index by hand. Add one line each time you add a file.
 
-<!-- BEGIN GENERATED CONTEXT INDEX -->
-
-* [design/README.md](./design/README.md).
-  Read when: changing the repository's design, boundaries or dependencies, or before simplifying a deliberate seam.
-
-<!-- END GENERATED CONTEXT INDEX -->
+| File | What it is for |
+| --- | --- |
+| [Architecture premises](./design/README.md) | Design decisions, boundaries and dependencies. |
+| [Ralph worktree guide](https://github.com/dullroar/repo-template/blob/126277f5b34027bc3766b4ae0804746f90dce959/docs/ralph-looper.md) | How agents run a plan with `ralph-looper`. |
