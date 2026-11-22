@@ -33,6 +33,39 @@ For architectural decisions and constraints, see [docs/design/](docs/design/READ
 pip install -r requirements.txt
 ```
 
+### Offline checks in Docker
+
+Run from a Git checkout on Linux or WSL with Bash, GNU tar, and access to a
+Docker daemon that runs Linux containers. The build needs access to the base
+image and Python package registries. It installs `requirements.txt` with the
+existing `requirements-mcp.lock` constraints and pins the Anthropic SDK to the
+version that supports the suite's `httpx` test transport.
+
+```bash
+bash scripts/test_docker.sh
+```
+
+The script builds from the current worktree contents of files in the Git
+index, including staged new files. It works in a linked Git worktree.
+It runs the context checks and the offline Python suite, including MCP stdio,
+as a normal container user. It uses synthetic fixtures, a temporary output
+directory and an isolated network. The gate needs no API credentials, Ollama,
+GPU or FUSE device.
+
+To build a standalone image from a clean checkout, run:
+
+```bash
+docker build -t compliance-poc .
+```
+
+To run the migration plan, install `ralph-looper` and run these commands from
+the repository root on the plan's base branch:
+
+```bash
+ralph-looper --repo "$PWD" --plan ralphify --agent codex
+ralph-looper --repo "$PWD" --plan ralphify --status
+```
+
 ## Deterministic evaluators (MCP tools)
 
 | Domain | Tool | Canonical input in the loan payload | Pack |

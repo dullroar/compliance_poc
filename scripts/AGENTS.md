@@ -31,5 +31,7 @@ See [the scripts guide](./README.md) for the project spending tools and their us
   Run me when: you run the context secret scan with the old command name.
 * [scan_secrets.py](./scan_secrets.py)
   Run me when: I changed AGENTS.md, CLAUDE.md, docs/, memory/ or plans/, and before every pull request.
+* [test_docker.sh](./test_docker.sh)
+  Run me when: you need to run the offline compliance and context checks in Docker.
 
 <!-- END GENERATED INDEX -->
