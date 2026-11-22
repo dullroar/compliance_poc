@@ -13,7 +13,7 @@ touches:
 lane: none
 requirements: [R2]
 gate: bash scripts/test_docker.sh && python3 scripts/check_context.py && git diff --check
-evidence: "Gate failed on 2026-11-22 UTC. Docker suite reported 647 passes, 8 expected skips, and 1 stale-pricing failure."
+evidence: "Gate rerun on 2026-11-22 UTC exited 1. Docker ran 656 tests in 298.574 seconds with 647 passes, 8 expected skips, and 1 stale-pricing failure."
 ---
 
 # 02-build-and-test
@@ -50,3 +50,8 @@ Use the existing Python dependencies and `requirements-mcp.lock`. Preserve evalu
   result. The Docker build and container context checks passed. The suite
   ran 656 tests in 297 seconds. The estimator test was the only failure.
   The estimator and its test are outside this step's `touches` list.
+- A third run on 2026-11-22 UTC used local Docker daemon access after the
+  sandbox denied access to the Docker socket. The build and all four
+  container context checks passed. The suite ran 656 tests in 298.574
+  seconds. The same estimator test was the only failure. The host context
+  and whitespace checks passed separately.
