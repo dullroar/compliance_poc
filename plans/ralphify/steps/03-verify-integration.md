@@ -71,3 +71,18 @@ Run `git merge-base HEAD plan/ralphify` to identify the integrated base commit. 
   worktree failed because the runner uses the checkout name to locate
   its runtime directory. The README directs users to the base checkout.
   The active driver owns the migration run.
+
+## Gate rerun
+
+On 2026-11-22 UTC, the same gate exited with code 0 on child commit
+`fafcfe3356879f940040386b309da96b9f24394d`. The integrated base was the
+same. The host and container context checks passed. The gate built
+`compliance-poc-test:Leoulsohma` and ran 657 tests in 308.806 seconds.
+There were 649 passes, the same eight opt-in skips, and zero failures
+or errors. The suite passed the offline MCP stdio parity and lifecycle
+checks. The final `git diff --check` passed.
+
+Both upstream links returned HTTP 200 again. The standalone build
+passed with `docker build -t compliance-poc:verify-03-i8ng4WUX .`.
+The CLI and its `serve`, `batch`, and `chat` subcommands each returned
+exit code 0 for `--help` in a container with `--network none`.
