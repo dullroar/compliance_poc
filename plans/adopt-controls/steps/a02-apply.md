@@ -1,8 +1,10 @@
 ---
 id: a02-apply
-status: blocked
+status: pending
 depends_on: [a01-audit]
 touches:
+  - scripts/anthropic_cost_estimator.py
+  - scripts/openai_cost_estimator.py
   - scripts/check_context.py
   - scripts/controls-requirements.txt
   - controls.toml
@@ -57,6 +59,10 @@ This is the first real use of the adoption tools in this repository. Record each
 
 Set `status: done`. Fill `evidence` with the gate command, the result and the date.
 If you cannot finish, write "Resume notes" below. Keep the status `in_progress`.
+
+## Operator change (2026-11-24)
+
+The library index check needs a `Run me when:` line in the first 25 lines of each script. `scripts/anthropic_cost_estimator.py` and `scripts/openai_cost_estimator.py` have none. You may now edit those two files: add one `Run me when: <situation>` line to the top comment or docstring of each. Do not change their code. Then run `python3 scripts/build_indexes.py`.
 
 ## Resume notes
 
