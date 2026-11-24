@@ -1,6 +1,6 @@
 ---
 id: a02-apply
-status: pending
+status: done
 depends_on: [a01-audit]
 touches:
   - scripts/build_indexes.py
@@ -20,9 +20,9 @@ touches:
 lane: none
 gate: python3 scripts/check_context.py && python3 scripts/build_indexes.py --check && python3 scripts/secret_guard.py --tracked && grep -q '3a2e9f3d95136958c54f73c831e84b971fc9a054' scripts/controls-requirements.txt && test -s controls.toml && grep -q '^  check:' .github/workflows/context.yml && grep -q 'secret_guard.py --tracked' .github/workflows/context.yml && ! grep -q 'continue-on-error' .github/workflows/context.yml && ! grep 'uses:' .github/workflows/context.yml | grep -vqE '@[0-9a-f]{40}' && grep -q 'cheapest executor' AGENTS.md && grep -q 'controls-adoption.md' docs/README.md && bash scripts/test_docker.sh && git diff --check
 requirements: [R2]
-claimed_by: ""
-claimed_at: ""
-evidence: ""
+claimed_by: claude cli-default
+claimed_at: "2026-11-24T15:03:23Z"
+evidence: gate passed 2026-11-24 (driver-verified)
 ---
 
 # Adopt the pinned library in advisory mode
@@ -69,4 +69,6 @@ You may also edit `scripts/build_indexes.py`: remove `openai_cost_estimator.py` 
 
 ## Resume notes
 
-(none)
+- 2026-11-24: Removed the two estimator scripts from `SCRIPT_GUIDE_FILES` in `scripts/build_indexes.py`. The estimators already had `Run me when:` lines. Ran `build_indexes.py`. All other gate parts pass here: `check_context.py`, `build_indexes.py --check`, `secret_guard.py --tracked`, the workflow and `AGENTS.md`/`docs/README.md` greps, `git diff --check`.
+- Not run: `bash scripts/test_docker.sh`. This session cannot run Docker. The driver runs it.
+- `adopt plan` now shows only a change to `scripts/install_hooks.sh` (outside `touches`). It was not applied.
