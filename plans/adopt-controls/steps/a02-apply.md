@@ -1,8 +1,9 @@
 ---
 id: a02-apply
-status: blocked
+status: pending
 depends_on: [a01-audit]
 touches:
+  - scripts/build_indexes.py
   - scripts/anthropic_cost_estimator.py
   - scripts/openai_cost_estimator.py
   - scripts/check_context.py
@@ -63,6 +64,8 @@ If you cannot finish, write "Resume notes" below. Keep the status `in_progress`.
 ## Operator change (2026-11-24)
 
 The library index check needs a `Run me when:` line in the first 25 lines of each script. `scripts/anthropic_cost_estimator.py` and `scripts/openai_cost_estimator.py` have none. You may now edit those two files: add one `Run me when: <situation>` line to the top comment or docstring of each. Do not change their code. Then run `python3 scripts/build_indexes.py`.
+
+You may also edit `scripts/build_indexes.py`: remove `openai_cost_estimator.py` and `anthropic_cost_estimator.py` from `SCRIPT_GUIDE_FILES`, so that the repository index and the library index agree. Change nothing else in that file. Then run `python3 scripts/build_indexes.py`.
 
 ## Resume notes
 
