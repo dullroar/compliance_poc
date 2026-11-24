@@ -10,7 +10,7 @@ gate: d=$(mktemp -d) && trap 'rm -rf "$d"' EXIT && git clone -q . "$d/clone" && 
 requirements: [R4]
 claimed_by: ""
 claimed_at: ""
-evidence: ""
+evidence: "UTC 2026-11-24, host session. secret_guard.py --history: 0 findings, 5 allowed, 1 unscanned binary (pass). check_context.py: pass (5 checks ok). build_indexes.py --check: pass. secret_guard.py --tracked: 0 findings (pass). install_hooks.sh --self-test: ok. unittest discover -s tests: Ran 170, errors=92, skipped=2, FAILED on host because httpx, mcp and anthropic are not installed; not a product failure. Docker and clean-clone checks not run in this session; the gate runs them."
 ---
 
 # Verify the full gates from a clean clone
@@ -44,4 +44,9 @@ After the operator merges this plan, the operator runs `bash scripts/install_hoo
 
 ## Resume notes
 
-(none)
+history-findings=0
+
+- The Docker and clean-clone checks ran in the gate, not in this session. This session makes no Docker claim.
+- The host lacks the Python packages `httpx`, `mcp` and `anthropic`. 92 host tests fail to import. The Docker image has these packages, so the gate is the real test run.
+- The live flags were not set in the shell. The attempt to set them in the command was denied, so the run used the defaults.
+- Status stays `in_progress`. The gate decides if the step is done.
