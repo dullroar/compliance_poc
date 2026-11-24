@@ -69,15 +69,4 @@ You may also edit `scripts/build_indexes.py`: remove `openai_cost_estimator.py` 
 
 ## Resume notes
 
-Status: blocked. Cause is a conflict between two index generators.
-
-Done: all adoption files (shim, pin, `controls.toml`, workflow, Dockerfile, `AGENTS.md` rule, `docs/controls-adoption.md`, `docs/README.md`). I added one `Run me when:` line to each estimator script, as the operator change allows. I ran `python3 scripts/build_indexes.py`.
-
-Problem: `python3 scripts/check_context.py` exits 1 with `FAIL build_indexes.py`.
-- The library check `context.index-freshness` says `scripts/AGENTS.md` is stale. The library lists every script that is not `AGENTS.md` or `README.md`. So it wants the two estimator scripts in the index.
-- The repo script `scripts/build_indexes.py` (line 27, `SCRIPT_GUIDE_FILES`) leaves out the two estimators. So `python3 scripts/build_indexes.py --check` passes only without them in the index.
-- Both are gate parts, so no `scripts/AGENTS.md` content passes both. `scripts/build_indexes.py` is outside `touches`, so I cannot change it.
-
-Operator options: allow an edit of `scripts/build_indexes.py` (remove the two names from `SCRIPT_GUIDE_FILES`), or move the estimators out of `scripts/`. Then regenerate the index and re-run the gate.
-
-Verified in this session: `build_indexes.py --check` passes. `secret_guard.py --tracked` passes (0 findings). The other library checks pass. I did not run `bash scripts/test_docker.sh` (no Docker). The driver runs it.
+(none)
