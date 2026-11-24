@@ -69,4 +69,16 @@ You may also edit `scripts/build_indexes.py`: remove `openai_cost_estimator.py` 
 
 ## Resume notes
 
-(none)
+Status: BLOCKED on scope. All edits in `touches` are done and committed.
+
+Done: `adopt apply` ran (shim, pin, `controls.toml`, `controls` job). `scripts/install_hooks.sh` was restored. The Dockerfile has `git` and the build-time shim cache. `AGENTS.md`, `docs/controls-adoption.md` and `docs/README.md` are written.
+
+Blocker: `python3 scripts/check_context.py` exits 1. The library check `context.index-freshness` fails with two errors:
+- `scripts/anthropic_cost_estimator.py` has no `Run me when:` line in its first 25 lines.
+- `scripts/openai_cost_estimator.py` has no `Run me when:` line in its first 25 lines.
+
+The old `build_indexes.py --check` passes, but the library is stricter. Both files are outside `touches`. I did not edit them. I did not disable the check in `controls.toml`, because that would weaken the control.
+
+Needed from the owner: allow these two files in `touches` (add a `Run me when:` line to each docstring), or give another decision. After that, run the gate again.
+
+Verified in this session: `build_indexes.py --check` and `secret_guard.py --tracked` pass. Docker was not run (no Docker in this session). The Docker gate also needs the network at image build, and it was not checked.
