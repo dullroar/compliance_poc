@@ -4,6 +4,8 @@
 This script does not send requests or reserve funds. Its only supported
 configuration is the guarded GPT-6 Luna Responses smoke test; other uses must
 first extend the estimator and durable request accounting.
+
+Run me when: you plan an OpenAI API call and must check its cost against the budget.
 """
 from __future__ import annotations
 

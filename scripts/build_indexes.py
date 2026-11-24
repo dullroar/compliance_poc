@@ -24,7 +24,7 @@ from ctx_common import BEGIN, END, SKIP_DIRS, repo_root, split_frontmatter
 RUN_ME = re.compile(r"Run me when:\s*(.+?)\s*(?:\*/|#>|-->|\"\"\")?\s*$")
 PLAN_SKIP = {"archive"}
 # The existing spending tools have usage entries in scripts/README.md.
-SCRIPT_GUIDE_FILES = {"AGENTS.md", "README.md", "openai_cost_estimator.py", "anthropic_cost_estimator.py"}
+SCRIPT_GUIDE_FILES = {"AGENTS.md", "README.md"}
 
 
 def md_gist(path: Path, errors: list[str]) -> str | None:

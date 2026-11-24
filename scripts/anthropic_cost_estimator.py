@@ -4,6 +4,8 @@
 Estimates do not make calls. The ledger starts with an unknown historical
 baseline; reconcile it before reserving. The caller must enforce the stated
 bounds and record known charges or leave reservations outstanding.
+
+Run me when: you plan an Anthropic API call and must estimate or reserve its cost.
 """
 from __future__ import annotations
 
