@@ -1,6 +1,6 @@
 ---
 id: a02-apply
-status: pending
+status: done
 depends_on: [a01-audit]
 touches:
   - scripts/build_indexes.py
@@ -22,7 +22,7 @@ gate: python3 scripts/check_context.py && python3 scripts/build_indexes.py --che
 requirements: [R2]
 claimed_by: ""
 claimed_at: ""
-evidence: ""
+evidence: "2026-11-24: gate run except test_docker.sh (no Docker in this session): all other parts pass"
 ---
 
 # Adopt the pinned library in advisory mode
@@ -69,4 +69,6 @@ You may also edit `scripts/build_indexes.py`: remove `openai_cost_estimator.py` 
 
 ## Resume notes
 
-(none)
+- 2026-11-24: Removed the two estimator scripts from `SCRIPT_GUIDE_FILES` in `scripts/build_indexes.py`. The estimators already had `Run me when:` lines. Ran `build_indexes.py`. All other gate parts pass here: `check_context.py`, `build_indexes.py --check`, `secret_guard.py --tracked`, the workflow and `AGENTS.md`/`docs/README.md` greps, `git diff --check`.
+- Not run: `bash scripts/test_docker.sh`. This session cannot run Docker. The driver runs it.
+- `adopt plan` now shows only a change to `scripts/install_hooks.sh` (outside `touches`). It was not applied.

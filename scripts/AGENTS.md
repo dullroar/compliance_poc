@@ -15,6 +15,8 @@ See [the scripts guide](./README.md) for the project spending tools and their us
 
 <!-- BEGIN GENERATED INDEX -->
 
+* [anthropic_cost_estimator.py](./anthropic_cost_estimator.py)
+  Run me when: you plan an Anthropic API call and must estimate or reserve its cost.
 * [build_context_indexes.py](./build_context_indexes.py)
   Run me when: you update generated indexes with the old command name.
 * [build_indexes.py](./build_indexes.py)
@@ -31,6 +33,8 @@ See [the scripts guide](./README.md) for the project spending tools and their us
   Run me when: you edit a context script that uses file discovery or front matter.
 * [install_hooks.sh](./install_hooks.sh)
   Run me when: I cloned a repository, or the hooks are missing (check with --check).
+* [openai_cost_estimator.py](./openai_cost_estimator.py)
+  Run me when: you plan an OpenAI API call and must check its cost against the budget.
 * [scan_context_secrets.py](./scan_context_secrets.py)
   Run me when: you run the context secret scan with the old command name.
 * [scan_secrets.py](./scan_secrets.py)
