@@ -27,10 +27,14 @@ See [the scripts guide](./README.md) for the project spending tools and their us
   Run me when: you create or change a plan or step, and before a plan loop starts.
 * [ctx_common.py](./ctx_common.py)
   Run me when: you edit a context script that uses file discovery or front matter.
+* [install_hooks.sh](./install_hooks.sh)
+  Run me when: I cloned a repository, or the hooks are missing (check with --check).
 * [scan_context_secrets.py](./scan_context_secrets.py)
   Run me when: you run the context secret scan with the old command name.
 * [scan_secrets.py](./scan_secrets.py)
   Run me when: I changed AGENTS.md, CLAUDE.md, docs/, memory/ or plans/, and before every pull request.
+* [secret_guard.py](./secret_guard.py)
+  Run me when: before a commit or a push (the hooks do it), in CI, before a merge, or to audit a repository for secrets.
 * [test_docker.sh](./test_docker.sh)
   Run me when: you need to run the offline compliance and context checks in Docker.
 
